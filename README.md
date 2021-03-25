@@ -1,2 +1,2 @@
-# algotom
-Image processing algorithms for tomography
+# Algotom
+### Data processing (**ALGO**)rithms for (**TOM**)ography.
