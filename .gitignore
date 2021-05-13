@@ -1,5 +1,11 @@
 *~
 *.swp
 *.pyc
-.idea/
-.project
+*.project
+*.pydevproject
+.idea
+__pycache__
+dev
+build/
+dist/
+*egg-info
