@@ -15,17 +15,18 @@ processing their own data.
 The software is made available for the paper, *"Data processing methods and
 data acquisition for samples larger than the field of view in parallel-beam 
 tomography,"* Nghia T. Vo, Robert C. Atwood, Michael Drakopoulos, 
-and Thomas Connolley, Optics Express (03/2021). https://doi.org/10.1364/OE.418448.
+and Thomas Connolley, Optics Express (03/2021), https://doi.org/10.1364/OE.418448. Pre-print 
+version is [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/350079070_Data_processing_methods_and_data_acquisition_for_samples_larger_than_the_field_of_view_in_parallel-beam_tomography/links/609d2bf8299bf1259ed51f4d/Data-processing-methods-and-data-acquisition-for-samples-larger-than-the-field-of-view-in-parallel-beam-tomography.pdf) 
 
 > "... Algotom development was started at the I12-JEEP beamline in 2014 as Python
-> codes to process data acquired by the beamline’s large field-of-view (FOV) detector, 
+> codes to process data acquired by the beamline's large field-of-view (FOV) detector, 
 > which uses two imaging sensors to cover a rectangular FOV. Images from these 
 > cameras must be stitched before tomographic reconstruction can take place. 
 > Data processing methods for improving the quality of tomographic data; 
 > removing artifacts caused by imperfections of hardware components; 
 > making use the beamline capabilities; processing data acquired by non-traditional
 > scanning techniques; and automating data processing pipeline have been actively
-> developed at I12 over the years. These methods have been used internally by I12’s
+> developed at I12 over the years. These methods have been used internally by I12's
 > users and refined further for publication and sharing with the research community
 > through open-source software such as Tomopy and Savu ...
 > 
@@ -62,7 +63,8 @@ Algotom are as follows:
   in half-acquisition scans (360-degree acquisition with the offset COR).
   
 - Methods in a full data processing pipeline: reading-writing data, 
-  pre-processing, tomographic reconstruction, and post-processing. 
+  pre-processing, tomographic reconstruction, and post-processing.
+  
   ![pipe_line](figs/readme/data_processing_space.png) 
 
 - Some practical methods developed and implemented for the package:
@@ -78,6 +80,7 @@ Algotom are as follows:
 - Calibration methods for determining pixel-size in helical scans.
 - Methods for generating simulation data: phantom creation, sinogram calculation
   based on the Fourier slice theorem, and artifact generation.
+  
   ![simulation](figs/readme/simulation.png)
 
 Author
