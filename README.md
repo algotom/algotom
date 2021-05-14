@@ -54,6 +54,8 @@ Algotom are as follows:
   to multiply double the field-of-view (FOV) of a parallel-beam tomography system.
   
   ![grid_scan](figs/readme/grid_scan.jpg)
+ 
+  [![animation](figs/readme/thumbnail.png)](https://www.youtube.com/watch?v=CNRGutasp0c)
   
 - Methods for processing helical scans (with/without the offset rotation-axis).
   
