@@ -116,9 +116,7 @@ How to install
     + Open terminal or command prompt and run the following command:
   
       `pip install algotom`
-- Important notes:
-    + If there's a problem of numpy 1.20 for python 3.7, reinstall numpy with 
-      version smaller than 1.20 (e.g. 1.19.2) after install algotom.
+
 
  How to use
 ----------
