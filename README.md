@@ -12,12 +12,12 @@ reconstruction, post-processing, and data simulation. Many utility methods are
 provided to help users quickly develop prototype-methods or build a pipeline for
 processing their own data.
 
-The software is made available for the paper, *"Data processing methods and
-data acquisition for samples larger than the field of view in parallel-beam 
-tomography,"* Nghia T. Vo, Robert C. Atwood, Michael Drakopoulos, 
-and Thomas Connolley, Optics Express (03/2021), https://doi.org/10.1364/OE.418448. Pre-print 
-version is [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/350079070_Data_processing_methods_and_data_acquisition_for_samples_larger_than_the_field_of_view_in_parallel-beam_tomography/links/609d2bf8299bf1259ed51f4d/Data-processing-methods-and-data-acquisition-for-samples-larger-than-the-field-of-view-in-parallel-beam-tomography.pdf). 
-Selected answers to technical questions of anonymous reviewers about methods in the paper is [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf).     
+The software is made available for the paper; Nghia T. Vo, Robert C. Atwood, 
+Michael Drakopoulos, and Thomas Connolley, *"Data processing methods and data 
+acquisition for samples larger than the field of view in parallel-beam tomography,"* 
+Opt. Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448. Selected
+answers to technical questions of anonymous reviewers about methods in the paper
+is [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf).     
 
 > "... Algotom development was started at the I12-JEEP beamline in 2014 as Python
 > codes to process data acquired by the beamline's large field-of-view (FOV) detector, 
@@ -46,7 +46,7 @@ Python libraries to ensure its ease-of-installation. Methods distributed in
 Algotom have been developed and tested at a synchrotron beamline where massive
 datasets are produced; image features can change significantly between 
 experiments depending on X-ray energy and sample types which can be biological, 
-medical, material science, or geological in origin. Users often don’t have 
+medical, material science, or geological in origin. Users often don't have 
 sufficient experience with image processing methods to know how to properly 
 tune parameters. All these factors drive the methods developed to be 
 easy-to-use, robust, and practical. Some featuring methods in 

@@ -9,3 +9,4 @@ dev
 build/
 dist/
 *egg-info
+recipe/
