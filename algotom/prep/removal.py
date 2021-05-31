@@ -70,7 +70,7 @@ def remove_stripe_based_sorting(sinogram, size=21, dim=1, **options):
         else:
             sino_sort = ndi.median_filter(sino_sort, (1, size))
     else:
-        if isinstance(options, dict):
+        if not isinstance(options, dict):
             raise ValueError(msg)
         for opt_name in options:
             opt = options[opt_name]
@@ -138,7 +138,7 @@ def remove_stripe_based_filtering(sinogram, sigma=3, size=21, dim=1, sort=True,
         else:
             sino_smooth = ndi.median_filter(sino_smooth, (1, size))
     else:
-        if isinstance(options, dict):
+        if not isinstance(options, dict):
             raise ValueError(msg)
         for opt_name in options:
             opt = options[opt_name]
@@ -206,7 +206,7 @@ def remove_stripe_based_fitting(sinogram, order=2, sigma=10, sort=False,
     if len(options) == 0:
         sino_filt = util.apply_gaussian_filter(sino_fit, sigma, sigmay, pad)
     else:
-        if isinstance(options, dict):
+        if not isinstance(options, dict):
             raise ValueError(msg)
         sino_filt = np.copy(sino_fit)
         for opt_name in options:
@@ -277,7 +277,7 @@ def remove_large_stripe(sinogram, snr=3.0, size=51, drop_ratio=0.1, norm=True,
     if len(options) == 0:
         sino_smooth = ndi.median_filter(sino_sort, (1, size))
     else:
-        if isinstance(options, dict):
+        if not isinstance(options, dict):
             raise ValueError(msg)
         sino_smooth = np.copy(sino_sort)
         for opt_name in options:
@@ -483,7 +483,7 @@ def remove_stripe_based_normalization(sinogram, sigma=15, num_chunk=1,
         if len(options) == 0:
             list_filt = ndi.gaussian_filter(list_mean, sigma)
         else:
-            if isinstance(options, dict):
+            if not isinstance(options, dict):
                 raise ValueError(msg)
             list_filt = np.copy(list_mean)
             for opt_name in options:
@@ -669,7 +669,7 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
             output_data[i][1] = np.real(np.fft.ifft2(np.fft.ifftshift(
                 np.fft.fftshift(np.fft.fft2(output_data[i][1])) * window)))
         else:
-            if isinstance(options, dict):
+            if not isinstance(options, dict):
                 raise ValueError(msg)
             mat_smooth = np.copy(output_data[i][1])
             for opt_name in options:
@@ -742,7 +742,7 @@ def remove_stripe_based_interpolation(sinogram, snr=3.0, size=51,
     if len(options) == 0:
         sino_smooth = ndi.median_filter(sino_sort, (1, size))
     else:
-        if isinstance(options, dict):
+        if not isinstance(options, dict):
             raise ValueError(msg)
         sino_smooth = np.copy(sino_sort)
         for opt_name in options:
