@@ -94,9 +94,9 @@ Nghia T. Vo - *Diamond Light Source, UK.*
 How to install
 --------------
 - From source code:
-  - Download or `git clone` the [source code](https://github.com/algotom/algotom) to a local folder.
-  - Download and install Miniconda software: https://docs.conda.io/en/latest/miniconda.html
-  - Open Linux terminal or Windows command prompt and run the following commands:
+  + Download or `git clone` the [source code](https://github.com/algotom/algotom) to a local folder.
+  + Download and install Miniconda software: https://docs.conda.io/en/latest/miniconda.html
+  + Open Linux terminal or Windows command prompt and run the following commands:
       
       `conda create -n algotom python=3.7`
       
@@ -105,31 +105,31 @@ How to install
       `cd <path-to-source-code>`
       
       `python setup.py install`
- - Using conda:
-    + Install Miniconda as instructed above.
-    + Open terminal or command prompt and run the following commands:
-      * If install to an existing environment:
-      
-        `conda install -c algotom algotom`
-      * If install to a new environment:
-        ```commandline
-        conda create -n algotom python=3.7
-        conda activate algotom
-        conda install -c algotom algotom
-        ```
+- Using conda:
+  + Install Miniconda as instructed above.
+  + Open terminal or command prompt and run the following commands:
+    * If install to an existing environment:
+    
+      `conda install -c algotom algotom`
+    * If install to a new environment:
+      ```commandline
+      conda create -n algotom python=3.7
+      conda activate algotom
+      conda install -c algotom algotom
+      ```
 
 - Using pip:
-    + Install Miniconda as instructed above.
-    + Open terminal or command prompt and run the following commands:
-      * If install to an existing environment:  
-        
-        `pip install algotom`
-      * If install to a new environment:
-        ```commandline
-        conda create -n algotom python=3.7
-        conda activate algotom
-        pip install algotom
-        ```
+  + Install Miniconda as instructed above.
+  + Open terminal or command prompt and run the following commands:
+    * If install to an existing environment:  
+      
+      `pip install algotom`
+    * If install to a new environment:
+      ```commandline
+      conda create -n algotom python=3.7
+      conda activate algotom
+      pip install algotom
+      ```
 
  How to use
 ----------
