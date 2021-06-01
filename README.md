@@ -107,16 +107,29 @@ How to install
       `python setup.py install`
  - Using conda:
     + Install Miniconda as instructed above.
-    + Open terminal or command prompt and run the following command:
+    + Open terminal or command prompt and run the following commands:
+      * If install to an existing environment:
       
-      `conda install -c algotom algotom`
+        `conda install -c algotom algotom`
+      * If install to a new environment:
+        ```commandline
+        conda create -n algotom python=3.7
+        conda activate algotom
+        conda install -c algotom algotom
+        ```
 
 - Using pip:
     + Install Miniconda as instructed above.
-    + Open terminal or command prompt and run the following command:
-  
-      `pip install algotom`
-
+    + Open terminal or command prompt and run the following commands:
+      * If install to an existing environment:  
+        
+        `pip install algotom`
+      * If install to a new environment:
+        ```commandline
+        conda create -n algotom python=3.7
+        conda activate algotom
+        pip install algotom
+        ```
 
  How to use
 ----------
