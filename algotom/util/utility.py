@@ -33,7 +33,7 @@ Module of utility methods:
     2.7  - make_2d_butterworth_window
     2.8  - make_2d_damping_window
     2.9  - apply_wavelet_decomposition
-    2.10 - apply_wavelet_recontruction
+    2.10 - apply_wavelet_reconstruction
     2.11 - apply_filter_to_wavelet_component
     2.12 - interpolate_inside_stripe
     2.13 - transform_slice_forward
@@ -42,7 +42,7 @@ Module of utility methods:
     3.1 - apply_gaussian_filter (in the Fourier space)
     3.2 - apply_regularization_filter
 4- Methods for grid scans:
-    4.1  - detec_sample
+    4.1  - detect_sample
     4.2  - fix_non_sample_areas
     4.3  - locate_slice
     4.4  - locate_slice_chunk
@@ -467,7 +467,7 @@ def apply_wavelet_decomposition(mat, wavelet_name, level=None):
     wavelet_name : str
         Name of a wavelet. E.g. "db5"
     level : int, optional
-        Decomposition level. It is contrained to return an array with
+        Decomposition level. It is constrained to return an array with
         a minimum size of larger than 16 pixels.
 
     Returns
@@ -485,7 +485,7 @@ def apply_wavelet_decomposition(mat, wavelet_name, level=None):
     return pywt.wavedec2(mat, wavelet_name, level=level)
 
 
-def apply_wavelet_recontruction(data, wavelet_name, ignore_level=None):
+def apply_wavelet_reconstruction(data, wavelet_name, ignore_level=None):
     """
     Apply 2D wavelet reconstruction.
 
@@ -590,8 +590,8 @@ def apply_filter_to_wavelet_component(data, level=None, order=1,
 
 def interpolate_inside_stripe(mat, list_mask, kind="linear"):
     """
-    Interpolate grayscales inside vertical stripes of an image. Stripe locations
-    given by a binary 1D-mask.
+    Interpolate gray-scales inside vertical stripes of an image. Stripe
+    locations given by a binary 1D-mask.
 
     Parameters
     ----------

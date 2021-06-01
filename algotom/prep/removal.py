@@ -690,7 +690,7 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
                     raise ValueError("Can't find the method: '{}' in the"
                                      " namespace".format(method))
             output_data[i][1] = mat_smooth
-    sinogram = util.apply_wavelet_recontruction(output_data, wavelet_name)
+    sinogram = util.apply_wavelet_reconstruction(output_data, wavelet_name)
     sinogram = sinogram[pad:nrow + pad, pad:ncol + pad]
     if sort is True:
         sinogram = util.sort_backward(sinogram, sino_index, axis=0)

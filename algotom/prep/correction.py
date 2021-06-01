@@ -27,7 +27,7 @@ Module of correction methods in the preprocessing stage:
 - MTF deconvolution.
 - Tilted sinogram generation.
 - Tilted 1D intensity-profile generation.
-- Beam hardering correction.
+- Beam hardening correction.
 """
 
 import numpy as np
@@ -557,7 +557,7 @@ def beam_hardening_correction(mat, q, n, opt=True):
         Corrected image.
     """
     if np.max(mat) >= 2.0:
-        raise ValueError("!!! Input image must be normalized, i.e. grayscales "
+        raise ValueError("!!! Input image must be normalized, i.e. gray-scales "
                          "are in the range of [0.0, 1.0]) !!!")
     if n < 2.0:
         raise ValueError("!!! n must be larger than or equal to 2 !!!")
