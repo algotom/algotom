@@ -147,7 +147,7 @@ How to install
   
   Methods distributed in Algotom can run on a normal computer which enable users
   to process these data locally. 
-- There are tools and methods users can use to customize their own algorithms:
+- There are tools and [methods](https://sarepy.readthedocs.io/toc/section5.html) users can use to customize their own algorithms:
   + Methods to transform images back-and-forth between the polar coordinate 
     system and the Cartesian coordinate system.
   + Methods to separate stripe artifacts.

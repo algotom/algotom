@@ -532,8 +532,13 @@ def check_level(level, n_level):
             if 0 in level:
                 raise ValueError(
                     "Level is out of range: [1:{}]!".format(n_level))
+        elif isinstance(level, tuple):
+            level = [(i if (0 < i <= n_level) else 0) for i in level]
+            if 0 in level:
+                raise ValueError(
+                    "Level is out of range: [1:{}]!".format(n_level))
         else:
-            raise ValueError("Level-input is incorrect!")
+            raise ValueError("Level-input format is incorrect!")
     return level
 
 
