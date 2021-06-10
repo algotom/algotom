@@ -36,5 +36,6 @@ setuptools.setup(
         "joblib"
     ],
     python_requires='>=3.7',
-    scripts=['bin/algotom'],
+    scripts=['bin/algotomcli.py'],
+    entry_points={'console_scripts':['algotom = algotomcli:main'],},
 )
