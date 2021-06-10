@@ -6,7 +6,7 @@ README = (HERE / "README.md").read_text()
 
 setuptools.setup(
     name="algotom",
-    version="1.0.3",
+    version=open('VERSION').read().strip(),
     author="Nghia Vo",
     author_email="nghia.vo@diamond.ac.uk",
     description="Data processing algorithms for tomography",
@@ -36,4 +36,5 @@ setuptools.setup(
         "joblib"
     ],
     python_requires='>=3.7',
+    scripts=['bin/algotom'],
 )
