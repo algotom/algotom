@@ -86,10 +86,10 @@ class CalculationMethods(unittest.TestCase):
         results = calc.find_overlap_multiple([mat1, mat2, mat3], win_width)
         num1 = np.abs(results[0][0] - overlap)
         num2 = np.abs(results[1][0] - overlap)
-        side1 = results[0][1]
-        side2 = results[1][1]
-        self.assertTrue(((num1 < self.error) and (side1 == side))\
-                        and ((num2 < self.error) and (side2 == side)))
+        side1 = int(results[0][1])
+        side2 = int(results[1][1])
+        self.assertTrue((num1 < self.error) and (side1 == side) 
+                        and (num2 < self.error) and (side2 == side))
 
     def test_find_center_360(self):
         mat = np.zeros((self.size, self.size), dtype=np.float32)
