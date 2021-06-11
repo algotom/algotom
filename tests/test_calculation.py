@@ -67,22 +67,16 @@ class CalculationMethods(unittest.TestCase):
         overlap = 20
         side = int(1)
         win_width = 10
-        mat1 = np.zeros((self.size, self.size), dtype=np.float32)
-        mat2 = np.copy(mat1)
-        mat3 = np.copy(mat1)
-        noise1 = np.float32(0.03 * np.random.rand(self.size, self.size))
-        noise2 = np.float32(0.03 * np.random.rand(self.size, self.size))
-        noise3 = np.float32(0.03 * np.random.rand(self.size, self.size))
-        mat1 = mat1 + noise1
-        mat2 = mat2 + noise2
-        mat3 = mat3 + noise3
+        mat1 = np.float32(0.1 * np.random.rand(self.size, self.size))
+        mat2 = np.float32(0.1 * np.random.rand(self.size, self.size))
+        mat3 = np.float32(0.1 * np.random.rand(self.size, self.size))
         mat_cor1 = np.tile(np.sin(np.arange(overlap) / 3.0), (self.size, 1))
         mat_cor2 = np.tile(np.sin(np.arange(overlap, 0, -1) / 3.0),
                            (self.size, 1))
-        mat1[:, self.size - overlap:] = np.float32(0.2) + mat_cor1
-        mat2[:, :overlap] = np.float32(0.2) + mat_cor1
-        mat2[:, self.size - overlap:] = np.float32(0.2) + mat_cor2
-        mat3[:, :overlap] = np.float32(0.2) + mat_cor2
+        mat1[:, self.size - overlap:] = np.float32(0.2) + np.abs(mat_cor1)
+        mat2[:, :overlap] = np.float32(0.2) + np.abs(mat_cor1)
+        mat2[:, self.size - overlap:] = np.float32(0.2) + np.abs(mat_cor2)
+        mat3[:, :overlap] = np.float32(0.2) + np.abs(mat_cor2)
         results = calc.find_overlap_multiple([mat1, mat2, mat3], win_width)
         num1 = np.abs(results[0][0] - overlap)
         num2 = np.abs(results[1][0] - overlap)
