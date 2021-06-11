@@ -220,7 +220,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
     """
     if output is not None:
         file_base, file_ext = os.path.splitext(output)
-        if file_ext is not "":
+        if file_ext != "":
             file_base = os.path.dirname(output)
         if os.path.exists(file_base):
             raise ValueError("Folder exists!!! Please choose another path!!!")
@@ -247,7 +247,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
         if (depth_dsp != 0) and (height_dsp != 0) and (width_dsp != 0):
             if output is not None:
                 file_base, file_ext = os.path.splitext(output)
-                if file_ext is not "":
+                if file_ext != "":
                     if not (file_ext == '.hdf' or file_ext == '.h5'
                             or file_ext == ".nxs"):
                         raise ValueError(
@@ -274,7 +274,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                     if output is None:
                         data_dsp.append(mat_dsp[0])
                     else:
-                        if file_ext is "":
+                        if file_ext == "":
                             out_name = "0000" + str(num)
                             losa.save_image(
                                 output + "/img_" + out_name[-5:] + ".tif",
@@ -311,7 +311,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                     dsp_method(dsp_method(input_, axis=-1), axis=1), axis=2)
             else:
                 file_base, file_ext = os.path.splitext(output)
-                if file_ext is not "":
+                if file_ext != "":
                     if not (file_ext == '.hdf' or file_ext == '.h5'
                             or file_ext == ".nxs"):
                         raise ValueError(
@@ -332,7 +332,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                                           cell_size[1], width_dsp, cell_size[2])
                         mat_dsp = dsp_method(dsp_method(
                             dsp_method(mat, axis=-1), axis=1), axis=2)
-                        if file_ext is not "":
+                        if file_ext != "":
                             data_out[num] = mat_dsp[0]
                         else:
                             out_name = "0000" + str(num)
@@ -405,7 +405,7 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
     """
     if output is not None:
         file_base, file_ext = os.path.splitext(output)
-        if file_ext is not "":
+        if file_ext != "":
             file_base = os.path.dirname(output)
         if os.path.exists(file_base):
             raise ValueError("Folder exists!!! Please choose another path!!!")
@@ -423,7 +423,7 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
             (gmin, gmax) = minmax
         if output is not None:
             file_base, file_ext = os.path.splitext(output)
-            if file_ext is not "":
+            if file_ext != "":
                 if not (file_ext == '.hdf' or file_ext == '.h5'
                         or file_ext == ".nxs"):
                     raise ValueError("File extension must be hdf, h5, or nxs")
@@ -445,7 +445,7 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
                 data_res.append(mat)
             else:
                 file_base, file_ext = os.path.splitext(output)
-                if file_ext is "":
+                if file_ext == "":
                     out_name = "0000" + str(i)
                     losa.save_image(output + "/img_" + out_name[-5:] + ".tif",
                                     mat)
@@ -474,7 +474,7 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         data_res = []
         if output is not None:
             file_base, file_ext = os.path.splitext(output)
-            if file_ext is not "":
+            if file_ext != "":
                 if not (file_ext == '.hdf' or file_ext == '.h5'
                         or file_ext == ".nxs"):
                     raise ValueError("File extension must be hdf, h5, or nxs")
@@ -492,7 +492,7 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
                 data_res.append(mat)
             else:
                 file_base, file_ext = os.path.splitext(output)
-                if file_ext is not "":
+                if file_ext != "":
                     data_out[i] = mat
                 else:
                     out_name = "0000" + str(i)
