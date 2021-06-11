@@ -54,8 +54,8 @@ def main():
 
     cmd_parsers = [
         ('init',        init,           (),                              "Create configuration file"),
-        ('status',      status,         explore_params,                  "Show the pv-cli status"),
-        ('explore',     explore,        explore_params,                  "Show the pv-cli status"),
+        ('status',      status,         explore_params,                  "Show the algotom-cli status"),
+        ('explore',     explore,        explore_params,                  "Explore a tomographic data in the hdf/nxs format"),
     ]
 
     subparsers = parser.add_subparsers(title="Commands", metavar='')
