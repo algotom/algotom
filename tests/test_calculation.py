@@ -66,7 +66,7 @@ class CalculationMethods(unittest.TestCase):
     def test_find_overlap_multiple(self):
         overlap = 20
         side = int(1)
-        win_width = 10
+        win_width = 15
         mat1 = np.float32(0.1 * np.random.rand(self.size, self.size))
         mat2 = np.float32(0.1 * np.random.rand(self.size, self.size))
         mat3 = np.float32(0.1 * np.random.rand(self.size, self.size))
