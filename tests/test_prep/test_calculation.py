@@ -65,12 +65,12 @@ class CalculationMethods(unittest.TestCase):
 
     def test_find_overlap_multiple(self):
         overlap = 20
-        side = int(1)
+        side = 1
         win_width = 15
         mat1 = np.float32(0.1 * np.random.rand(self.size, self.size))
         mat2 = np.float32(0.1 * np.random.rand(self.size, self.size))
         mat3 = np.float32(0.1 * np.random.rand(self.size, self.size))
-        mat_cor1 = np.tile(np.sin(np.arange(overlap) / 3.0), (self.size, 1))
+        mat_cor1 = np.tile(np.sin(np.arange(overlap) / 2.0), (self.size, 1))
         mat_cor2 = np.tile(np.sin(np.arange(overlap, 0, -1) / 3.0),
                            (self.size, 1))
         mat1[:, self.size - overlap:] = np.float32(0.2) + np.abs(mat_cor1)
@@ -82,8 +82,8 @@ class CalculationMethods(unittest.TestCase):
         num2 = np.abs(results[1][0] - overlap)
         side1 = int(results[0][1])
         side2 = int(results[1][1])
-        self.assertTrue((num1 < self.error) and (side1 == side) \
-                        and (num2 < self.error) and (side2 == side))
+        self.assertTrue((num1 < self.error) and (side1 == side) and (
+                num2 < self.error) and (side2 == side))
 
     def test_find_center_360(self):
         mat = np.zeros((self.size, self.size), dtype=np.float32)
