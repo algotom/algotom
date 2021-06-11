@@ -88,8 +88,8 @@ class CalculationMethods(unittest.TestCase):
         num2 = np.abs(results[1][0] - overlap)
         side1 = results[0][1]
         side2 = results[1][1]
-        self.assertTrue(num1 < self.error and side1 == side \
-                        and num2 < self.error and side2 == side)
+        self.assertTrue(((num1 < self.error) and (side1 == side))\
+                        and ((num2 < self.error) and (side2 == side)))
 
     def test_find_center_360(self):
         mat = np.zeros((self.size, self.size), dtype=np.float32)
