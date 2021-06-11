@@ -70,9 +70,9 @@ class CalculationMethods(unittest.TestCase):
         mat1 = np.zeros((self.size, self.size), dtype=np.float32)
         mat2 = np.copy(mat1)
         mat3 = np.copy(mat1)
-        noise1 = np.float32(0.1 * np.random.rand(self.size, self.size))
-        noise2 = np.float32(0.1 * np.random.rand(self.size, self.size))
-        noise3 = np.float32(0.1 * np.random.rand(self.size, self.size))
+        noise1 = np.float32(0.03 * np.random.rand(self.size, self.size))
+        noise2 = np.float32(0.03 * np.random.rand(self.size, self.size))
+        noise3 = np.float32(0.03 * np.random.rand(self.size, self.size))
         mat1 = mat1 + noise1
         mat2 = mat2 + noise2
         mat3 = mat3 + noise3
