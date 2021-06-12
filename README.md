@@ -93,6 +93,8 @@ Nghia T. Vo - *Diamond Light Source, UK.*
 
 How to install
 --------------
+Algotom is installable across operating systems (Windows, Ubuntu, Mac) and 
+works with Python >=3.7. To install:
 - From source code:
   + Download or `git clone` the [source code](https://github.com/algotom/algotom) to a local folder.
   + Download and install Miniconda software: https://docs.conda.io/en/latest/miniconda.html
