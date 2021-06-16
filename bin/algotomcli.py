@@ -37,17 +37,7 @@ def explore(args):
 
 
 def main():
-    home = os.path.expanduser("~")
-    logs_home = home + '/logs/'
-
-    # make sure logs directory exists
-    if not os.path.exists(logs_home):
-        os.makedirs(logs_home)
-
-    lfname = logs_home + 'pv_' + datetime.strftime(datetime.now(), "%Y-%m-%d_%H:%M:%S") + '.log'
-    log.setup_custom_logger(lfname)
-    log.warning('Logs are saved at: %s' % lfname)
-    
+   
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', **config.SECTIONS['general']['config'])
     explore_params   = config.EXPLORE_PARAMS
@@ -67,8 +57,20 @@ def main():
         cmd_parser.set_defaults(_func=func)
 
     args = config.parse_known_args(parser, subparser=True)
-    args.lfname = lfname
-    
+
+    # create logger
+    logs_home = args.logs_home
+
+    # make sure logs directory exists
+    if not os.path.exists(logs_home):
+        os.makedirs(logs_home)
+
+    lfname = os.path.join(logs_home, 'tomopy_' + datetime.strftime(datetime.now(), "%Y-%m-%d_%H_%M_%S") + '.log')
+
+    log.setup_custom_logger(lfname)
+    log.debug("Started algotom")
+    log.info("Saving log at %s" % lfname)
+     
     try: 
         # load args from default (config.py) if not changed
         config.log_values(args)
