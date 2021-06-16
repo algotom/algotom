@@ -17,6 +17,7 @@ from datetime import datetime
 
 from algotom.util import log
 from algotom.util import config
+from algotom import algotom
 
 import numpy as np
 import algotom.io.converter as conv
@@ -31,10 +32,10 @@ def init(args):
 def status(args):
     config.show_config(args)
 
-def explore(args):
+def run_explore(args):
     log.info('file path : %s' % args.file_path)
     log.info('output base : %s' % args.output_base)
-
+    algotom.explore(args)
 
 def main():
    
@@ -43,9 +44,9 @@ def main():
     explore_params   = config.EXPLORE_PARAMS
 
     cmd_parsers = [
-        ('init',        init,           (),                              "Create configuration file"),
-        ('status',      status,         explore_params,                  "Show the algotom-cli status"),
-        ('explore',     explore,        explore_params,                  "Explore a tomographic data in the hdf/nxs format"),
+        ('init',        init,               (),                              "Create configuration file"),
+        ('status',      status,             explore_params,                  "Show the algotom-cli status"),
+        ('explore',     run_explore,        explore_params,                  "Explore a tomographic data in the hdf/nxs format"),
     ]
 
     subparsers = parser.add_subparsers(title="Commands", metavar='')
