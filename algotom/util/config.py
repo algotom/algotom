@@ -5,8 +5,11 @@ import argparse
 import configparser
 import numpy as np
 from collections import OrderedDict
+from pathlib import Path
+
 from algotom.util import log
 
+LOGS_HOME = Path.home()/'logs'
 CONFIG_FILE_NAME = os.path.join(str(pathlib.Path.home()), 'algotom.conf')
 
 SECTIONS = OrderedDict()
@@ -16,6 +19,11 @@ SECTIONS['general'] = {
         'default': CONFIG_FILE_NAME,
         'type': str,
         'help': "File name of configuration",
+        'metavar': 'FILE'},
+    'logs-home': {
+        'default': LOGS_HOME,
+        'type': str,
+        'help': "Log file directory",
         'metavar': 'FILE'},
     'verbose': {
         'default': True,
@@ -177,7 +185,7 @@ def show_config(args):
     """
     args = args.__dict__
 
-    log.warning('PV status start')
+    log.warning('algotom status start')
     for section, name in zip(SECTIONS, NICE_NAMES):
         entries = sorted((k for k in args.keys() if k.replace('_', '-') in SECTIONS[section]))
         if entries:
@@ -185,5 +193,5 @@ def show_config(args):
                 value = args[entry] if args[entry] != None else "-"
                 log.info("  {:<16} {}".format(entry, value))
 
-    log.warning('PV status end')
+    log.warning('algotom status end')
  
