@@ -30,13 +30,15 @@ sys.path.insert(0, os.path.abspath('../..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx_rtd_theme',
+    'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.todo',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode']
+    'sphinxcontrib.bibtex',
+    'sphinx.ext.viewcode',
+]
 
 bibtex_bibfiles = [
     'bibtex/ref.bib',
