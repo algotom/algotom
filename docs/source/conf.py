@@ -314,20 +314,9 @@ texinfo_documents = [
 autodoc_mock_imports = [
     'PIL',
     'h5py',
+    'pywt',
+    'joblib',
+    'numba',
     'numpy',
-    'pandas',
-    'cv2',
-    'tensorflow',
-    'matplotlib',
-    'dask',
-    'skimage',
-    'configargparse',
-    'scipy',
-    'numexpr',
-    'epics',
-    'time',
-    'math',
-    'pymsgbox',
-    'pvaccess',
-    'paramiko'
+    'scipy'
 ]

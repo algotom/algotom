@@ -51,6 +51,7 @@ Content
    features
    install
    usage
+   demo
    api
    highlights
    credits
