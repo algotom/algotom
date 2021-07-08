@@ -135,7 +135,7 @@ works with Python >=3.7. To install:
 
  How to use
 ----------
- 
+- Documentation: https://algotom.readthedocs.io/en/latest/index.html 
 - Examples of how to use the package are in the "examples/" folder on [github](https://github.com/algotom/algotom). 
   They cover most of use-cases which users can adapt to process their own data.
 - Real tomographic data for testing methods can be downloaded from [zenodo.org](https://www.zenodo.org/search?page=1&size=20&q=tomographic%20data%20nghia%20vo&type=dataset)
