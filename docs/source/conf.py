@@ -36,7 +36,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
-    'sphinxcontrib.bibtex',
     'sphinx.ext.viewcode']
 
 bibtex_bibfiles = [
