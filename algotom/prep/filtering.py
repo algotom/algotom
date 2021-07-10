@@ -22,8 +22,8 @@
 
 """
 Module of filtering methods in the preprocessing stage:
-- Fresnel filter (denoising or low-pass filter).
-- Double-wedge filter.
+    - Fresnel filter (denoising or low-pass filter).
+    - Double-wedge filter.
 """
 
 import numpy as np

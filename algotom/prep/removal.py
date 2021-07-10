@@ -22,10 +22,10 @@
 
 """
 Module of removal methods in the preprocessing stage:
-- Many methods for removing stripe artifact in a sinogram (<-> ring artifact
-in a reconstructed image).
-- A zinger removal method.
-- Blob removal methods.
+    - Many methods for removing stripe artifact in a sinogram (<-> ring artifact
+      in a reconstructed image).
+    - A zinger removal method.
+    - Blob removal methods.
 """
 
 import numpy as np

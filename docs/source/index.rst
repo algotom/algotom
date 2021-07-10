@@ -5,7 +5,7 @@ Algotom
 Data processing (**ALGO**)rithms for (**TOM**)ography
 
 .. image:: img/logo.png
-   :width: 320px
+   :width: 50%
    :alt: logo
 
 **Algotom** is a Python package implementing methods for processing tomographic
@@ -51,7 +51,6 @@ Content
    features
    install
    usage
-   demo
    api
    highlights
    credits

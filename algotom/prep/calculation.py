@@ -22,16 +22,16 @@
 
 """
 Module of calculation methods in the preprocessing stage:
-- Calculating the center-of-rotation (COR) in a 180-degree scan using a
-  sinogram.
-- Determining the overlap-side and overlap-area between images.
-- Calculating the COR in a half-acquisition scan (360-degree scan with offset
-  COR).
-- Using the similar technique as above to calculate the COR in a 180-degree scan
-  from two projections.
-- Determining the relative translations between images using phase-correlation
-  technique.
-- Calculating the COR in a 180-degree scan using phase-correlation technique.
+    - Calculating the center-of-rotation (COR) in a 180-degree scan using a
+      sinogram.
+    - Determining the overlap-side and overlap-area between images.
+    - Calculating the COR in a half-acquisition scan (360-degree scan with
+      offset COR).
+    - Using the similar technique as above to calculate the COR in a 180-degree
+      scan from two projections.
+    - Determining the relative translations between images using
+      phase-correlation technique.
+    - Calculating the COR in a 180-degree scan using phase-correlation technique.
 """
 
 import numpy as np

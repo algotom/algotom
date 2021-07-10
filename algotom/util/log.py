@@ -1,6 +1,5 @@
 '''
-    tomoscan custom logger
-    
+Logger
 '''
 import logging
 
@@ -24,7 +23,8 @@ def setup_custom_logger(lfname=None, stream_to_console=True):
 
     if (lfname != None):
         fHandler = logging.FileHandler(lfname)
-        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s:'
+                                           ' %(message)s')
         fHandler.setFormatter(file_formatter)
         logger.addHandler(fHandler)
     if stream_to_console:

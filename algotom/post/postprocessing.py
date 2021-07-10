@@ -22,11 +22,11 @@
 
 """
 Module of methods in the postprocessing stage:
-- Get statistical information of reconstructed images or a dataset.
-- Downsample 2D, 3D array, or a dataset.
-- Rescale 2D, 3D array or a dataset to 8-bit or 16-bit data-type.
-- Removing ring artifacts in a reconstructed image by transform back and forth
-between the polar coordinates and the Cartesian coordinates.
+    - Get statistical information of reconstructed images or a dataset.
+    - Downsample 2D, 3D array, or a dataset.
+    - Rescale 2D, 3D array or a dataset to 8-bit or 16-bit data-type.
+    - Removing ring artifacts in a reconstructed image by transform back and
+      forth between the polar coordinates and the Cartesian coordinates.
 """
 
 import os

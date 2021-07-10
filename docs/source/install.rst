@@ -9,7 +9,7 @@ From source
 -----------
 
 Clone the `Algotom <https://github.com/algotom/algotom>`_  
-from `GitHub <https://github.com>`_ repository::
+from Github repository::
 
     git clone https://github.com/algotom/algotom.git algotom
 
@@ -44,7 +44,7 @@ Install Miniconda as instructed above.
 
 If install to an existing environment:: 
       
-    pip install algotom`
+    pip install algotom
 
 
 If install to a new environment::

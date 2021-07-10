@@ -22,12 +22,12 @@
 
 """
 Module of correction methods in the preprocessing stage:
-- Flat-field correction.
-- Distortion correction.
-- MTF deconvolution.
-- Tilted sinogram generation.
-- Tilted 1D intensity-profile generation.
-- Beam hardening correction.
+    - Flat-field correction.
+    - Distortion correction.
+    - MTF deconvolution.
+    - Tilted sinogram generation.
+    - Tilted 1D intensity-profile generation.
+    - Beam hardening correction.
 """
 
 import numpy as np
@@ -60,8 +60,8 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     options : dict, optional
         Apply a zinger removal method and/or ring removal methods.
         E.g option1={"method": "dezinger", "para1": 0.001, "para2": 1},
-        option2={"method": "remove_stripe_based_sorting",
-                "para1": 15, "para2": 1}
+        option2={"method": "remove_stripe_based_sorting", "para1": 15,
+        "para2": 1}
 
     Returns
     -------

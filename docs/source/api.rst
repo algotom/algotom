@@ -1,21 +1,41 @@
-===
-API
-===
+=============
+API reference
+=============
 
+1. Input-output
+---------------
 
-.. rubric:: **algotom Modules:**
+.. toctree::
+   api/algotom.io.converter
+   api/algotom.io.loadersaver
+
+2. Pre-processing
+-----------------
 
 .. toctree::
 
-   api/algotom.io.converter
-   api/algotom.io.loadersaver
-   api/algotom.post.postprocessing
    api/algotom.prep.calculation
    api/algotom.prep.conversion
    api/algotom.prep.correction
    api/algotom.prep.filtering
    api/algotom.prep.removal
+
+3. Reconstruction
+-----------------
+
+.. toctree::
    api/algotom.rec.reconstruction
+
+4. Post-processing
+------------------
+
+.. toctree::
+   api/algotom.post.postprocessing
+
+5. Utility
+----------
+
+.. toctree::
    api/algotom.util.calibration
    api/algotom.util.config
    api/algotom.util.log

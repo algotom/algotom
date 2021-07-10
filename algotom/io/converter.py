@@ -22,8 +22,8 @@
 
 """
 Module for converting data type:
-- Convert a list of tif files to a hdf/nxs file.
-- Extract tif images from a hdf/nxs file.
+    - Convert a list of tif files to a hdf/nxs file.
+    - Extract tif images from a hdf/nxs file.
 """
 
 import os
