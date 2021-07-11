@@ -17,7 +17,7 @@ reconstruction, post-processing, and data simulation. Many utility methods are
 provided to help users quickly develop prototype-methods or build a pipeline for
 processing their own data.
 
-The software is made available for :cite:`Vo:21`. Selected
+The software is made available for the paper in :cite:`Vo:21`. Selected
 answers to technical questions of anonymous reviewers about methods in the paper
 is `here <https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf>`_.
 

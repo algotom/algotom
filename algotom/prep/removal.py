@@ -928,7 +928,7 @@ def remove_blob_1d(sino_1d, mask_1d):
     Notes
     -----
     The method is used to remove streak artifacts caused by blobs in
-    a sinogram generated from a helical-scan data [1].
+    a sinogram generated from a helical-scan data, Ref. [1].
 
     References
     ----------
