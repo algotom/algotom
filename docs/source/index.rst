@@ -21,7 +21,7 @@ The software is made available for the paper in :cite:`Vo:21`. Selected
 answers to technical questions of anonymous reviewers about methods in the paper
 is `here <https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf>`_.
 
-*... Algotom development was started at the I12-JEEP beamline in 2014 as Python
+*"... Algotom development was started at the I12-JEEP beamline in 2014 as Python
 codes to process data acquired by the beamline's large field-of-view (FOV) detector, 
 which uses two imaging sensors to cover a rectangular FOV. Images from these 
 cameras must be stitched before tomographic reconstruction can take place. 
@@ -39,8 +39,9 @@ easy-to-use and easy-to-deploy prototype methods. The development of Algotom
 has focused on pre-processing methods which work in the sinogram space to 
 reduce computational cost. Methods working in the projection space such as 
 phase filter, distortion correction, or rotation correction have been adapted 
-to work in the sinogram space...*
+to work in the sinogram space..."*
 
+**Source Code:** https://github.com/algotom/algotom
 
 Content
 -------
