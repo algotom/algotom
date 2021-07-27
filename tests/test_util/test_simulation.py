@@ -85,7 +85,7 @@ class SimulationMethods(unittest.TestCase):
     def test_convert_to_Xray_image(self):
         sinogram1 = sim.convert_to_Xray_image(self.sinogram)
         num1 = np.abs((np.max(sinogram1) - 1.0))
-        self.assertTrue(num1 < 0.025)
+        self.assertTrue(num1 < 0.1)
 
     def test_add_background_fluctuation(self):
         sinogram1 = sim.convert_to_Xray_image(self.sinogram)

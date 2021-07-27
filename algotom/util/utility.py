@@ -337,7 +337,7 @@ def detect_stripe(list_data, snr):
     npoint = len(list_data)
     list_sort = np.sort(list_data)
     xlist = np.arange(0, npoint, 1.0)
-    ndrop = np.int16(0.25 * npoint)
+    ndrop = int(0.25 * npoint)
     (slope, intercept) = np.polyfit(xlist[ndrop:-ndrop - 1],
                                     list_sort[ndrop:-ndrop - 1], 1)
     y_end = intercept + slope * xlist[-1]
@@ -416,11 +416,11 @@ def make_2d_butterworth_window(width, height, u, v, n):
         2D array.
     """
     xcenter = np.ceil(width / 2.0) - 1.0
-    ycenter = np.int16(np.ceil(height / 2.0) - 1)
+    ycenter = int(np.ceil(height / 2.0) - 1)
     xlist = np.arange(width) - xcenter
     window = 1.0 / (1.0 + np.power(xlist / u, 2 * n))
-    row1 = ycenter - np.int16(v)
-    row2 = ycenter + np.int16(v) + 1
+    row1 = ycenter - int(v)
+    row2 = ycenter + int(v) + 1
     window_2d = np.ones((height, width), dtype=np.float32)
     window_2d[row1:row2] = window
     return window_2d

@@ -44,7 +44,7 @@ import numpy.fft as fft
 
 def make_inverse_double_wedge_mask(height, width, radius):
     """
-    Generate a double-wedge binary mask using Eq. (3) in Ref. [1].
+    Generate a double-wedge binary mask using Eq-(3) in [1].
     Values outside the double-wedge region correspond to 1.0.
 
     Parameters
@@ -63,7 +63,7 @@ def make_inverse_double_wedge_mask(height, width, radius):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.22.019078
+    [1].. https://doi.org/10.1364/OE.22.019078
     """
     du = 1.0 / width
     dv = (height - 1.0) / (height * 2.0 * np.pi)

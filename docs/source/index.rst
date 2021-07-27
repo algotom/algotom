@@ -19,7 +19,7 @@ processing their own data.
 
 The software is made available for the paper in :cite:`Vo:21`. Selected
 answers to technical questions of anonymous reviewers about methods in the paper
-is `here <https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf>`_.
+are `here <https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf>`_.
 
 *"... Algotom development was started at the I12-JEEP beamline in 2014 as Python
 codes to process data acquired by the beamline's large field-of-view (FOV) detector, 
