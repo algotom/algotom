@@ -17,7 +17,7 @@ acquisition for samples larger than the field of view in parallel-beam tomograph
 Nghia T. Vo, Robert C. Atwood, Michael Drakopoulos, and Thomas Connolley, Opt. 
 Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448. Selected
 answers to technical questions of anonymous reviewers about methods in the paper
-is [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf).     
+are [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf).     
 
 > "... Algotom development was started at the I12-JEEP beamline in 2014 as Python
 > codes to process data acquired by the beamline's large field-of-view (FOV) detector, 
