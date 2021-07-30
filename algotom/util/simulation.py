@@ -255,7 +255,7 @@ def make_face_phantom(size):
     """
     half = size // 2
     mask = np.zeros((size, size), dtype=np.float32)
-    face1 = make_elliptic_mask(size, 0.0, (size / 1.3, 0.98 * size), 0.0)
+    face1 = make_elliptic_mask(size, 0.0, (size / 1.3, 0.95 * size), 0.0)
     face2 = -0.6 * make_elliptic_mask(size, (0.0, -0.01 * size),
                                       (0.94 * size / 1.3, 0.94 * size), 0.0)
     face = face1 + face2
