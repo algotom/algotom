@@ -25,7 +25,7 @@ Features
 Algotom is a lightweight package. The software is built on top of a few core
 Python libraries to ensure its ease-of-installation. Methods distributed in 
 Algotom have been developed and tested at synchrotron beamlines where massive
-datasets are produced. This factor drive the methods developed to be easy-to-use, 
+datasets are produced. This factor drives the methods developed to be easy-to-use, 
 robust, and practical. Some featuring methods in Algotom are as follows:
 - Methods for processing grid scans (or tiled scans) with the offset rotation-axis 
   to multiply double the field-of-view (FOV) of a parallel-beam tomography system.
