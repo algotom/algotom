@@ -19,38 +19,14 @@ Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448. Selected
 answers to technical questions of anonymous reviewers about methods in the paper
 are [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf).     
 
-> "... Algotom development was started at the I12-JEEP beamline in 2014 as Python
-> codes to process data acquired by the beamline's large field-of-view (FOV) detector, 
-> which uses two imaging sensors to cover a rectangular FOV. Images from these 
-> cameras must be stitched before tomographic reconstruction can take place. 
-> Data processing methods for improving the quality of tomographic data; 
-> removing artifacts caused by imperfections of hardware components; 
-> making use the beamline capabilities; processing data acquired by non-traditional
-> scanning techniques; and automating data processing pipeline have been actively
-> developed at I12 over the years. These methods have been used internally by I12's
-> users and refined further for publication and sharing with the research community
-> through open-source software such as Tomopy and Savu ...
-> 
-> ... In contrast to Savu and Tomopy which are optimized for speed, Algotom is a 
-> package of data processing algorithms and tools which are designed to be 
-> easy-to-use and easy-to-deploy prototype methods. The development of Algotom 
-> has focused on pre-processing methods which work in the sinogram space to 
-> reduce computational cost. Methods working in the projection space such as 
-> phase filter, distortion correction, or rotation correction have been adapted 
-> to work in the sinogram space..." 
-
 Features
 --------
+
 Algotom is a lightweight package. The software is built on top of a few core
 Python libraries to ensure its ease-of-installation. Methods distributed in 
-Algotom have been developed and tested at a synchrotron beamline where massive
-datasets are produced; image features can change significantly between 
-experiments depending on X-ray energy and sample types which can be biological, 
-medical, material science, or geological in origin. Users often don't have 
-sufficient experience with image processing methods to know how to properly 
-tune parameters. All these factors drive the methods developed to be 
-easy-to-use, robust, and practical. Some featuring methods in Algotom are as 
-follows:
+Algotom have been developed and tested at synchrotron beamlines where massive
+datasets are produced. This factor drive the methods developed to be easy-to-use, 
+robust, and practical. Some featuring methods in Algotom are as follows:
 - Methods for processing grid scans (or tiled scans) with the offset rotation-axis 
   to multiply double the field-of-view (FOV) of a parallel-beam tomography system.
   
@@ -89,75 +65,20 @@ follows:
 Author
 ------
 
-Nghia T. Vo - *Diamond Light Source, UK.*  
+- Nghia T. Vo - *Diamond Light Source, UK.*  
 
 How to install
 --------------
-Algotom is installable across operating systems (Windows, Ubuntu, Mac) and 
-works with Python >=3.7. To install:
-- From source code:
-  + Download or `git clone` the [source code](https://github.com/algotom/algotom) to a local folder.
-  + Download and install Miniconda software: https://docs.conda.io/en/latest/miniconda.html
-  + Open Linux terminal or Windows command prompt and run the following commands:
-      
-      `conda create -n algotom python=3.7`
-      
-      `conda activate algotom`
-      
-      `cd <path-to-source-code>`
-      
-      `python setup.py install`
-- Using conda:
-  + Install Miniconda as instructed above.
-  + Open terminal or command prompt and run the following commands:
-    * If install to an existing environment:
-    
-      `conda install -c algotom algotom`
-    * If install to a new environment:
-      ```commandline
-      conda create -n algotom python=3.7
-      conda activate algotom
-      conda install -c algotom algotom
-      ```
 
-- Using pip:
-  + Install Miniconda as instructed above.
-  + Open terminal or command prompt and run the following commands:
-    * If install to an existing environment:  
-      
-      `pip install algotom`
-    * If install to a new environment:
-      ```commandline
-      conda create -n algotom python=3.7
-      conda activate algotom
-      pip install algotom
-      ```
+- https://algotom.readthedocs.io/en/latest/install.html
 
- How to use
+How to use
 ----------
-- Documentation: https://algotom.readthedocs.io/en/latest/
-- Examples of how to use the package are in the "examples/" folder on [github](https://github.com/algotom/algotom). 
-  They cover most of use-cases which users can adapt to process their own data.
-- Real tomographic data for testing methods can be downloaded from [zenodo.org](https://www.zenodo.org/search?page=1&size=20&q=tomographic%20data%20nghia%20vo&type=dataset)
-- Methods can also be tested using simulation data as shown in "examples/example_08*.py"
-- Users can use Algotom to re-process some old data collected at synchrotron facilities suffering from:
-  + Various types of [ring artifacts](https://sarepy.readthedocs.io/). 
-  + Cupping artifacts (also known as beam hardening artifacts) which 
-    are caused by using: FFT-based reconstruction methods without proper padding; 
-    polychromatic X-ray sources; or low-dynamic-range detectors to record 
-    high-dynamic-range projection-images.       
-  
-  Methods distributed in Algotom can run on a normal computer which enable users
-  to process these data locally. 
-- There are tools and [methods](https://sarepy.readthedocs.io/toc/section5.html) users can use to customize their own algorithms:
-  + Methods to transform images back-and-forth between the polar coordinate 
-    system and the Cartesian coordinate system.
-  + Methods to separate stripe artifacts.
-  + Methods to transform back-and-forth between reconstruction images and 
-    sinogram images.
+
+- https://algotom.readthedocs.io/en/latest/usage.html
  
 Highlights
------------
+----------
 
 Algotom was used for some experiments featured on media:
 - Scanning [Moon rocks and Martian meteorites](https://www.diamond.ac.uk/Home/News/LatestNews/2019/17-07-2019.html) 
