@@ -27,7 +27,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Image Processing"
     ],
     install_requires=[
-        "numpy>=1.15,<1.21",
+        "numpy>=1.15",
         "scipy",
         "numba>=0.50.1",
         "pywavelets",
