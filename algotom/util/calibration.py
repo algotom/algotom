@@ -22,10 +22,10 @@
 
 """
 Module of calibration methods:
-- Correcting the non-uniform background of an image.
-- Binarizing an image.
-- Calculating the distance between two point-like objects segmented from
-  two images. Useful for determining pixel-size in helical scans.
+    - Correcting the non-uniform background of an image.
+    - Binarizing an image.
+    - Calculating the distance between two point-like objects segmented from
+      two images. Useful for determining pixel-size in helical scans.
 """
 
 import numpy as np
