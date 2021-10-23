@@ -92,6 +92,7 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
     def test_detect_stripe(self):
+        np.random.seed(1)
         lis = np.random.rand(self.size)
         lis_off = np.linspace(0, 1, len(lis))
         lis = lis + lis_off
