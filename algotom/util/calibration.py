@@ -34,7 +34,7 @@ import algotom.util.utility as util
 import scipy.signal as sig
 
 
-def normalize_background(mat, radius=51):
+def normalize_background(mat, size=51):
     """
     Correct a non-uniform background of an image using the median filter.
 
@@ -42,7 +42,7 @@ def normalize_background(mat, radius=51):
     ----------
     mat : array_like
         2D array.
-    radius : int
+    size : int
         Size of the median filter.
 
     Returns
@@ -50,7 +50,7 @@ def normalize_background(mat, radius=51):
     array_like
         2D array. Corrected image.
     """
-    mat_bck = ndi.median_filter(mat, radius, mode="reflect")
+    mat_bck = ndi.median_filter(mat, size, mode="reflect")
     mean_val = np.mean(mat_bck)
     try:
         mat_cor = mean_val * mat / mat_bck
