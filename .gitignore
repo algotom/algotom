@@ -22,6 +22,7 @@ Thumbs.db
 build
 dist
 docs/_build
+docs/build
 *egg-info
 .settings
 pip-log.txt

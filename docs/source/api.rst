@@ -37,8 +37,6 @@ API reference
 
 .. toctree::
    api/algotom.util.calibration
-   api/algotom.util.config
-   api/algotom.util.log
    api/algotom.util.simulation
    api/algotom.util.utility
    
