@@ -147,7 +147,7 @@ def calculate_threshold(mat, bgr="bright"):
     """
     size = max(mat.shape)
     list1 = np.sort(np.ndarray.flatten(mat))
-    list1 = ndi.zoom(list1, (1.0 * size) / len(list1))
+    list1 = ndi.zoom(list1, (1.0 * size) / len(list1), mode='edge')
     list2 = sig.savgol_filter(list1, 2 * (len(list1) // 2) - 1, 3)
     if bgr == "bright":
         threshold = list2[0]
