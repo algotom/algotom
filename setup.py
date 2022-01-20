@@ -49,7 +49,5 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Image Processing"
     ],
     install_requires=dependencies,
-    python_requires='>=3.7',
-    scripts=['bin/algotomcli.py'],
-    entry_points={'console_scripts': ['algotom = algotomcli:main'], },
+    python_requires='>=3.7'
 )
