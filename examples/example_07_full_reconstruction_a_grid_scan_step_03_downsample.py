@@ -15,7 +15,7 @@
 # limitations under the License.
 # ===========================================================================
 # Author: Nghia T. Vo
-# E-mail: algotomography@gmail.com
+# E-mail:  
 # Description: Examples of how to downsample a full reconstruction of a grid
 # scan.
 # ===========================================================================

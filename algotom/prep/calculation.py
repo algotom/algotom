@@ -15,7 +15,7 @@
 # limitations under the License.
 # ============================================================================
 # Author: Nghia T. Vo
-# E-mail: algotomography@gmail.com
+# E-mail:  
 # Description: Python implementations of preprocessing techniques.
 # Contributors:
 # ============================================================================
