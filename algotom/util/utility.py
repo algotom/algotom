@@ -336,15 +336,9 @@ def detect_stripe(list_data, snr):
     """
     npoint = len(list_data)
     list_sort = np.sort(list_data)
-<<<<<<< HEAD
-    xlist = np.arange(0, npoint, 1.0)
-    ndrop = int(0.25 * npoint)
-    (slope, intercept) = np.polyfit(xlist[ndrop:-ndrop - 1],
-=======
     x_list = np.arange(0, npoint, 1.0)
-    ndrop = np.int16(0.25 * npoint)
+    ndrop = int(0.25 * npoint)
     (slope, intercept) = np.polyfit(x_list[ndrop:-ndrop - 1],
->>>>>>> 726dc2124838194423b8532fab80ee1c902e144d
                                     list_sort[ndrop:-ndrop - 1], 1)
     y_end = intercept + slope * x_list[-1]
     noise_level = np.abs(y_end - intercept)
