@@ -22,8 +22,8 @@
 
 """
 Module for phase contrast imaging:
-- Unwrap phase images.
-- Generate a weighting map.
+    - Unwrap phase images.
+    - Generate a quality map, weight mask.
 """
 
 import numpy as np

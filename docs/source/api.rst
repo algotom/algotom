@@ -19,6 +19,7 @@ API reference
    api/algotom.prep.correction
    api/algotom.prep.filtering
    api/algotom.prep.removal
+   api/algotom.prep.phase
 
 3. Reconstruction
 -----------------
