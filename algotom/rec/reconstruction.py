@@ -15,7 +15,7 @@
 # limitations under the License.
 # ============================================================================
 # Author: Nghia T. Vo
-# E-mail: algotomography@gmail.com
+# E-mail:  
 # Description: Python implementations of FFT-based reconstruction methods
 # Contributors:
 # ============================================================================
@@ -422,7 +422,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
         sino_360 = np.vstack((sinogram[: nrow - 1], np.fliplr(sinogram)))
         sinogram = shift(sino_360, (b_ang / step, 0), mode='wrap')[:nrow]
         if angles[-1] < angles[0]:
-            sinogram = np.fliplr(sinogram)
+            sinogram = np.flipud(np.fliplr(sinogram))
     num_pad = int(pad_rate * ncol1)
     sinogram = np.pad(sinogram, ((0, 0), (num_pad, num_pad)), mode=pad_mode)
     ncol2 = sinogram.shape[1]

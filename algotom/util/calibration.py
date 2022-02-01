@@ -15,7 +15,7 @@
 # limitations under the License.
 # ============================================================================
 # Author: Nghia T. Vo
-# E-mail: algotomography@gmail.com
+# E-mail:  
 # Description: Calibration methods
 # Contributors:
 # ============================================================================
@@ -34,7 +34,7 @@ import algotom.util.utility as util
 import scipy.signal as sig
 
 
-def normalize_background(mat, radius=51):
+def normalize_background(mat, size=51):
     """
     Correct a non-uniform background of an image using the median filter.
 
@@ -42,7 +42,7 @@ def normalize_background(mat, radius=51):
     ----------
     mat : array_like
         2D array.
-    radius : int
+    size : int
         Size of the median filter.
 
     Returns
@@ -50,7 +50,7 @@ def normalize_background(mat, radius=51):
     array_like
         2D array. Corrected image.
     """
-    mat_bck = ndi.median_filter(mat, radius, mode="reflect")
+    mat_bck = ndi.median_filter(mat, size, mode="reflect")
     mean_val = np.mean(mat_bck)
     try:
         mat_cor = mean_val * mat / mat_bck
@@ -147,7 +147,7 @@ def calculate_threshold(mat, bgr="bright"):
     """
     size = max(mat.shape)
     list1 = np.sort(np.ndarray.flatten(mat))
-    list1 = ndi.zoom(list1, (1.0 * size) / len(list1))
+    list1 = ndi.zoom(list1, (1.0 * size) / len(list1), mode='nearest')
     list2 = sig.savgol_filter(list1, 2 * (len(list1) // 2) - 1, 3)
     if bgr == "bright":
         threshold = list2[0]

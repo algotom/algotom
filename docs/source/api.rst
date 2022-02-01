@@ -19,6 +19,7 @@ API reference
    api/algotom.prep.correction
    api/algotom.prep.filtering
    api/algotom.prep.removal
+   api/algotom.prep.phase
 
 3. Reconstruction
 -----------------
@@ -37,8 +38,6 @@ API reference
 
 .. toctree::
    api/algotom.util.calibration
-   api/algotom.util.config
-   api/algotom.util.log
    api/algotom.util.simulation
    api/algotom.util.utility
    

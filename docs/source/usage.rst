@@ -16,6 +16,9 @@ Usage
     + :download:`generate_simulation_data.py <../../docs/demo/example_08_generate_simulation_data.py>`
     + :download:`generate_tilted_sinogram.py <../../docs/demo/example_09_generate_tilted_sinogram.py>`
     + :download:`pre_process_data_in_the_projection_space.py <../../docs/demo/example_10_pre_process_data_in_the_projection_space.py>`
+    + :download:`reconstruct_few_slices_each_frame_in_time_series_tomography <../../docs/demo/time_series_tomography/reconstruct_few_slices_each_frame.py>`
+    + :download:`reconstruct_full_each_frame_in_time_series_tomography <../../docs/demo/time_series_tomography/reconstruct_full_each_frame.py>`
+    + :download:`reconstruct_single_slice_each_frame_in_time_series_tomography <../../docs/demo/time_series_tomography/reconstruct_single_slice_every_frame.py>`
 
 - Real tomographic data for testing methods can be downloaded from `zenodo <https://www.zenodo.org/search?page=1&size=20&q=tomographic%20data%20nghia%20vo&type=dataset>`_.
 

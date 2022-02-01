@@ -15,7 +15,7 @@
 # limitations under the License.
 # ===========================================================================
 # Author: Nghia T. Vo
-# E-mail: algotomography@gmail.com
+# E-mail:  
 # Description: Examples of how to use the Algotom package.
 # ===========================================================================
 
@@ -87,7 +87,7 @@ flat_field = np.mean(np.asarray(data[np.squeeze(np.where(ikey == 1.0)), :, :]), 
 # Apply distortion correction and MTF deconvolution.
 flat_field = corr.unwarp_projection(corr.mtf_deconvolution(flat_field, mtf_win, mtf_pad),
                                    xcenter, ycenter, list_fact)
-# MTF deconvolution no applicable to dark-noise images.
+# Note: we don't apply MTF deconvolution to dark-noise images.
 dark_field = corr.unwarp_projection(dark_field, xcenter, ycenter, list_fact)
 
 # Calculate parameters for looping.

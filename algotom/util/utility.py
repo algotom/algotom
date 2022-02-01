@@ -15,7 +15,7 @@
 # limitations under the License.
 # ============================================================================
 # Author: Nghia T. Vo
-# E-mail: algotomography@gmail.com
+# E-mail:  
 # Description: Utility methods
 # Contributors:
 # ============================================================================
@@ -109,7 +109,7 @@ def apply_method_to_multiple_sinograms(data, method, para, ncore=None):
     return data_out
 
 
-def mapping(mat, xmat, ymat, order=1, mode="reflect"):
+def mapping(mat, x_mat, y_mat, order=1, mode="reflect"):
     """
     Apply a geometric transformation to a 2D array
 
@@ -117,9 +117,9 @@ def mapping(mat, xmat, ymat, order=1, mode="reflect"):
     ----------
     mat : array_like
         2D array.
-    xmat : array_like
+    x_mat : array_like
         2D array of the x-coordinates.
-    ymat : array_like
+    y_mat : array_like
         2D array of the y-coordinates.
     order : int, optional
         The order of the spline interpolation, default is 1.
@@ -133,9 +133,9 @@ def mapping(mat, xmat, ymat, order=1, mode="reflect"):
     array_like
         2D array.
     """
-    coords = np.vstack((np.ndarray.flatten(ymat), np.ndarray.flatten(xmat)))
+    coords = np.vstack((np.ndarray.flatten(y_mat), np.ndarray.flatten(x_mat)))
     mat = ndi.map_coordinates(mat, coords, order=order, mode=mode)
-    return mat.reshape(xmat.shape)
+    return mat.reshape(x_mat.shape)
 
 
 def make_circle_mask(width, ratio):
@@ -336,11 +336,11 @@ def detect_stripe(list_data, snr):
     """
     npoint = len(list_data)
     list_sort = np.sort(list_data)
-    xlist = np.arange(0, npoint, 1.0)
+    x_list = np.arange(0, npoint, 1.0)
     ndrop = int(0.25 * npoint)
-    (slope, intercept) = np.polyfit(xlist[ndrop:-ndrop - 1],
+    (slope, intercept) = np.polyfit(x_list[ndrop:-ndrop - 1],
                                     list_sort[ndrop:-ndrop - 1], 1)
-    y_end = intercept + slope * xlist[-1]
+    y_end = intercept + slope * x_list[-1]
     noise_level = np.abs(y_end - intercept)
     if noise_level == 0.0:
         raise ValueError("The method doesn't work on noise-free data. If you "
@@ -416,11 +416,12 @@ def make_2d_butterworth_window(width, height, u, v, n):
         2D array.
     """
     xcenter = np.ceil(width / 2.0) - 1.0
-    ycenter = int(np.ceil(height / 2.0) - 1)
-    xlist = np.arange(width) - xcenter
-    window = 1.0 / (1.0 + np.power(xlist / u, 2 * n))
-    row1 = ycenter - int(v)
-    row2 = ycenter + int(v) + 1
+    ycenter = np.int16(np.ceil(height / 2.0) - 1)
+    x_list = np.arange(width) - xcenter
+    window = 1.0 / (1.0 + np.power(x_list / u, 2 * n))
+    row1 = ycenter - np.int16(v)
+    row2 = ycenter + np.int16(v) + 1
+
     window_2d = np.ones((height, width), dtype=np.float32)
     window_2d[row1:row2] = window
     return window_2d
@@ -448,11 +449,11 @@ def make_2d_damping_window(width, height, size, window_name="gaussian"):
         2D array of the window.
     """
     xcenter = np.ceil(width / 2.0) - 1.0
-    xlist = np.arange(width) - xcenter
+    x_list = np.arange(width) - xcenter
     if window_name == "butter":
-        window = 1.0 - 1.0 / (1.0 + np.power(xlist / size, 2))
+        window = 1.0 - 1.0 / (1.0 + np.power(x_list / size, 2))
     else:
-        window = 1.0 - np.exp(-xlist ** 2 / (2 * (size ** 2)))
+        window = 1.0 - np.exp(-x_list ** 2 / (2 * (size ** 2)))
     return np.tile(window, (height, 1))
 
 
@@ -543,7 +544,8 @@ def check_level(level, n_level):
 
 
 def apply_filter_to_wavelet_component(data, level=None, order=1,
-                                      method="gaussian_filter", para=[(1, 11)]):
+                                      method="gaussian_filter",
+                                      para=[(1, 11)]):
     """
     Apply a filter to a component of the wavelet decomposition of an image.
 
@@ -619,10 +621,10 @@ def interpolate_inside_stripe(mat, list_mask, kind="linear"):
     list_mask = np.copy(list_mask)
     list_mask[0:2] = 0.0
     list_mask[-2:] = 0.0
-    xlist = np.where(list_mask < 1.0)[0]
+    x_list = np.where(list_mask < 1.0)[0]
     ylist = np.arange(nrow)
-    zmat = mat[:, xlist]
-    finter = interpolate.interp2d(xlist, ylist, zmat, kind=kind)
+    zmat = mat[:, x_list]
+    finter = interpolate.interp2d(x_list, ylist, zmat, kind=kind)
     xlist_miss = np.where(list_mask > 0.0)[0]
     if len(xlist_miss) > 0:
         mat[:, xlist_miss] = finter(xlist_miss, ylist)
@@ -1083,8 +1085,9 @@ def locate_slice(slice_idx, height, overlap_metadata):
         list_slices = [(np.arange(i * height, i * height + height) -
                         np.sum(overlap_list[0: i])) for i in range(g_nrow)]
     else:
-        list_slices = [(np.arange(i * height + height - 1, i * height - 1, -1) -
-                        np.sum(overlap_list[0: i])) for i in range(g_nrow)]
+        list_slices = [
+            (np.arange(i * height + height - 1, i * height - 1, -1) -
+             np.sum(overlap_list[0: i])) for i in range(g_nrow)]
     list_slices = np.asarray(list_slices)
     results = []
     for i, list1 in enumerate(list_slices):
@@ -1143,8 +1146,9 @@ def locate_slice_chunk(slice_start, slice_stop, height, overlap_metadata):
         list_slices = [(np.arange(i * height, i * height + height) -
                         np.sum(overlap_list[0: i])) for i in range(g_nrow)]
     else:
-        list_slices = [(np.arange(i * height + height - 1, i * height - 1, -1) -
-                        np.sum(overlap_list[0: i])) for i in range(g_nrow)]
+        list_slices = [
+            (np.arange(i * height + height - 1, i * height - 1, -1) -
+             np.sum(overlap_list[0: i])) for i in range(g_nrow)]
     list_slices = np.asarray(list_slices)
     results = []
     for i, list1 in enumerate(list_slices):
