@@ -22,4 +22,5 @@
       open_hdf_stream
       load_distortion_coefficient
       save_distortion_coefficient
+      get_hdf_tree
 
