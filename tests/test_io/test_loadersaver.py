@@ -95,3 +95,14 @@ class LoaderSaverMethods(unittest.TestCase):
         losa.save_distortion_coefficient(file_path, 31.0, 32.0, [1.0, 0.0])
         (x, y, facts) = losa.load_distortion_coefficient(file_path)
         self.assertTrue(((x == 31.0) and (y == 32.0)) and facts == [1.0, 0.0])
+
+    def test_get_hdf_tree(self):
+        file_path = "data/data.hdf"
+        ifile = h5py.File(file_path, "w")
+        ifile.create_dataset("entry/data", data=np.random.rand(64, 64))
+        ifile.create_dataset("entry/energy", data=25.0)
+        ifile.close()
+        entries = losa.get_hdf_tree(file_path, output="data/tree.txt",
+                                    display=False)
+        self.assertTrue(
+            os.path.isfile("data/tree.txt") and ("data" in entries[2]))

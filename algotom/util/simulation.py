@@ -255,9 +255,11 @@ def make_face_phantom(size):
     """
     half = size // 2
     mask = np.zeros((size, size), dtype=np.float32)
-    face1 = make_elliptic_mask(size, 0.0, (size / 1.3, 0.95 * size), 0.0)
+    ratio1 = 0.95 if size > 64 else 0.9
+    ratio2 = 0.91 if size > 64 else 0.86
+    face1 = make_elliptic_mask(size, 0.0, (size / 1.3, ratio1 * size), 0.0)
     face2 = -0.6 * make_elliptic_mask(size, (0.0, -0.01 * size),
-                                      (0.94 * size / 1.3, 0.91 * size), 0.0)
+                                      (ratio2 * size / 1.3, ratio2 * size), 0.0)
     face = face1 + face2
     x_rat_eye = 0.3
     y_rat_eye = 0.4
