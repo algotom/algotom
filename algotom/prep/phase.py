@@ -171,7 +171,7 @@ def get_weight_mask(mat, snr=1.5):
     return mask
 
 
-def phase_unwrap_based_cosine_transform(mat, window=None):
+def unwrap_phase_based_cosine_transform(mat, window=None):
     """
     Unwrap a phase image using the cosine transform as described in Ref. [1].
 
@@ -206,7 +206,7 @@ def phase_unwrap_based_cosine_transform(mat, window=None):
     return mat_unwrap
 
 
-def phase_unwrap_based_fft(mat, win_for=None, win_back=None):
+def unwrap_phase_based_fft(mat, win_for=None, win_back=None):
     """
     Unwrap a phase image using the Fourier transform as described in Ref. [1].
 
@@ -249,7 +249,7 @@ def phase_unwrap_based_fft(mat, win_for=None, win_back=None):
     return mat_unwrap
 
 
-def phase_unwrap_iterative_fft(mat, iteration=4, win_for=None, win_back=None,
+def unwrap_phase_iterative_fft(mat, iteration=4, win_for=None, win_back=None,
                                weight_map=None):
     """
     Unwrap a phase image using an iterative FFT-based method as described in
@@ -285,13 +285,13 @@ def phase_unwrap_iterative_fft(mat, iteration=4, win_for=None, win_back=None,
         win_back = _make_window(2 * height, 2 * width, direction="backward")
     if weight_map is None:
         weight_map = np.ones_like(mat)
-    mat_unwrap = phase_unwrap_based_fft(mat * weight_map, win_for, win_back)
+    mat_unwrap = unwrap_phase_based_fft(mat * weight_map, win_for, win_back)
     for i in range(iteration):
         mat_wrap = _wrap_to_pi(mat_unwrap)
         mat_diff = mat - mat_wrap
         nmean = np.mean(mat_diff)
         mat_diff = _wrap_to_pi(mat_diff - nmean)
-        phase_diff = phase_unwrap_based_fft(mat_diff * weight_map, win_for,
+        phase_diff = unwrap_phase_based_fft(mat_diff * weight_map, win_for,
                                             win_back)
         mat_unwrap = mat_unwrap + phase_diff
     return mat_unwrap

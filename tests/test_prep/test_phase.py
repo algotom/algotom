@@ -55,36 +55,36 @@ class PhaseMethods(unittest.TestCase):
         self.phase_wrapped = np.arctan2(np.sin(phantom), np.cos(phantom))
         self.phase_image = phantom
 
-    def test_phase_unwrap_based_cosine_transform(self):
-        phase_unwrapped1 = ps.phase_unwrap_based_cosine_transform(
+    def test_unwrap_phase_based_cosine_transform(self):
+        phase_unwrapped1 = ps.unwrap_phase_based_cosine_transform(
             self.phase_wrapped)
         (height, width) = phase_unwrapped1.shape
         window = ps._make_cosine_window(height, width)
-        phase_unwrapped2 = ps.phase_unwrap_based_cosine_transform(
+        phase_unwrapped2 = ps.unwrap_phase_based_cosine_transform(
             self.phase_wrapped, window=window)
         num1 = np.median(np.abs(phase_unwrapped1 - self.phase_image))
         num2 = np.median(np.abs(phase_unwrapped2 - self.phase_image))
         self.assertTrue(num1 < self.eps and num2 < self.eps)
 
-    def test_phase_unwrap_based_fft(self):
-        phase_unwrapped1 = ps.phase_unwrap_based_fft(self.phase_wrapped)
+    def test_unwrap_phase_based_fft(self):
+        phase_unwrapped1 = ps.unwrap_phase_based_fft(self.phase_wrapped)
         (height, width) = phase_unwrapped1.shape
         win_for = ps._make_window(2 * height, 2 * width, direction="forward")
         win_back = ps._make_window(2 * height, 2 * width, direction="backward")
-        phase_unwrapped2 = ps.phase_unwrap_based_fft(self.phase_wrapped,
+        phase_unwrapped2 = ps.unwrap_phase_based_fft(self.phase_wrapped,
                                                      win_for=win_for,
                                                      win_back=win_back)
         num1 = np.median(np.abs(phase_unwrapped1 - self.phase_image))
         num2 = np.median(np.abs(phase_unwrapped2 - self.phase_image))
         self.assertTrue(num1 < self.eps and num2 < self.eps)
 
-    def test_phase_unwrap_iterative_fft(self):
-        phase_unwrapped1 = ps.phase_unwrap_iterative_fft(self.phase_wrapped,
+    def test_unwrap_phase_iterative_fft(self):
+        phase_unwrapped1 = ps.unwrap_phase_iterative_fft(self.phase_wrapped,
                                                          iteration=3)
         (height, width) = phase_unwrapped1.shape
         win_for = ps._make_window(2 * height, 2 * width, direction="forward")
         win_back = ps._make_window(2 * height, 2 * width, direction="backward")
-        phase_unwrapped2 = ps.phase_unwrap_iterative_fft(self.phase_wrapped,
+        phase_unwrapped2 = ps.unwrap_phase_iterative_fft(self.phase_wrapped,
                                                          iteration=3,
                                                          win_for=win_for,
                                                          win_back=win_back)
