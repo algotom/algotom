@@ -10,9 +10,9 @@
 
    .. autosummary::
 
-    phase_unwrap_based_cosine_transform
-    phase_unwrap_based_fft
-    phase_unwrap_iterative_fft
+    unwrap_phase_based_cosine_transform
+    unwrap_phase_based_fft
+    unwrap_phase_iterative_fft
     get_quality_map
     get_weight_mask
    
