@@ -75,6 +75,7 @@ How to install
   + Downgrade Numpy to 1.21 and install Algotom/Numba again.
   + Create a new environment and install Algotom first, then other packages.
   + Use conda instead of pip.
+- Avoid to use the latest version of Python (e.g 3.10) or Numpy (1.22) as the Python ecosystem taking time to keep up with these twos.
 
 How to use
 ----------
