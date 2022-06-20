@@ -40,6 +40,7 @@ API reference
    api/algotom.util.calibration
    api/algotom.util.simulation
    api/algotom.util.utility
+   api/algotom.util.correlation
    
 .. automodule:: algotom
    :members:

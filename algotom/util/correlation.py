@@ -24,20 +24,18 @@
 """
 Module of correlation-based methods for finding shifts between images or
 stacks of images. The methods are designed to be flexible to:
-- Run on multicore CPU or GPU.
-- Use small/large RAM or small/large GPU memory.
-- Work with small/large size of data.
-- Find shifts locally or globally.
+    - Run on multicore CPU or GPU.
+    - Use small/large RAM or small/large GPU memory.
+    - Work with small/large size of data.
+    - Find shifts locally or globally.
 """
 
 import math
 import numpy as np
-from numba import jit, cuda, NumbaWarning
+from numba import jit, cuda
 import multiprocessing as mp
 from joblib import Parallel, delayed
 import warnings
-
-warnings.filterwarnings("ignore", category=NumbaWarning)
 
 
 def normalize_image(mat):

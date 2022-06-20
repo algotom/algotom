@@ -60,6 +60,8 @@ Some featuring methods in Algotom are as follows:
    :figwidth: 100%
    :alt: simulation
 
+- Methods for speckle-based phase-contrast tomography, image correlation, and image alignment.
+
 .. contents:: Contents:
    :local:
 

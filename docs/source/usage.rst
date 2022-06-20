@@ -20,6 +20,12 @@ Usage
     + :download:`reconstruct_full_each_frame_in_time_series_tomography <../../docs/demo/time_series_tomography/reconstruct_full_each_frame.py>`
     + :download:`reconstruct_single_slice_each_frame_in_time_series_tomography <../../docs/demo/time_series_tomography/reconstruct_single_slice_every_frame.py>`
 
+- Examples of how to use Algotom for processing speckle-based phase-contrast tomography:
+	+ :download:`retrieve_phase_single_projection <../../docs/demo/speckle_based_tomography/retrieve_phase_single_projection.py>`
+	+ :download:`retrieve_phase_all_projections <../../docs/demo/speckle_based_tomography/retrieve_phase_all_projections.py>`
+	+ :download:`reconstruct_single_slice_from_raw_data <../../docs/demo/speckle_based_tomography/reconstruct_single_slice_from_raw_data.py>`
+	+ :download:`reconstruct_from_phase_projections <../../docs/demo/speckle_based_tomography/reconstruct_from_phase_projections.py>`
+
 - Real tomographic data for testing methods can be downloaded from `zenodo <https://www.zenodo.org/search?page=1&size=20&q=tomographic%20data%20nghia%20vo&type=dataset>`_.
 
 - Methods can also be tested using simulation data as shown in "examples/example_08*.py"

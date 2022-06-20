@@ -28,7 +28,7 @@ readme = (current_folder / "README.md").read_text()
 
 setuptools.setup(
     name="algotom",
-    version="1.0.3",
+    version="1.1.0",
     author="Nghia Vo",
     author_email="nghia.vo@diamond.ac.uk",
     description="Data processing algorithms for tomography",

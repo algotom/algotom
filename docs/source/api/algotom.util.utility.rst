@@ -39,3 +39,4 @@
     fix_non_sample_areas
     locate_slice
     locate_slice_chunk
+	generate_spiral_positions
