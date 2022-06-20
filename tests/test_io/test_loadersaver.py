@@ -138,17 +138,17 @@ class LoaderSaverMethods(unittest.TestCase):
             file_path = "data/speck_" + str(i) + ".hdf"
             ifile = h5py.File(file_path, "w")
             data = np.ones((2, 64, 64))
-            ifile.create_dataset("entry/speck/", data=np.float32(data))
+            ifile.create_dataset("entry/speck", data=np.float32(data))
             ifile.close()
 
             file_path = "data/tomo_" + str(i) + ".hdf"
             ifile = h5py.File(file_path, "w")
             data = 2 * np.ones((4, 64, 64))
-            ifile.create_dataset("entry/tomo/", data=np.float32(data))
+            ifile.create_dataset("entry/tomo", data=np.float32(data))
             ifile.close()
         ref_path = losa.find_file("data/speck*")
         sam_path = losa.find_file("data/tomo*")
-        ref_key, sam_key = "entry/speck/", "entry/tomo/"
+        ref_key, sam_key = "entry/speck", "entry/tomo"
         f_alias = losa.get_reference_sample_stacks
         ref_stack, sam_stack = f_alias(0, ref_path, sam_path, ref_key, sam_key,
                                        crop=(0, 0, 0, 0), flat_field=None,
