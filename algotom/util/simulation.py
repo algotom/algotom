@@ -323,7 +323,7 @@ def make_face_phantom(size):
 def make_sinogram(mat, angles, pad_rate=0.5, pad_mode="edge"):
     """
     Create a sinogram (series of 1D projections) from a 2D image based on the
-    Fourier slice theorem (Ref. [1]).
+    Fourier slice theorem (Ref. [1]_).
 
     Parameters
     ----------
@@ -411,7 +411,7 @@ def add_stripe_artifact(sinogram, size, position, strength_ratio=0.2,
         To define the strength of the artifact. The value is in the range of
         [0.0, 1.0].
     stripe_type : {"partial", "full", "dead", "fluctuating"}
-        Type of stripe as classified in Ref. [1].
+        Type of stripe as classified in Ref. [1]_.
 
     Returns
     -------

@@ -71,7 +71,7 @@ def make_fresnel_window(height, width, ratio, dim):
 def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
     """
     Apply a low-pass filter based on the Fresnel propagator to an image
-    (Ref. [1]).
+    (Ref. [1]_).
 
     Parameters
     ----------
@@ -123,7 +123,7 @@ def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
 
 def make_double_wedge_mask(height, width, radius):
     """
-    Generate a double-wedge binary mask using Eq. (3) in Ref. [1].
+    Generate a double-wedge binary mask using Eq. (3) in Ref. [1]_.
     Values outside the double-wedge region correspond to 0.0.
 
     Parameters
@@ -162,7 +162,7 @@ def make_double_wedge_mask(height, width, radius):
 def double_wedge_filter(sinogram, center=0, sino_type="180", iteration=5,
                         mask=None, ratio=1.0, pad=250):
     """
-    Apply double-wedge filter to a sinogram image (Ref. [1]).
+    Apply double-wedge filter to a sinogram image (Ref. [1]_).
 
     Parameters
     ----------

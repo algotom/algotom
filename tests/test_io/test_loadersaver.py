@@ -106,3 +106,100 @@ class LoaderSaverMethods(unittest.TestCase):
                                     display=False)
         self.assertTrue(
             os.path.isfile("data/tree.txt") and ("data" in entries[2]))
+
+    def test_get_reference_sample_stacks_dls(self):
+        num_stack = 3
+        for i in range(num_stack):
+            file_path = "data/speck_tomo_" + str(i) + ".hdf"
+            ifile = h5py.File(file_path, "w")
+            data = np.concatenate((np.zeros((2, 64, 64)),
+                                   np.ones((3, 64, 64)),
+                                   2 * np.ones((4, 64, 64))),
+                                  axis=0)
+            ifile.create_dataset("entry/data/data", data=np.float32(data))
+            keys = np.concatenate((2.0 * np.ones(2), np.ones(3), np.zeros(4)))
+            ifile.create_dataset("entry/data/image_key", data=np.float32(keys))
+            ifile.close()
+        list_path = losa.find_file("data/speck_tomo*")
+        f_alias = losa.get_reference_sample_stacks_dls
+        ref_stack, sam_stack = f_alias(0, list_path, data_key=None,
+                                       image_key=None, crop=(0, 0, 0, 0),
+                                       flat_field=None, dark_field=None,
+                                       num_use=None, fix_zero_div=False)
+        check1 = True if (ref_stack.shape[0] == num_stack) \
+                         and (sam_stack.shape[0] == num_stack) else False
+        check2 = True if (np.mean(ref_stack) == 1.0) \
+                         and (np.mean(sam_stack) == 2.0) else False
+        self.assertTrue(check1 and check2)
+
+    def test_get_reference_sample_stacks(self):
+        num_stack = 3
+        for i in range(num_stack):
+            file_path = "data/speck_" + str(i) + ".hdf"
+            ifile = h5py.File(file_path, "w")
+            data = np.ones((2, 64, 64))
+            ifile.create_dataset("entry/speck", data=np.float32(data))
+            ifile.close()
+
+            file_path = "data/tomo_" + str(i) + ".hdf"
+            ifile = h5py.File(file_path, "w")
+            data = 2 * np.ones((4, 64, 64))
+            ifile.create_dataset("entry/tomo", data=np.float32(data))
+            ifile.close()
+        ref_path = losa.find_file("data/speck*")
+        sam_path = losa.find_file("data/tomo*")
+        ref_key, sam_key = "entry/speck", "entry/tomo"
+        f_alias = losa.get_reference_sample_stacks
+        ref_stack, sam_stack = f_alias(0, ref_path, sam_path, ref_key, sam_key,
+                                       crop=(0, 0, 0, 0), flat_field=None,
+                                       dark_field=None, num_use=None,
+                                       fix_zero_div=False)
+        check1 = True if (ref_stack.shape[0] == num_stack) \
+                         and (sam_stack.shape[0] == num_stack) else False
+        check2 = True if (np.mean(ref_stack) == 1.0) \
+                         and (np.mean(sam_stack) == 2.0) else False
+        self.assertTrue(check1 and check2)
+
+    def test_get_image_stack(self):
+        num_stack = 3
+        for i in range(num_stack):
+            file_path = "data/img_stk_" + str(i) + ".hdf"
+            ifile = h5py.File(file_path, "w")
+            data = np.ones((3, 64, 64))
+            ifile.create_dataset("entry/data", data=np.float32(data))
+            ifile.close()
+        list_path = losa.find_file("data/img_stk*")
+        f_alias = losa.get_image_stack
+        img_stack = f_alias(0, list_path, data_key="entry/data", average=False,
+                            crop=(0, 0, 0, 0), flat_field=None,
+                            dark_field=None, num_use=None, fix_zero_div=False)
+        check1 = True if (img_stack.shape[0] == num_stack) \
+                         and (np.mean(img_stack) == 1.0) else False
+        img_stack = f_alias(4, list_path, data_key="entry/data", average=True,
+                            crop=(0, 0, 0, 0), flat_field=None,
+                            dark_field=None, num_use=None, fix_zero_div=False)
+        check2 = True if (img_stack.shape[0] == num_stack) \
+                         and (np.mean(img_stack) == 1.0) else False
+        num_img = 4
+        for i in range(num_stack):
+            folder_path = "data/img_stk_tif_" + str(i) + "/"
+            for j in range(num_img):
+                file_path = folder_path + "/img_" + str(j) + ".tif"
+                losa.save_image(file_path, np.ones((64, 64)))
+        list_path = losa.find_file("data/img_stk_tif*")
+        img_stack = f_alias(0, list_path, data_key=None, average=False,
+                            crop=(0, 0, 0, 0), flat_field=None,
+                            dark_field=None, num_use=None, fix_zero_div=False)
+        check3 = True if (img_stack.shape[0] == num_stack) \
+                         and (np.mean(img_stack) == 1.0) else False
+        img_stack = f_alias(4, list_path, data_key=None, average=True,
+                            crop=(0, 0, 0, 0), flat_field=None,
+                            dark_field=None, num_use=None, fix_zero_div=False)
+        check4 = True if (img_stack.shape[0] == num_stack) \
+                         and (np.mean(img_stack) == 1.0) else False
+        img_stack = f_alias(None, list_path[0], data_key=None, average=False,
+                            crop=(0, 0, 0, 0), flat_field=None,
+                            dark_field=None, num_use=None, fix_zero_div=False)
+        check5 = True if (img_stack.shape[0] == num_img) \
+                         and (np.mean(img_stack) == 1.0) else False
+        self.assertTrue(check1 and check2 and check3 and check4 and check5)

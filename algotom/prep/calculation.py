@@ -34,6 +34,7 @@ Module of calculation methods in the preprocessing stage:
 - Calculating the COR in a 180-degree scan using phase-correlation technique.
 """
 
+import warnings
 import numpy as np
 from scipy import stats
 import scipy.ndimage as ndi
@@ -44,7 +45,7 @@ import numpy.fft as fft
 
 def make_inverse_double_wedge_mask(height, width, radius):
     """
-    Generate a double-wedge binary mask using Eq. (3) in Ref. [1].
+    Generate a double-wedge binary mask using Eq. (3) in Ref. [1]_.
     Values outside the double-wedge region correspond to 1.0.
 
     Parameters
@@ -147,7 +148,7 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
     denoise : bool, optional
         Apply a smoothing filter.
     ncore: int or None
-        Number of cores used for computing. Automatically selected if None.
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -176,7 +177,16 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
             delayed(calculate_center_metric)(list_cor[i], sino_180, sino_flip,
                                              sino_comp, mask) for i in
             range(num_metric))
-    return list_cor[np.argmin(list_metric)]
+    min_pos = np.argmin(list_metric)
+    if min_pos == 0:
+        msg = "Global minimum is out of the searching range. Please " \
+              "reduce the start-value !!!"
+        warnings.warn(msg)
+    if min_pos == (num_metric - 1):
+        msg = "Global minimum is out of the searching range. Please " \
+              "increase the stop-value !!!"
+        warnings.warn(msg)
+    return list_cor[min_pos]
 
 
 def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
@@ -199,7 +209,7 @@ def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
     denoise : bool, optional
         Apply a smoothing filter.
     ncore: int or None
-        Number of cores used for computing. Automatically selected if None.
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -262,16 +272,18 @@ def downsample_cor(image, dsp_fact0, dsp_fact1):
 def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
                    ratio=0.5, dsp=True, ncore=None):
     """
-    Find the center-of-rotation using the method described in Ref. [1].
+    Find the center-of-rotation using the method described in Ref. [1]_.
 
     Parameters
     ----------
     sino_180 : array_like
         2D array. 180-degree sinogram.
     start : float
-        Starting point for searching CoR.
+        Starting point for searching CoR. Use the value of
+        (width/2 - width/16) if None.
     stop : float
-        Ending point for searching CoR.
+        Ending point for searching CoR. Use the value of
+        (width/2 + width/16) if None.
     step : float
         Sub-pixel accuracy of estimated CoR.
     radius : float
@@ -281,7 +293,7 @@ def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
     dsp : bool
         Enable/disable downsampling.
     ncore: int or None
-        Number of cores used for computing. Automatically selected if None.
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -466,7 +478,7 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
 def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
                  use_overlap=False):
     """
-    Find the overlap area and overlap side between two images (Ref. [1]) where
+    Find the overlap area and overlap side between two images (Ref. [1]_) where
     the overlap side referring to the first image.
 
     Parameters
@@ -587,7 +599,7 @@ def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
                     use_overlap=False):
     """
     Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
-    the method presented in Ref. [1].
+    the method presented in Ref. [1]_.
 
     Parameters
     ----------
@@ -655,7 +667,7 @@ def complex_gradient(mat):
 def find_shift_based_phase_correlation(mat1, mat2, gradient=True):
     """
     Find relative translation in x and y direction between images with
-    haft-pixel accuracy (Ref. [1]).
+    haft-pixel accuracy (Ref. [1]_).
 
     Parameters
     ----------
@@ -745,7 +757,7 @@ def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
                            use_overlap=False):
     """
     Find the center-of-rotation (COR) using projection images at 0-degree
-    and 180-degree based on a method in Ref. [1].
+    and 180-degree based on a method in Ref. [1]_.
 
     Parameters
     ----------

@@ -355,7 +355,7 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
 
 def convert_sinogram_180_to_360(sino_180, center):
     """
-    Convert a 180-degree sinogram to a 360-degree sinogram (Ref. [1]).
+    Convert a 180-degree sinogram to a 360-degree sinogram (Ref. [1]_).
 
     Parameters
     ----------
@@ -384,7 +384,7 @@ def convert_sinogram_180_to_360(sino_180, center):
 def extend_sinogram(sino_360, cor, apply_log=True):
     """
     Extend a 360-degree sinogram (with offset center-of-rotation) for
-    later reconstruction (Ref. [1]).
+    later reconstruction (Ref. [1]_).
 
     Parameters
     ----------
@@ -449,7 +449,7 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                                    mask=None, crop=(0, 0, 0, 0)):
     """
     Generate a 180-degree sinogram or a 360-degree sinogram from a helical
-    scan dataset which is a hdf/nxs object (Ref. [1]).
+    scan dataset which is a hdf/nxs object (Ref. [1]_).
 
     Parameters
     ----------
@@ -570,7 +570,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                                         mask=None, crop=(0, 0, 0, 0)):
     """
     Generate a full sinogram from a helical scan dataset which is a hdf/nxs
-    object (Ref. [1]). Full sinogram is all 1D projection of the same slice of
+    object (Ref. [1]_). Full sinogram is all 1D projection of the same slice of
     a sample staying inside the field of view.
 
     Parameters

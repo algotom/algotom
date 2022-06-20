@@ -127,7 +127,7 @@ def invert_dot_contrast(mat):
 
 def calculate_threshold(mat, bgr="bright"):
     """
-    Calculate threshold value based on Algorithm 4 in Ref. [1].
+    Calculate threshold value based on Algorithm 4 in Ref. [1]_.
 
     Parameters
     ----------
@@ -167,7 +167,7 @@ def binarize_image(mat, threshold=None, bgr="bright", norm=False, denoise=True,
         2D array.
     threshold : float, optional
         Threshold value for binarization. Automatically calculated using
-        Algorithm 4 in Ref. [1] if None.
+        Algorithm 4 in Ref. [1]_ if None.
     bgr : {"bright", "dark"}
         To indicate the brightness of the background against image features.
     norm : bool, optional
@@ -296,7 +296,7 @@ def calculate_distance(mat1, mat2, size_opt="max", threshold=None, bgr='bright',
                        norm=False, denoise=True, invert=True):
     """
     Calculate the distance between two point-like objects segmented from
-    two images. Useful for measuring pixel-size in helical scans (Ref. [1]).
+    two images. Useful for measuring pixel-size in helical scans (Ref. [1]_).
 
     Parameters
     ----------
@@ -308,7 +308,7 @@ def calculate_distance(mat1, mat2, size_opt="max", threshold=None, bgr='bright',
         Options to select binary objects based on their size.
     threshold : float, optional
         Threshold value for binarization. Automatically calculated using
-        Algorithm 4 in Ref. [2] if None.
+        Algorithm 4 in Ref. [2]_ if None.
     bgr : {"bright", "dark"}
         To indicate the brightness of the background against image features.
     norm : bool, optional

@@ -30,8 +30,7 @@ Module of FFT-based reconstruction methods in the reconstruction stage:
 
 import math
 import numpy as np
-from numba import cuda
-from numba import jit
+from numba import jit, cuda
 from scipy import signal
 from scipy.ndimage import shift
 import numpy.fft as fft
@@ -370,8 +369,8 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
                        apply_log=True):
     """
     Apply the DFI (direct Fourier inversion) reconstruction method to a
-    sinogram image (Ref. [1]). The method is a practical and direct
-    implementation of the Fourier slice theorem (Ref. [2]).
+    sinogram image (Ref. [1]_). The method is a practical and direct
+    implementation of the Fourier slice theorem (Ref. [2]_).
 
     Parameters
     ----------
