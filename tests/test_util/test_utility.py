@@ -164,3 +164,8 @@ class UtilityMethods(unittest.TestCase):
         mat1 = util.transform_1d_window_to_2d(list1)
         (width, height) = mat1.shape
         self.assertTrue(width == self.size and height == self.size)
+
+    def test_generate_spiral_positions(self):
+        xy_list = util.generate_spiral_positions(40, 40, 2160, 2560,
+                                                 spiral_shape=1.0)
+        self.assertTrue(len(xy_list) == 40)

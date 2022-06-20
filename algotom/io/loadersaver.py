@@ -29,14 +29,18 @@ Module for I/O tasks:
 - Search file names, make a file/folder name.
 - Load distortion coefficients from a txt file.
 - Get the tree view of a hdf/nxs file.
+- Functions for loading stacks of images from multiple datasets, e.g. to be
+  used by speckle-based phase contrast tomography.
 """
 
 import os
 import glob
+import warnings
+from collections import OrderedDict, deque
 import h5py
 import numpy as np
 from PIL import Image
-from collections import OrderedDict, deque
+
 
 PIPE = "│"
 ELBOW = "└──"
@@ -611,3 +615,547 @@ def get_hdf_tree(file_path, output=None, add_shape=True, display=True):
             for entry in tree:
                 print(entry)
     return tree
+
+
+def __get_ref_sam_stacks_dls(proj_idx, list_data_obj, list_sam_idx,
+                             list_ref_idx, list_dark_idx, top, bot, left,
+                             right, height, width, flat_field, dark_field,
+                             fix_zero_div):
+    """
+    Supplementary method for the method of "get_reference_sample_stacks_dls"
+    """
+    ref_stack = []
+    sam_stack = []
+    num_img = len(list_data_obj)
+    height1 = bot - top
+    width1 = right - left
+    if flat_field is not None:
+        if flat_field.shape != (height, width):
+            raise ValueError("Shape of flat-field images is not "
+                             "the same as projection images "
+                             "({0}, {1})".format(height, width))
+        else:
+            flat_ave = flat_field[top: bot, left:right]
+    else:
+        flat_ave = np.ones((height1, width1), dtype=np.float32)
+    if dark_field is not None:
+        if dark_field.shape != (height, width):
+            raise ValueError("Shape of dark-field images is not "
+                             "the same as projection images "
+                             "({0}, {1})".format(height, width))
+        else:
+            dark_ave = dark_field[top: bot, left:right]
+    for i in range(num_img):
+        if dark_field is None:
+            if len(list_dark_idx) != 0:
+                idx1 = list_dark_idx[i][0]
+                idx2 = list_dark_idx[i][-1] + 1
+                dark_ave = np.mean(
+                    list_data_obj[i][idx1:idx2, top:bot, left:right], axis=0)
+            else:
+                dark_ave = np.zeros((height1, width1), dtype=np.float32)
+        if flat_field is not None:
+            flat_dark = flat_ave - dark_ave
+            nmean = np.mean(flat_dark)
+            flat_dark[flat_dark == 0.0] = nmean
+        if len(list_ref_idx) != 0:
+            idx1 = list_ref_idx[i][0]
+            idx2 = list_ref_idx[i][-1] + 1
+            ref_ave = np.mean(list_data_obj[i][idx1:idx2, top:bot, left:right],
+                              axis=0)
+            if flat_field is not None:
+                ref_ave = (ref_ave - dark_ave) / flat_dark
+            else:
+                ref_ave = ref_ave - dark_ave
+            ref_stack.append(ref_ave)
+        idx = list_sam_idx[i][proj_idx]
+        proj = list_data_obj[i][idx, top:bot, left:right]
+        if flat_field is not None:
+            proj = (proj - dark_ave) / flat_dark
+        else:
+            proj = (proj - dark_ave)
+        sam_stack.append(proj)
+    sam_stack = np.asarray(sam_stack)
+    if fix_zero_div:
+        nmean = np.mean(sam_stack)
+        sam_stack[sam_stack == 0.0] = nmean
+    if ref_stack:
+        ref_stack = np.asarray(ref_stack)
+        if fix_zero_div:
+            nmean = np.mean(ref_stack)
+            ref_stack[ref_stack == 0.0] = nmean
+    return ref_stack, sam_stack
+
+
+def get_reference_sample_stacks_dls(proj_idx, list_path, data_key=None,
+                                    image_key=None, crop=(0, 0, 0, 0),
+                                    flat_field=None, dark_field=None,
+                                    num_use=None, fix_zero_div=True):
+    """
+    A method for multi-position speckle-based phase-contrast tomography to get
+    two stacks of reference images (speckle images) and sample images (at the
+    same rotation angle from each tomographic dataset).
+
+    The method is specific to tomographic datasets acquired at Diamond Light
+    Source (DLS) where projection-images, flat-field images, and dark-field
+    images are in the same 3d array. There is a dataset named "image_key"
+    inside a hdf/nxs file used to distinguish image types.
+
+    Parameters
+    ----------
+    proj_idx : int
+        Index of a projection-image in a tomographic dataset.
+    list_path : list of str
+        List of file paths (hdf/nxs format) to tomographic datasets.
+    data_key : str, optional
+        Key to images. Automatically find the key if None.
+    image_key : str, list, tuple, ndarray, optional
+        Key to 1d-array dataset for specifying image types. Automatically
+        find the key if None. Can be used to pass the 1d-array manually.
+    crop : tuple of int, optional
+        Crop the images from the edges, i.e.
+        crop = (crop_top, crop_bottom, crop_left, crop_right).
+    flat_field : ndarray, optional
+        2D array or None. Used for flat-field correction if not None.
+    dark_field : ndarray, optional
+        2D array or None. Used for dark-field correction if not None.
+    num_use : int, optional
+        Number of datasets used for stacking.
+    fix_zero_div : bool, optional
+        Correct zeros to avoid zero-division problem down the processing line.
+
+    Returns
+    -------
+    ref_stack : ndarray
+        Return if reference-images found. 3D array.
+    sam_stack : ndarray
+        3D array. A stack of sample-images.
+    """
+    if not isinstance(list_path, list):
+        raise ValueError("Input must be a list of strings!!!")
+    num_file = len(list_path)
+    if num_use is None:
+        num_use = num_file
+    else:
+        num_use = np.clip(num_use, 1, num_file)
+    if data_key is None:
+        data_key = find_hdf_key(list_path[0], "data/data")[0]
+        if len(data_key) != 0:
+            data_key = data_key[0]
+        else:
+            raise ValueError("Please provide the key to dataset!!!")
+    if image_key is None:
+        image_key = find_hdf_key(list_path[0], "image_key")[0]
+        if len(image_key) != 0:
+            image_key = image_key[0]
+        else:
+            image_key = None
+            warnings.warn("No image-key found!!!. Output will be a single "
+                          "stack")
+    (height, width) = load_hdf(list_path[0], data_key).shape[-2:]
+    cr_top, cr_bot, cr_left, cr_right = crop
+    top = cr_top
+    bot = height - cr_bot
+    left = cr_left
+    right = width - cr_right
+    height1 = bot - top
+    width1 = right - left
+    if height1 < 1 or width1 < 1:
+        raise ValueError("Can't crop data with the given input!!!")
+    list_data_obj = []
+    list_sam_idx = []
+    list_ref_idx = []
+    list_dark_idx = []
+    list_num_proj = []
+    list_start_idx = []
+    list_stop_idx = []
+    for path in list_path[:num_use]:
+        data_obj = load_hdf(path, data_key)
+        num_img = len(data_obj)
+        list_data_obj.append(data_obj)
+        if image_key is not None:
+            if isinstance(image_key, str):
+                int_keys = load_hdf(path, image_key)[:]
+            else:
+                if not (isinstance(image_key, list) or
+                        isinstance(image_key, tuple) or
+                        isinstance(image_key, np.ndarray)):
+                    raise ValueError("Input must be a string, list, tuple, or "
+                                     "1D numpy array!!!")
+                else:
+                    int_keys = np.asarray(image_key, dtype=np.float32)
+                    if len(int_keys) != num_img:
+                        raise ValueError("Number of image-keys is not the same"
+                                         " as the number of images {0}!!!"
+                                         "".format(num_img))
+            list_tmp = np.where(int_keys == 0.0)[0]
+            if len(list_tmp) != 0:
+                list_idx = np.sort(np.int32(np.squeeze(np.asarray(list_tmp))))
+                list_sam_idx.append(list_idx)
+                list_start_idx.append(list_idx[0])
+                list_stop_idx.append(list_idx[-1])
+            list_num_proj.append(len(list_tmp))
+            list_tmp = np.where(int_keys == 1.0)[0]
+            if len(list_tmp) != 0:
+                list_ref_idx.append(
+                    np.sort(np.int32(np.squeeze(np.asarray(list_tmp)))))
+            list_tmp = np.where(int_keys == 2.0)[0]
+            if len(list_tmp) != 0:
+                list_dark_idx.append(
+                    np.sort(np.int32(np.squeeze(np.asarray(list_tmp)))))
+        else:
+            num_proj = num_img
+            list_sam_idx.append(np.arange(num_proj))
+            list_start_idx.append(0)
+            list_stop_idx.append(num_proj - 1)
+            list_num_proj.append(num_proj)
+    num_proj = np.min(np.asarray(list_num_proj))
+    start_idx = np.max(np.asarray(list_start_idx))
+    stop_idx = np.min(np.asarray(list_stop_idx))
+    if (stop_idx - start_idx + 1) > num_proj:
+        stop_idx = start_idx + num_proj - 1
+    idx_off = proj_idx + start_idx
+    if idx_off > stop_idx or idx_off < start_idx:
+        raise ValueError("Requested projection index is out of the range"
+                         " [{0}, {1}] given the offset of "
+                         "{2}".format(start_idx, stop_idx, start_idx))
+    else:
+        f_alias = __get_ref_sam_stacks_dls
+        ref_stack, sam_stack = f_alias(proj_idx, list_data_obj, list_sam_idx,
+                                       list_ref_idx, list_dark_idx, top, bot,
+                                       left, right, height, width, flat_field,
+                                       dark_field, fix_zero_div)
+        if len(ref_stack) != 0:
+            return ref_stack, sam_stack
+        else:
+            return sam_stack
+
+
+def __check_dark_flat_field(flat_field, dark_field, height, width):
+    """
+    Supplementary method for checking dark-field image, flat-field image.
+    """
+    if flat_field is not None:
+        if len(flat_field) == 3:
+            flat_field = np.mean(flat_field, axis=0)
+        (height2, width2) = flat_field.shape
+        if height2 != height or width2 != width:
+            raise ValueError("Shape of flat-field images is not "
+                             "the same as projection images")
+    else:
+        flat_field = np.ones((height, width))
+    if dark_field is not None:
+        if len(dark_field) == 3:
+            dark_field = np.mean(dark_field, axis=0)
+        (height2, width2) = dark_field.shape
+        if height2 != height or width2 != width:
+            raise ValueError("Shape of dark-field images is not "
+                             "the same as projection images")
+    else:
+        dark_field = np.zeros((height, width))
+    return flat_field, dark_field
+
+
+def get_reference_sample_stacks(proj_idx, ref_path, sam_path, ref_key, sam_key,
+                                crop=(0, 0, 0, 0), flat_field=None,
+                                dark_field=None, num_use=None,
+                                fix_zero_div=True):
+    """
+    A method for multi-position speckle-based phase-contrast tomography to get
+    two stacks of reference images (speckle images) and sample images (at the
+    same rotation angle from each tomographic dataset).
+
+    Parameters
+    ----------
+    proj_idx : int
+        Index of a projection-image in a tomographic dataset.
+    ref_path : list of str
+        List of file paths (hdf/nxs format) to reference-image datasets.
+    sam_path : list of str
+        List of file paths (hdf/nxs format) to tomographic datasets.
+    ref_key : str
+        Key to a reference-image dataset.
+    sam_key : str
+        Key to a projection-image dataset.
+    crop : tuple of int, optional
+        Crop the images from the edges, i.e.
+        crop = (crop_top, crop_bottom, crop_left, crop_right).
+    flat_field : ndarray, optional
+        2D array or None. Used for flat-field correction if not None.
+    dark_field : ndarray, optional
+        2D array or None. Used for dark-field correction if not None.
+    num_use : int, optional
+        Number of datasets used for stacking.
+    fix_zero_div : bool, optional
+        Correct zeros to avoid zero-division problem down the processing line.
+
+    Returns
+    -------
+    ref_stack : ndarray
+        3D array. A stack of reference-images.
+    sam_stack : ndarray
+        3D array. A stack of sample-images.
+    """
+    if not isinstance(ref_path, list):
+        raise ValueError("Input-path must be a list of strings!!!")
+    if len(ref_path) != len(sam_path):
+        raise ValueError("Number of input datasets must be the same")
+    num_file = len(ref_path)
+    if num_use is None:
+        num_use = num_file
+    else:
+        num_use = np.clip(num_use, 1, num_file)
+    (height, width) = load_hdf(ref_path[0], ref_key).shape[-2:]
+    cr_top, cr_bot, cr_left, cr_right = crop
+    top = cr_top
+    bot = height - cr_bot
+    left = cr_left
+    right = width - cr_right
+    height1 = bot - top
+    width1 = right - left
+    if height1 < 1 or width1 < 1:
+        raise ValueError("Can't crop data with the given input!!!")
+    fix_zeros = False if flat_field is None else True
+    flat_field, dark_field = __check_dark_flat_field(flat_field, dark_field,
+                                                     height, width)
+    flat_field = flat_field[top:bot, left:right]
+    dark_field = dark_field[top:bot, left:right]
+    flat_dark = flat_field - dark_field
+    if fix_zeros:
+        nmean = np.mean(flat_dark)
+        flat_dark[flat_dark == 0.0] = nmean
+    ref_objs = []
+    sam_objs = []
+    for i in range(num_use):
+        ref_objs.append(load_hdf(ref_path[i], ref_key))
+        sam_objs.append(load_hdf(sam_path[i], sam_key))
+    ref_stack = []
+    sam_stack = []
+    for i in range(num_use):
+        if len(ref_objs[i].shape) == 3:
+            ref_ave = np.mean(ref_objs[i][:, top:bot, left:right], axis=0)
+        else:
+            ref_ave = ref_objs[i][top:bot, left:right]
+        proj = sam_objs[i][proj_idx, top:bot, left:right]
+        if fix_zeros:
+            ref_ave = (ref_ave - dark_field) / flat_dark
+            proj = (proj - dark_field) / flat_dark
+        else:
+            ref_ave = ref_ave - dark_field
+            proj = (proj - dark_field)
+        ref_stack.append(ref_ave)
+        sam_stack.append(proj)
+    ref_stack = np.asarray(ref_stack)
+    sam_stack = np.asarray(sam_stack)
+    if fix_zero_div:
+        nmean = np.mean(ref_stack)
+        ref_stack[ref_stack == 0.0] = nmean
+        nmean = np.mean(sam_stack)
+        sam_stack[sam_stack == 0.0] = nmean
+    return ref_stack, sam_stack
+
+
+def get_tif_stack(file_base, idx=None, crop=(0, 0, 0, 0), flat_field=None,
+                  dark_field=None, num_use=None, fix_zero_div=True):
+    """
+    Load tif images to a stack.
+
+    Parameters
+    ----------
+    file_base : str
+        Folder path to tif images.
+    idx : int or None
+        Load single or multiple images.
+    crop : tuple of int, optional
+        Crop the images from the edges, i.e.
+        crop = (crop_top, crop_bottom, crop_left, crop_right).
+    flat_field : ndarray, optional
+        2D array or None. Used for flat-field correction if not None.
+    dark_field : ndarray, optional
+        2D array or None. Used for dark-field correction if not None.
+    num_use : int, optional
+        Number of images used for stacking.
+    fix_zero_div : bool, optional
+        Correct zeros to avoid zero-division problem down the processing line.
+
+    Returns
+    -------
+    img_stack : ndarray
+        3D array. A stack of images.
+    """
+    list_file = find_file(file_base + "/*tif*")
+    num_file = len(list_file)
+    if num_file != 0:
+        (height, width) = np.shape(load_image(list_file[0]))
+    else:
+        raise ValueError("There're no tif images in: {}".format(file_base))
+    if idx is not None:
+        if idx < 0:
+            idx = num_file + idx
+        if idx > (num_file - 1):
+            raise ValueError("Requested index: {0} is out of "
+                             "the range: {1}".format(idx, num_file - 1))
+    if num_use is None:
+        num_use = num_file
+    else:
+        num_use = np.clip(num_use, 1, num_file)
+    cr_top, cr_bot, cr_left, cr_right = crop
+    top = cr_top
+    bot = height - cr_bot
+    left = cr_left
+    right = width - cr_right
+    height1 = bot - top
+    width1 = right - left
+    if height1 < 1 or width1 < 1:
+        raise ValueError("Can't crop data with the given input!!!")
+    fix_zeros = False if flat_field is None else True
+    flat_field, dark_field = __check_dark_flat_field(flat_field, dark_field,
+                                                     height, width)
+    flat_field = flat_field[top:bot, left:right]
+    dark_field = dark_field[top:bot, left:right]
+    flat_dark = flat_field - dark_field
+    if fix_zeros:
+        nmean = np.mean(flat_dark)
+        flat_dark[flat_dark == 0.0] = nmean
+    if idx is not None:
+        img_stack = load_image(list_file[idx])[top:bot, left:right]
+        if fix_zeros:
+            img_stack = (img_stack - dark_field) / flat_dark
+        else:
+            img_stack = img_stack - dark_field
+        img_stack = [img_stack]
+    else:
+        img_stack = []
+        for file in list_file[:num_use]:
+            img = load_image(file)[top:bot, left:right]
+            if fix_zeros:
+                img = (img - dark_field) / flat_dark
+            else:
+                img = img - dark_field
+            img_stack.append(img)
+    img_stack = np.asarray(img_stack)
+    if fix_zero_div:
+        nmean = np.mean(img_stack)
+        img_stack[img_stack == 0.0] = nmean
+    return img_stack
+
+
+def get_image_stack(idx, list_path, data_key=None, average=False,
+                    crop=(0, 0, 0, 0), flat_field=None, dark_field=None,
+                    num_use=None, fix_zero_div=True):
+    """
+    Stack images of the same index from different datasets. For tif images,
+    if only one dataset is provided (list_path is a string, not a list),
+    there's an option, idx = None, to load the whole stack.
+
+    Parameters
+    ----------
+    idx : int or None
+        Index of an image in a dataset. Use None to load all images if only
+        one dataset provided.
+    list_path : list of str
+        List of hdf/nxs file-paths or folders of tif-images to datasets.
+    data_key : str
+        Requested if datasets are hdf/nxs files.
+    average : bool, optional
+        Average images in a dataset if True.
+    crop : tuple of int, optional
+        Crop the images from the edges, i.e.
+        crop = (crop_top, crop_bottom, crop_left, crop_right).
+    flat_field : ndarray, optional
+        2D array or None. Used for flat-field correction if not None.
+    dark_field : ndarray, optional
+        2D array or None. Used for dark-field correction if not None.
+    num_use : int, optional
+        Number of datasets used for stacking.
+    fix_zero_div : bool, optional
+        Correct zeros to avoid zero-division problem down the processing line.
+
+    Returns
+    -------
+    img_stack : ndarray
+        3D array. A stack of images.
+    """
+    if isinstance(list_path, list):
+        num_file = len(list_path)
+        if num_use is None:
+            num_use = num_file
+        else:
+            num_use = np.clip(num_use, 1, num_file)
+        tif_format = False
+        file_base, file_ext = os.path.splitext(list_path[0])
+        if file_ext == "":
+            tif_format = True
+        else:
+            if data_key is None:
+                raise ValueError(
+                    "Please provide the key to datasets of hdf/nxs "
+                    "files")
+        if tif_format:
+            list_file = find_file(file_base + "/*tif*")
+            if len(list_file) != 0:
+                (height, width) = np.shape(load_image(list_file[0]))
+            else:
+                raise ValueError("There're no tif images in: "
+                                 "{}".format(file_base))
+        else:
+            (height, width) = load_hdf(list_path[0], data_key).shape[-2:]
+        cr_top, cr_bot, cr_left, cr_right = crop
+        top = cr_top
+        bot = height - cr_bot
+        left = cr_left
+        right = width - cr_right
+        height1 = bot - top
+        width1 = right - left
+        if height1 < 1 or width1 < 1:
+            raise ValueError("Can't crop data with the given input!!!")
+        fix_zeros = False if flat_field is None else True
+        flat_field, dark_field = __check_dark_flat_field(flat_field,
+                                                         dark_field,
+                                                         height, width)
+        flat_field = flat_field[top:bot, left:right]
+        dark_field = dark_field[top:bot, left:right]
+        flat_dark = flat_field - dark_field
+        if fix_zeros:
+            nmean = np.mean(flat_dark)
+            flat_dark[flat_dark == 0.0] = nmean
+        img_stack = []
+        if not tif_format:
+            for i in range(num_use):
+                data_obj = load_hdf(list_path[i], data_key)
+                if len(data_obj.shape) == 3:
+                    if average:
+                        img = np.mean(data_obj[:, top:bot, left:right], axis=0)
+                    else:
+                        img = data_obj[idx, top:bot, left:right]
+                else:
+                    img = data_obj[top:bot, left:right]
+                if fix_zeros:
+                    img = (img - dark_field) / flat_dark
+                else:
+                    img = img - dark_field
+                img_stack.append(img)
+        else:
+            for i in range(num_use):
+                list_file = find_file(list_path[i] + "/*tif*")
+                if average:
+                    img = np.mean(
+                        np.asarray([load_image(file)[top:bot, left:right] \
+                                    for file in list_file]), axis=0)
+                else:
+                    img = load_image(list_file[idx])[top:bot, left:right]
+                if fix_zeros:
+                    img = (img - dark_field) / flat_dark
+                else:
+                    img = img - dark_field
+                img_stack.append(img)
+        img_stack = np.asarray(img_stack)
+        if fix_zero_div:
+            nmean = np.mean(img_stack)
+            img_stack[img_stack == 0.0] = nmean
+    else:
+        img_stack = get_tif_stack(list_path, idx=idx, crop=crop,
+                                  flat_field=flat_field,
+                                  dark_field=dark_field, num_use=num_use,
+                                  fix_zero_div=fix_zero_div)
+    return img_stack

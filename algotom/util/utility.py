@@ -46,6 +46,8 @@ Module of utility methods:
     4.2  - fix_non_sample_areas
     4.3  - locate_slice
     4.4  - locate_slice_chunk
+5- Methods for speckle-based tomography
+    5.1  - generate_spiral_positions
  """
 
 import sys
@@ -78,7 +80,7 @@ def apply_method_to_multiple_sinograms(data, method, para, ncore=None):
     para : list
         Parameters of the method. e.g. [21, 1]
     ncore: int or None
-        Number of cores used for computing. Automatically selected if None.
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -316,7 +318,7 @@ def generate_fitted_image(mat, order, axis=0, num_chunk=1):
 
 def detect_stripe(list_data, snr):
     """
-    Locate stripe positions using Algorithm 4 in Ref. [1]
+    Locate stripe positions using Algorithm 4 in Ref. [1]_
 
     Parameters
     ----------
@@ -361,7 +363,7 @@ def detect_stripe(list_data, snr):
 def calculate_regularization_coefficient(width, alpha):
     """
     Calculate coefficients used for the regularization-based method.
-    Eq. (7) in Ref. [1].
+    Eq. (7) in Ref. [1]_.
 
     Parameters
     ----------
@@ -855,7 +857,7 @@ def apply_1d_regularizer(list_data, sijmat):
 
 def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
     """
-    Apply a regularization filter using the method in Ref. [1].
+    Apply a regularization filter using the method in Ref. [1]_.
     Note that it's computationally costly.
 
     Parameters
@@ -867,7 +869,7 @@ def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
     axis : int
         Axis along which to apply the filter.
     ncore: int or None
-        Number of cores used for computing. Automatically selected if None.
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -929,7 +931,7 @@ def transform_1d_window_to_2d(win_1d):
 def detect_sample(sinogram, sino_type="180"):
     """
     To check if there is a sample in a sinogram using the "double-wedge"
-    property of the Fourier transform of the sinogram (Ref. [1]).
+    property of the Fourier transform of the sinogram (Ref. [1]_).
 
     Parameters
     ----------
@@ -1211,3 +1213,41 @@ def locate_slice_chunk(slice_start, slice_stop, height, overlap_metadata):
         if len(result1) > 0:
             results.append(result1)
     return results
+
+
+def generate_spiral_positions(step, num_pos, height, width, spiral_shape=1.0):
+    """
+    Generate Fermat spiral positions. Unit is pixel.
+
+    Parameters
+    ----------
+    step : int
+        Step size in pixel. ~ 20-> 40
+    num_pos : int
+        Number of positions.
+    height: int
+        Height of the field of view (in pixel).
+    width: int
+        Width of the field of view (in pixel).
+    spiral_shape : float, optional
+        To define the spiral shape.
+
+    Returns
+    -------
+    array_like
+        2D array. List of (x,y) positions
+    """
+    positions = []
+    phi = 2.0 * np.pi * ((1.0 + np.sqrt(5)) / 2) + spiral_shape * np.pi
+    mid_hei = height // 2
+    mid_wid = width // 2
+    for i in range(num_pos):
+        r = 1.0 * step * np.sqrt(i)
+        x_pos = r * np.cos(i * phi)
+        y_pos = r * np.sin(i * phi)
+        if (np.abs(x_pos) > mid_wid) or (np.abs(y_pos) > mid_hei):
+            msg = "Calculated position is out of the field of view. " \
+                  "Please reduce the step!!!"
+            raise ValueError(msg)
+        positions.append([x_pos, y_pos])
+    return np.asarray(positions, dtype=np.float32)

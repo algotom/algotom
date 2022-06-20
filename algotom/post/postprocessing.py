@@ -37,7 +37,7 @@ import algotom.io.loadersaver as losa
 import algotom.prep.removal as remo
 
 
-def get_statical_information(mat, percentile=(5, 95), denoise=False):
+def get_statical_information(mat, percentile=(1, 99), denoise=False):
     """
     Get statical information of an image.
 
@@ -80,7 +80,7 @@ def get_statical_information(mat, percentile=(5, 95), denoise=False):
     return gmin, gmax, min_percent, max_percent, mean, median, variance
 
 
-def get_statical_information_dataset(input_, percentile=(5, 95), skip=5,
+def get_statical_information_dataset(input_, percentile=(1, 99), skip=5,
                                      denoise=False, key_path=None):
     """
     Get statical information of a dataset. This can be a folder of tif files,
@@ -252,10 +252,11 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                             or file_ext == ".nxs"):
                         raise ValueError(
                             "File extension must be hdf, h5, or nxs")
-                output = file_base + file_ext
-                data_out = losa.open_hdf_stream(
-                    output, (depth_dsp, height_dsp, width_dsp),
-                    key_path="downsample/data", overwrite=False)
+                    else:
+                        output = file_base + file_ext
+                        data_out = losa.open_hdf_stream(
+                            output, (depth_dsp, height_dsp, width_dsp),
+                            key_path="downsample/data", overwrite=False)
             data_dsp = []
             for i in range(0, depth, cell_size[0]):
                 if (i + cell_size[0]) > depth:
@@ -316,10 +317,11 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                             or file_ext == ".nxs"):
                         raise ValueError(
                             "File extension must be hdf, h5, or nxs")
-                    output = file_base + file_ext
-                    data_out = losa.open_hdf_stream(
-                        output, (depth_dsp, height_dsp, width_dsp),
-                        key_path="downsample/data", overwrite=False)
+                    else:
+                        output = file_base + file_ext
+                        data_out = losa.open_hdf_stream(
+                            output, (depth_dsp, height_dsp, width_dsp),
+                            key_path="downsample/data", overwrite=False)
                 num = 0
                 for i in range(0, depth, cell_size[0]):
                     if (i + cell_size[0]) > depth:
@@ -466,9 +468,8 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         if minmax is None:
             if skip is None:
                 skip = int(np.ceil(0.15 * depth))
-            (gmin, gmax) = get_statical_information_dataset(input_, skip=skip,
-                                                            key_path=key_path)[
-                           0:2]
+            f_alias = get_statical_information_dataset
+            (gmin, gmax) = f_alias(input_,skip=skip,key_path=key_path)[0:2]
         else:
             (gmin, gmax) = minmax
         data_res = []
@@ -518,7 +519,7 @@ def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):
     v : int
         Number of rows (* 2) to be applied the filter.
     sort : bool, optional
-        Apply sorting (Ref. [2]) if True.
+        Apply sorting (Ref. [2]_) if True.
 
     Returns
     -------
@@ -547,7 +548,7 @@ def remove_ring_based_wavelet_fft(mat, level=5, size=1, wavelet_name="db9",
                                   sort=False):
     """
     Remove ring artifacts in a reconstructed image by combining the polar
-    transform and the wavelet-fft-based method (Ref. [1]).
+    transform and the wavelet-fft-based method (Ref. [1]_).
 
     Parameters
     ----------
@@ -560,7 +561,7 @@ def remove_ring_based_wavelet_fft(mat, level=5, size=1, wavelet_name="db9",
     wavelet_name : str
         Name of a wavelet. Search pywavelets API for a full list.
     sort : bool, optional
-        Apply sorting (Ref. [2]) if True.
+        Apply sorting (Ref. [2]_) if True.
 
     Returns
     -------
