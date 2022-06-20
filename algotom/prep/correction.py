@@ -124,7 +124,7 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
 def unwarp_projection(proj, xcenter, ycenter, list_fact):
     """
     Apply distortion correction to a projection image using the polynomial
-    backward model (Ref. [1]).
+    backward model (Ref. [1]_).
 
     Parameters
     ----------
@@ -285,7 +285,7 @@ def unwarp_sinogram_chunk(data, start_index, stop_index, xcenter, ycenter,
 def mtf_deconvolution(mat, window, pad):
     """
     Deconvolve an projection image using division in the Fourier domain.
-    Window can be determined using the approach in Ref. [1].
+    Window can be determined using the approach in Ref. [1]_.
 
     Parameters
     ----------

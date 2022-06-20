@@ -10,14 +10,13 @@ also be used for standard scans. The software includes methods in a full
 pipeline of data processing: reading-writing data, pre-processing, tomographic 
 reconstruction, post-processing, and data simulation. Many utility methods are 
 provided to help users quickly develop prototype-methods or build a pipeline for
-processing their own data.
+processing their own data. From version 1.1, methods for speckle-based phase-contrast
+tomography were added to the package.
 
 The software is made available for the paper; *"Data processing methods and data 
 acquisition for samples larger than the field of view in parallel-beam tomography,"*
 Nghia T. Vo, Robert C. Atwood, Michael Drakopoulos, and Thomas Connolley, Opt. 
-Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448. Selected
-answers to technical questions of anonymous reviewers about methods in the paper
-are [here](https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Selected_replies_to_technical_questions_from_reviewerspdf/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf).     
+Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448.      
 
 Features
 --------
@@ -31,8 +30,6 @@ robust, and practical. Some featuring methods in Algotom are as follows:
   to multiply double the field-of-view (FOV) of a parallel-beam tomography system.
   
   ![grid_scan](https://github.com/algotom/algotom/raw/master/figs/readme/grid_scan.jpg)
- 
-  [![animation](https://github.com/algotom/algotom/raw/master/figs/readme/thumbnail.png)](https://www.youtube.com/watch?v=CNRGutasp0c)
   
 - Methods for processing helical scans (with/without the offset rotation-axis).
   
@@ -61,6 +58,20 @@ robust, and practical. Some featuring methods in Algotom are as follows:
   based on the Fourier slice theorem, and artifact generation.
   
   ![simulation](https://github.com/algotom/algotom/raw/master/figs/readme/simulation.png)
+- Methods for speckle-based phase-contrast tomography, image correlation, and image alignment.
+
+Update notes
+------------
+
+- 13/05/2021: Publish codes
+- 26/01/2022:
+  + Add phase.py module 
+  + Add phase-unwrapping methods
+- 20/06/2022:
+  + Add correlation.py module.
+  + Add methods for speckle-based phase-contrast tomography.
+  + Add methods for image alignment.
+  + Release version 1.1
 
 Author
 ------
@@ -71,6 +82,11 @@ How to install
 --------------
 
 - https://algotom.readthedocs.io/en/latest/install.html
+- If users install Algotom to an existing enviroment and Numba fails to install due to the requests of Numpy < 1.22:
+  + Downgrade Numpy to 1.21 and install Algotom/Numba again.
+  + Create a new environment and install Algotom first, then other packages.
+  + Use conda instead of pip.
+- Avoid to use the latest version of Python (e.g 3.10) or Numpy (1.22) as the Python ecosystem taking time to keep up with these twos.
 
 How to use
 ----------
