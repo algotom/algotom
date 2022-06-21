@@ -22,10 +22,10 @@
 
 """
 Module of FFT-based reconstruction methods in the reconstruction stage:
-- Filtered back-projection (FBP) method for GPU (using numba and cuda) and CPU.
-- Direct Fourier inversion (DFI) method.
-- Wrapper for Astra Toolbox reconstruction (optional)
-- Wrapper for Tomopy-gridrec reconstruction (optional)
+    - Filtered back-projection (FBP) method for GPU (using numba and cuda) and CPU.
+    - Direct Fourier inversion (DFI) method.
+    - Wrapper for Astra Toolbox reconstruction (optional)
+    - Wrapper for Tomopy-gridrec reconstruction (optional)
 """
 
 import math

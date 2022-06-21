@@ -22,32 +22,32 @@
 
 """
 Module of utility methods:
-1- Methods for parallel computing, geometric transformation, masking.
-2- Methods for customizing stripe/ring removal methods
-    2.1  - sort_forward
-    2.2  - sort_backward
-    2.3  - separate_frequency_component
-    2.4  - generate_fitted_image
-    2.5  - detect_stripe
-    2.6  - calculate_regularization_coefficient
-    2.7  - make_2d_butterworth_window
-    2.8  - make_2d_damping_window
-    2.9  - apply_wavelet_decomposition
-    2.10 - apply_wavelet_reconstruction
-    2.11 - apply_filter_to_wavelet_component
-    2.12 - interpolate_inside_stripe
-    2.13 - transform_slice_forward
-    2.14 - transform_slice_backward
-3- Customized smoothing filters:
-    3.1 - apply_gaussian_filter (in the Fourier space)
-    3.2 - apply_regularization_filter
-4- Methods for grid scans:
-    4.1  - detect_sample
-    4.2  - fix_non_sample_areas
-    4.3  - locate_slice
-    4.4  - locate_slice_chunk
-5- Methods for speckle-based tomography
-    5.1  - generate_spiral_positions
+    - Methods for parallel computing, geometric transformation, masking.
+    - Methods for customizing stripe/ring removal methods
+        + sort_forward
+        + sort_backward
+        + separate_frequency_component
+        + generate_fitted_image
+        + detect_stripe
+        + calculate_regularization_coefficient
+        + make_2d_butterworth_window
+        + make_2d_damping_window
+        + apply_wavelet_decomposition
+        + apply_wavelet_reconstruction
+        + apply_filter_to_wavelet_component
+        + interpolate_inside_stripe
+        + transform_slice_forward
+        + transform_slice_backward
+    - Customized smoothing filters:
+        + apply_gaussian_filter (in the Fourier space)
+        + apply_regularization_filter
+    - Methods for grid scans:
+        + detect_sample
+        + fix_non_sample_areas
+        + locate_slice
+        + locate_slice_chunk
+    - Methods for speckle-based tomography
+        + generate_spiral_positions
  """
 
 import sys

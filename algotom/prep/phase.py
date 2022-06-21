@@ -22,14 +22,14 @@
 
 """
 Module for phase contrast imaging:
-- Unwrap phase images.
-- Generate a weighting map.
-- Methods for speckle-based phase-contrast imaging.
-    + Find shifts between two stacks of images.
-    + Find shifts between sample-images.
-    + Align between two stacks of images.
-    + Retrieve phase image.
-    + Generate transmission-signal and dark-signal images.
+    - Unwrap phase images.
+    - Generate a quality map, weight mask.
+    - Methods for speckle-based phase-contrast imaging.
+        + Find shifts between two stacks of images.
+        + Find shifts between sample-images.
+        + Align between two stacks of images.
+        + Retrieve phase image.
+        + Generate transmission-signal and dark-signal images.
 """
 
 import multiprocessing as mp

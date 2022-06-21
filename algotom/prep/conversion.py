@@ -22,14 +22,14 @@
 
 """
 Module of conversion methods in the preprocessing stage:
-- Stitching images.
-- Joining images if there is no overlapping.
-- Converting a 360-degree sinogram with offset center-of-rotation (COR) to
-  a 180-degree sinogram.
-- Extending a 360-degree sinogram with offset COR for direct reconstruction
-  instead of converting it to a 180-degree sinogram.
-- Converting a 180-degree sinogram to a 360-sinogram.
-- Generating a sinogram from a helical data.
+    - Stitching images.
+    - Joining images if there is no overlapping.
+    - Converting a 360-degree sinogram with offset center-of-rotation (COR) to
+      a 180-degree sinogram.
+    - Extending a 360-degree sinogram with offset COR for direct reconstruction
+      instead of converting it to a 180-degree sinogram.
+    - Converting a 180-degree sinogram to a 360-sinogram.
+    - Generating a sinogram from a helical data.
 """
 
 import numpy as np

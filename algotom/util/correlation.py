@@ -24,10 +24,10 @@
 """
 Module of correlation-based methods for finding shifts between images or
 stacks of images. The methods are designed to be flexible to:
-- Run on multicore CPU or GPU.
-- Use small/large RAM or small/large GPU memory.
-- Work with small/large size of data.
-- Find shifts locally or globally.
+    - Run on multicore CPU or GPU.
+    - Use small/large RAM or small/large GPU memory.
+    - Work with small/large size of data.
+    - Find shifts locally or globally.
 """
 
 import math

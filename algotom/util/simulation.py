@@ -23,10 +23,10 @@
 
 """
 Module of simulation methods:
-1- Methods for designing a customized 2D phantom.
-2- Method for calculating a sinogram of a phantom based on the Fourier
-   slice theorem.
-3- Methods for adding artifacts to a simulated sinogram.
+    - Methods for designing a customized 2D phantom.
+    - Method for calculating a sinogram of a phantom based on the Fourier
+      slice theorem.
+    - Methods for adding artifacts to a simulated sinogram.
 """
 
 import numpy as np

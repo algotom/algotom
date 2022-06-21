@@ -22,12 +22,12 @@
 
 """
 Module of correction methods in the preprocessing stage:
-- Flat-field correction.
-- Distortion correction.
-- MTF deconvolution.
-- Tilted sinogram generation.
-- Tilted 1D intensity-profile generation.
-- Beam hardening correction.
+    - Flat-field correction.
+    - Distortion correction.
+    - MTF deconvolution.
+    - Tilted sinogram generation.
+    - Tilted 1D intensity-profile generation.
+    - Beam hardening correction.
 """
 
 import numpy as np
