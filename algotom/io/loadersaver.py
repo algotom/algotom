@@ -22,15 +22,15 @@
 
 """
 Module for I/O tasks:
-- Load data from an image file (tif, png, jpeg) or a hdf/nxs file.
-- Get dataset information in a hdf/nxs file.
-- Search for datasets in a hdf/nxs file.
-- Save a 2D array as a tif image or 2D, 3D array to a hdf/nxs file.
-- Search file names, make a file/folder name.
-- Load distortion coefficients from a txt file.
-- Get the tree view of a hdf/nxs file.
-- Functions for loading stacks of images from multiple datasets, e.g. to be
-  used by speckle-based phase contrast tomography.
+    - Load data from an image file (tif, png, jpeg) or a hdf/nxs file.
+    - Get dataset information in a hdf/nxs file.
+    - Search for datasets in a hdf/nxs file.
+    - Save a 2D array as a tif image or 2D, 3D array to a hdf/nxs file.
+    - Search file names, make a file/folder name.
+    - Load distortion coefficients from a txt file.
+    - Get the tree view of a hdf/nxs file.
+    - Functions for loading stacks of images from multiple datasets, e.g. to be
+      used by speckle-based phase contrast tomography.
 """
 
 import os
