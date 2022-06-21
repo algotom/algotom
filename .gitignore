@@ -10,4 +10,5 @@ build/
 dist/
 *egg-info
 recipe/
-docs/
+docs/build
+docs/_build
