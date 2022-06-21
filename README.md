@@ -59,6 +59,7 @@ robust, and practical. Some featuring methods in Algotom are as follows:
   
   ![simulation](https://github.com/algotom/algotom/raw/master/figs/readme/simulation.png)
 - Methods for speckle-based phase-contrast tomography, image correlation, and image alignment.
+  ![speckle](https://github.com/algotom/algotom/raw/master/figs/readme/speckle_based_tomography.png)
 
 Update notes
 ------------
@@ -90,7 +91,7 @@ How to install
 
 How to use
 ----------
-
+- https://github.com/algotom/algotom/tree/master/examples
 - https://algotom.readthedocs.io/en/latest/usage.html
  
 Highlights
