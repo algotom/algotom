@@ -86,7 +86,7 @@ How to install
   + Downgrade Numpy and install Algotom/Numba again.
   + Create a new environment and install Algotom first, then other packages.
   + Use conda instead of pip.
-- Avoid to use the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
+- Avoid using the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
 
 How to use
 ----------
