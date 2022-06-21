@@ -63,15 +63,15 @@ robust, and practical. Some featuring methods in Algotom are as follows:
 Update notes
 ------------
 
-- 13/05/2021: Publish codes
+- 13/05/2021: Publish codes.
 - 26/01/2022:
-  + Add phase.py module 
-  + Add phase-unwrapping methods
+  + Add phase.py module.
+  + Add phase-unwrapping methods.
 - 20/06/2022:
   + Add correlation.py module.
   + Add methods for speckle-based phase-contrast tomography.
   + Add methods for image alignment.
-  + Release version 1.1
+  + Release version 1.1.
 
 Author
 ------
@@ -82,8 +82,8 @@ How to install
 --------------
 
 - https://algotom.readthedocs.io/en/latest/install.html
-- If users install Algotom to an existing enviroment and Numba fails to install due to the requests of Numpy < 1.23:
-  + Downgrade Numpy to 1.22 and install Algotom/Numba again.
+- If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
+  + Downgrade Numpy and install Algotom/Numba again.
   + Create a new environment and install Algotom first, then other packages.
   + Use conda instead of pip.
 - Avoid to use the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
