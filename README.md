@@ -82,11 +82,11 @@ How to install
 --------------
 
 - https://algotom.readthedocs.io/en/latest/install.html
-- If users install Algotom to an existing enviroment and Numba fails to install due to the requests of Numpy < 1.22:
-  + Downgrade Numpy to 1.21 and install Algotom/Numba again.
+- If users install Algotom to an existing enviroment and Numba fails to install due to the requests of Numpy < 1.23:
+  + Downgrade Numpy to 1.22 and install Algotom/Numba again.
   + Create a new environment and install Algotom first, then other packages.
   + Use conda instead of pip.
-- Avoid to use the latest version of Python (e.g 3.10) or Numpy (1.22) as the Python ecosystem taking time to keep up with these twos.
+- Avoid to use the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
 
 How to use
 ----------
