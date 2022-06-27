@@ -73,6 +73,7 @@ Update notes
   + Add methods for speckle-based phase-contrast tomography.
   + Add methods for image alignment.
   + Release version 1.1.
+- 27/06/2022: Publish https://algotom.github.io
 
 Author
 ------
@@ -82,7 +83,7 @@ Author
 How to install
 --------------
 
-- https://algotom.readthedocs.io/en/latest/install.html
+- https://algotom.github.io/toc/section3.html
 - If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
   + Downgrade Numpy and install Algotom/Numba again.
   + Create a new environment and install Algotom first, then other packages.
