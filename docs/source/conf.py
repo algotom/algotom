@@ -73,7 +73,7 @@ master_doc = 'index'
 
 # General information about the project.
 Affiliation = u'Diamond Light Source, UK'
-project = u'Algotom'
+project = u'Algotom-Reference'
 copyright = u'2021, Nghia T. Vo ' + Affiliation
 
 # The version info for the project you're documenting, acts as replacement for

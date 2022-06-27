@@ -1,12 +1,12 @@
+.. image:: img/logo.png
+   :width: 30%
+   :align: right
+
 =======
 Algotom
 =======
 
 Data processing (**ALGO**)rithms for (**TOM**)ography
-
-.. image:: img/logo.png
-   :width: 50%
-   :alt: logo
 
 **Algotom** is a Python package implementing methods for processing tomographic
 data acquired by non-standard scanning techniques such as grid scans, helical 
@@ -22,15 +22,19 @@ The software is made available for the paper in :cite:`Vo:21`.
 
 **Source Code:** https://github.com/algotom/algotom
 
+**Documentation main page:** https://algotom.github.io
+
+This page is for Algotom functions reference.
+
 Content
 -------
 
 .. toctree::
    :maxdepth: 1
 
-   features
+   api
    install
    usage
-   api
+   features
    highlights
    credits
