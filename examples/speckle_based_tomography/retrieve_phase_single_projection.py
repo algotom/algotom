@@ -29,8 +29,10 @@ sample_stack = losa.load_hdf("C:/user/data/sam_stack.hdf", "entry/data")
 output_base = "C:/user/output/"
 
 num_use = 40  # Use 40 speckle-positions for calculation
-speckle_stack = speckle_stack[:40, :, :]  # Data shape: 40 x 2560 x 2160
-sample_stack = sample_stack[:40, :, :]
+speckle_stack = speckle_stack[:num_use, :, :]  # Data shape: 40 x 2560 x 2160
+sample_stack = sample_stack[:num_use, :, :]
+chunk_size = 100 # Process 100 rows in one go. Adjust to suit CPU/GPU memory.
+
 
 t0 = timeit.default_timer()
 # dim=2 is slow (>45 mins) if running on CPU.
@@ -39,7 +41,7 @@ x_shifts, y_shifts, phase = f_alias1(speckle_stack, sample_stack, dim=1,
                                      win_size=7, margin=10, method="diff",
                                      size=3, gpu=True, block=(16, 16),
                                      ncore=None, norm=False,
-                                     norm_global=True, chunk_size=None,
+                                     norm_global=True, chunk_size=chunk_size,
                                      surf_method="SCS",
                                      correct_negative=True,
                                      return_shift=True)

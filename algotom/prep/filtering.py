@@ -22,7 +22,8 @@
 
 """
 Module of filtering methods in the preprocessing stage:
-    - Fresnel filter (denoising or low-pass filter).
+    - Fresnel filter (denoising or low-pass filter), a simplified version of
+      the well-known Paganin's filter.
     - Double-wedge filter.
 """
 
@@ -71,7 +72,8 @@ def make_fresnel_window(height, width, ratio, dim):
 def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
     """
     Apply a low-pass filter based on the Fresnel propagator to an image
-    (Ref. [1]_).
+    (Ref. [1]_). It can be used for improving the contrast of an image.
+    It's simpler than the well-known Paganin's filter (Ref. [2]_).
 
     Parameters
     ----------
@@ -97,6 +99,7 @@ def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
     References
     ----------
     .. [1] https://doi.org/10.1364/OE.418448
+    .. [2] https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Data_processing_methods_and_data_acquisition_for_samples_larger_than_the_field_of_view_in_parallel-beam_tomography_selected_replies_to_technical_questions_from_reviewers/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf
     """
     if apply_log:
         mat = -np.log(mat)
