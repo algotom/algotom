@@ -6,7 +6,7 @@ py_ver = sys.version.split(".")[:2]
 python_version = py_ver[0] + "." + py_ver[1]
 if python_version == "3.7":
     dependencies = [
-        "numpy>=1.17,<1.21",
+        "numpy>=1.18,<1.23",
         "scipy<=1.7",
         "numba>=0.50.1",
         "pywavelets",
@@ -15,7 +15,7 @@ if python_version == "3.7":
         "joblib"]
 else:
     dependencies = [
-        "numpy>=1.17,<1.23",
+        "numpy>=1.18,<1.23",
         "scipy",
         "numba>=0.50.1",
         "pywavelets",
