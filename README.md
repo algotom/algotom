@@ -78,7 +78,7 @@ Update notes
 Author
 ------
 
-- Nghia T. Vo - *Diamond Light Source, UK.*  
+- Nghia T. Vo - *NSLS-II, Brookhaven National Lab, USA*; *Diamond Light Source, UK.*  
 
 How to install
 --------------
