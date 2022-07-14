@@ -149,8 +149,8 @@ def back_projection_gpu(recon, sinogram, angles, xlist, center, sino_height,
     """
     Implement the back-projection algorithm using GPU.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     recon : array_like
         Square array of zeros. Reconstruction image.
     sinogram : array_like
@@ -203,8 +203,8 @@ def back_projection_cpu(sinogram, angles, xlist, center):
     """
     Implement the back-projection algorithm using CPU.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     sinogram : array_like
         2D array. (Filtered) sinogram image.
     angles : array_like
