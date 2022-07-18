@@ -208,7 +208,7 @@ class UtilityMethods(unittest.TestCase):
         check1 = True if (num1 < 0.05 and num2 < 0.05) else False
         x_shift, y_shift = f_alias(self.ref_stack[0], self.sam_stack[0], 17,
                                    5, list_ij=list_ij, num_point=None,
-                                   global_value="median", gpu=False,
+                                   global_value="mean", gpu=False,
                                    block=32, sub_pixel=True, method="poly_fit",
                                    size=3, ncore=None, norm=True,
                                    return_list=False)
@@ -217,7 +217,7 @@ class UtilityMethods(unittest.TestCase):
         check2 = True if (num1 < 0.05 and num2 < 0.05) else False
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0], 17,
                                      5, list_ij=list_ij, num_point=None,
-                                     global_value="median", gpu=False,
+                                     global_value="mixed", gpu=False,
                                      block=32, sub_pixel=True, method="diff",
                                      size=3, ncore=None, norm=True,
                                      return_list=True)

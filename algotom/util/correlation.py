@@ -2670,7 +2670,7 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
             global_yshift = np.median(y_shifts)
         elif global_value == "mixed":
             mid = num_point // 2
-            begin = np.clip(mid - 3, 0, None),
+            begin = np.clip(mid - 3, 0, None)
             end = np.clip(mid + 3, mid, num_point)
             if end > begin:
                 global_xshift = np.mean(np.sort(x_shifts)[begin:end])
@@ -2821,7 +2821,7 @@ def _find_global_shift_based_local_shifts_gpu(ref_mat, mat, win_size, margin,
             global_yshift = np.median(y_shifts)
         elif global_value == "mixed":
             mid = num_point // 2
-            begin = np.clip(mid - 3, 0, None),
+            begin = np.clip(mid - 3, 0, None)
             end = np.clip(mid + 3, mid, num_point)
             if end > begin:
                 global_xshift = np.mean(np.sort(x_shifts)[begin:end])
