@@ -55,16 +55,14 @@ def normalize_image(mat):
         2D or 3D array. Normalized image.
     """
     if len(mat.shape) == 3:
-        mat_2d = np.mean(mat, axis=1)
-        mat = np.moveaxis(np.moveaxis(mat, 1, 0) / mat_2d, 0, 1)
-        mat_2d = np.mean(mat, axis=2)
-        mat = np.moveaxis(np.moveaxis(mat, 2, 0) / mat_2d, 0, 2)
+        mat1 = (mat - np.mean(mat)) / np.std(mat)
+        mat1 = mat1 - np.min(mat1)
     else:
-        mat = mat / np.mean(mat, axis=0)
-        array_1d = np.mean(mat, axis=1)
-        mat = np.transpose(np.transpose(mat) / array_1d)
-    mat = (mat - np.mean(mat)) / np.std(mat)
-    return mat
+        rlist = np.sum(mat, axis=0)
+        clist = np.transpose([np.sum(mat, axis=1)])
+        mat1 = (mat / rlist) / clist
+        mat1 = (mat1 - np.mean(mat1)) / np.std(mat1)
+    return mat1
 
 
 @jit(nopython=True, parallel=False, cache=True)
@@ -985,7 +983,7 @@ def _get_1d_shift_full_image_3d_input_cpu(ref_mat, mat, direction="x",
                                           chunk_size=None, win_size=7,
                                           margin=10, sub_pixel=True,
                                           method="diff", size=3, ncore=None,
-                                          norm=True, norm_global=True):
+                                          norm=True, norm_global=False):
     """
     CPU-function to find local 1d-shifts of the second 3d-image against the
     reference 3d-image where their shapes are the same and their size may be
@@ -1039,14 +1037,15 @@ def _get_1d_shift_full_image_3d_input_cpu(ref_mat, mat, direction="x",
     (depth, height, width) = ref_mat.shape
     if chunk_size is None:
         chunk_size = height + 1
-    num_chunk = height // chunk_size + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
     f_alias = _get_1d_shift_multi_rows_3d_input
     shifts = np.zeros((height, width), dtype=np.float32)
     edge = margin + win_size // 2
-    if norm_global and norm:
+    if norm_global:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
-        norm = False
     if direction == "x":
         list_index = np.array_split(np.arange(height), num_chunk)
         for pos in list_index:
@@ -1131,11 +1130,11 @@ def _get_2d_shift_full_image_2d_input(ref_mat, mat, win_size=7, margin=10,
     win_size = 2 * (win_size // 2) + 1
     radi = win_size // 2
     start = radi + margin
-    edge = (win_size + 2 * margin)
-    if width < edge or height < edge:
+    als_size = win_size + 2 * margin
+    if width < als_size or height < als_size:
         raise ValueError("Shapes of the inputs {0} are smaller than the "
                          "requested size (win_size + 2*margin) = "
-                         "{1}".format(ref_mat.shape, edge))
+                         "{1}".format(ref_mat.shape, als_size))
     stop_col, stop_row = width - start, height - start
     start1, radi1 = start + 1, radi + 1
     if norm:
@@ -1170,7 +1169,7 @@ def _get_2d_shift_full_image_2d_input(ref_mat, mat, win_size=7, margin=10,
 def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
                                       sub_pixel=True, method="diff", size=3,
                                       gpu=False, block=(16, 16), pad=True,
-                                      ncore=None, norm=True):
+                                      ncore=None, norm=False):
     """
     To find local (y,x)-shifts of the second 3d-image against the reference
     3d-image where their shapes are the same. Each (y,x)-shifting value is
@@ -1235,11 +1234,11 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
     start = radi + margin
     if ref_mat.shape != mat.shape:
         raise ValueError("Shapes of the inputs are not the same !!!")
-    edge = (win_size + 2 * margin)
-    if width < edge or height < edge:
+    als_size = win_size + 2 * margin
+    if width < als_size or height < als_size:
         raise ValueError("Shapes of the inputs {0} are smaller than the "
                          "requested size (win_size + 2*margin) = "
-                         "{1} x {1}".format((height, width), edge))
+                         "{1} x {1}".format((height, width), als_size))
     if norm:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
@@ -1277,8 +1276,8 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
 def _get_2d_shift_full_image_3d_input_cpu(ref_mat, mat, chunk_size=None,
                                           win_size=7, margin=10,
                                           sub_pixel=True, method="diff",
-                                          size=3, ncore=None, norm=True,
-                                          norm_global=True):
+                                          size=3, ncore=None, norm=False,
+                                          norm_global=False):
     """
     CPU function to find local (y,x)-shifts of the second 3d-image against the
     reference 3d-image where their shapes are the same and their size may be
@@ -1332,16 +1331,21 @@ def _get_2d_shift_full_image_3d_input_cpu(ref_mat, mat, chunk_size=None,
     (height, width) = ref_mat.shape[-2:]
     if chunk_size is None:
         chunk_size = height + 1
-    num_chunk = height // chunk_size + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
     edge = margin + win_size // 2
+    if height < (2 * edge + 1):
+        raise ValueError("Height of the inputs {0} are smaller than the "
+                         "requested size (win_size + 2*margin + 1) = "
+                         "{1} x {1}".format(height, 2 * edge + 1))
     list_index = np.array_split(np.arange(edge, height - edge), num_chunk)
     x_shifts = np.zeros((height, width), dtype=np.float32)
     y_shifts = np.zeros((height, width), dtype=np.float32)
     f_alias = _get_2d_shift_multi_rows_3d_input
-    if norm_global and norm:
+    if norm_global:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
-        norm = False
     for pos in list_index:
         bindex, eindex = pos[0], pos[-1] + 1
         ref_mat1 = ref_mat[:, bindex - edge:eindex + edge, :]
@@ -1472,8 +1476,7 @@ def _get_1d_shift_multi_rows_3d_input_kernel(shift_mat, ref_mat, mat,
 
 def _get_1d_shift_multi_rows_3d_input_gpu(ref_mat, mat, direction="x",
                                           win_size=7, margin=10,
-                                          block=(16, 16), pad=True,
-                                          norm=True):
+                                          block=(16, 16), pad=True, norm=True):
     """
     GPU function to find local 1d-shifts of the second 3d-image against the
     reference 3d-image where their shapes are the same. Each shifting value is
@@ -1514,9 +1517,6 @@ def _get_1d_shift_multi_rows_3d_input_gpu(ref_mat, mat, direction="x",
     """
     if ref_mat.shape != mat.shape:
         raise ValueError("Data shape must be the same !!!")
-    if norm:
-        ref_mat = normalize_image(ref_mat)
-        mat = normalize_image(mat)
     if len(ref_mat.shape) == 2:
         ref_mat = np.expand_dims(ref_mat, axis=0)
         mat = np.expand_dims(mat, axis=0)
@@ -1530,6 +1530,10 @@ def _get_1d_shift_multi_rows_3d_input_gpu(ref_mat, mat, direction="x",
     ref_mat = np.moveaxis(ref_mat, 1, 0)
     mat = np.moveaxis(mat, 1, 0)
     (height, depth, width) = ref_mat.shape
+    if norm:
+        ref_mat = np.asarray(
+            [normalize_image(ref_mat[i]) for i in range(height)])
+        mat = np.asarray([normalize_image(mat[i]) for i in range(height)])
     win_size = 2 * (win_size // 2) + 1
     radi = win_size // 2
     edge = radi + margin
@@ -1603,14 +1607,15 @@ def _get_1d_shift_full_image_3d_input_gpu(ref_mat, mat, direction="x",
     (depth, height, width) = ref_mat.shape
     if chunk_size is None:
         chunk_size = height + 1
-    num_chunk = height // chunk_size + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
     f_alias = _get_1d_shift_multi_rows_3d_input_gpu
     shifts = np.zeros((height, width), dtype=np.float32)
     edge = margin + win_size // 2
-    if norm_global and norm:
+    if norm_global:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
-        norm = False
     if direction == "x":
         list_index = np.array_split(np.arange(height), num_chunk)
         for pos in list_index:
@@ -1844,7 +1849,8 @@ def _get_2d_shift_multi_rows_2d_input_kernel(shifts, ref_mat, mat, coef_4d,
 
 
 def _get_2d_shift_multi_rows_2d_input_gpu(ref_mat, mat, win_size=7, margin=10,
-                                          block=(16, 16), pad=True, norm=True):
+                                          block=(16, 16), pad=True,
+                                          norm=False):
     """
     Using gpu to find local (y,x)-shifts of the second image against the
     reference image where their shapes are the same. Each (y,x)-shifting value
@@ -1912,8 +1918,8 @@ def _get_2d_shift_multi_rows_2d_input_gpu(ref_mat, mat, win_size=7, margin=10,
 
 def _get_2d_shift_full_image_2d_input_gpu(ref_mat, mat, chunk_size=None,
                                           win_size=7, margin=10,
-                                          block=(16, 16), norm=True,
-                                          norm_global=True):
+                                          block=(16, 16), norm=False,
+                                          norm_global=False):
     """
     GPU function to find local (y,x)-shifts of the second image against the
     reference image where their shapes are the same and their size may be
@@ -1958,16 +1964,21 @@ def _get_2d_shift_full_image_2d_input_gpu(ref_mat, mat, chunk_size=None,
     (height, width) = ref_mat.shape
     if chunk_size is None:
         chunk_size = height + 1
-    num_chunk = height // chunk_size + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
     edge = margin + win_size // 2
+    if height < (2 * edge + 1):
+        raise ValueError("Height of the inputs {0} are smaller than the "
+                         "requested size (win_size + 2*margin + 1) = "
+                         "{1} x {1}".format(height, 2 * edge + 1))
     list_index = np.array_split(np.arange(edge, height - edge), num_chunk)
     x_shifts = np.zeros((height, width), dtype=np.float32)
     y_shifts = np.zeros((height, width), dtype=np.float32)
     f_alias = _get_2d_shift_multi_rows_2d_input_gpu
-    if norm_global and norm:
+    if norm_global:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
-        norm = False
     for pos in list_index:
         bindex, eindex = pos[0], pos[-1] + 1
         ref_mat1 = ref_mat[bindex - edge:eindex + edge, :]
@@ -2027,7 +2038,8 @@ def _get_2d_shift_multi_rows_3d_input_kernel(shifts, ref_mat, mat, coef_4d,
 
 
 def _get_2d_shift_multi_rows_3d_input_gpu(ref_mat, mat, win_size=7, margin=10,
-                                          block=(16, 16), pad=True, norm=True):
+                                          block=(16, 16), pad=True,
+                                          norm=False):
     """
     GPU function to find local (y,x)-shifts of the second 3d-image against the
     reference 3d-image where their shapes are the same. Each (y,x)-shifting
@@ -2098,8 +2110,8 @@ def _get_2d_shift_multi_rows_3d_input_gpu(ref_mat, mat, win_size=7, margin=10,
 
 def _get_2d_shift_full_image_3d_input_gpu(ref_mat, mat, chunk_size=None,
                                           win_size=7, margin=10,
-                                          block=(16, 16), norm=True,
-                                          norm_global=True):
+                                          block=(16, 16), norm=False,
+                                          norm_global=False):
     """
     GPU function to find local (y,x)-shifts of the second 3d-image against the
     reference 3d-image where their shapes are the same and their size may be
@@ -2145,13 +2157,19 @@ def _get_2d_shift_full_image_3d_input_gpu(ref_mat, mat, chunk_size=None,
     (height, width) = ref_mat.shape[-2:]
     if chunk_size is None:
         chunk_size = height + 1
-    num_chunk = height // chunk_size + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
     edge = margin + win_size // 2
+    if height < (2 * edge + 1):
+        raise ValueError("Height of the inputs {0} are smaller than the "
+                         "requested size (win_size + 2*margin + 1) = "
+                         "{1} x {1}".format(height, 2 * edge + 1))
     list_index = np.array_split(np.arange(edge, height - edge), num_chunk)
     x_shifts = np.zeros((height, width), dtype=np.float32)
     y_shifts = np.zeros((height, width), dtype=np.float32)
     f_alias = _get_2d_shift_multi_rows_3d_input_gpu
-    if norm_global and norm:
+    if norm_global:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
         norm = False
@@ -2214,7 +2232,7 @@ def _generate_4d_correlation_map_3d_input_kernel(coef_4d, ref_mat, mat, height,
 def _get_2d_shift_multi_rows_3d_input_cpu_gpu(ref_mat, mat, win_size=7,
                                               margin=10, method="diff", size=3,
                                               block=(16, 16), pad=True,
-                                              ncore=None, norm=True):
+                                              ncore=None, norm=False):
     """
     Combine GPU and CPU to find local (y,x)-shifts of the second 3d-image
     against the reference 3d-image where their shapes are the same.
@@ -2306,7 +2324,7 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
                                               win_size=7, margin=10,
                                               method="diff", size=3,
                                               block=(16, 16), ncore=None,
-                                              norm=True, norm_global=True):
+                                              norm=False, norm_global=False):
     """
     Combine GPU and CPU to find local (y,x)-shifts of the second 3d-image
     against the reference 3d-image where their shapes are the same and their
@@ -2367,13 +2385,19 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
     (height, width) = ref_mat.shape[-2:]
     if chunk_size is None:
         chunk_size = height + 1
-    num_chunk = height // chunk_size + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
     edge = margin + win_size // 2
+    if height < (2 * edge + 1):
+        raise ValueError("Height of the inputs {0} are smaller than the "
+                         "requested size (win_size + 2*margin + 1) = "
+                         "{1} x {1}".format(height, 2 * edge + 1))
     list_index = np.array_split(np.arange(edge, height - edge), num_chunk)
     x_shifts = np.zeros((height, width), dtype=np.float32)
     y_shifts = np.zeros((height, width), dtype=np.float32)
     f_alias = _get_2d_shift_multi_rows_3d_input_cpu_gpu
-    if norm_global and norm:
+    if norm_global:
         ref_mat = normalize_image(ref_mat)
         mat = normalize_image(mat)
         norm = False
@@ -2390,7 +2414,7 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
 
 def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
                       method="diff", size=3, gpu=False, block=(16, 16),
-                      ncore=None, norm=True, norm_global=True,
+                      ncore=None, norm=True, norm_global=False,
                       chunk_size=None):
     """
     To find local shifts (in y and x direction) between two images by selecting
@@ -2507,7 +2531,7 @@ def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
                                                margin=margin,
                                                block=block, norm=norm,
                                                norm_global=norm_global)
-    return x_shifts, y_shifts
+    return np.float32(x_shifts), np.float32(y_shifts)
 
 
 def __get_input_list(list_ij, height, width, gap):
@@ -2560,9 +2584,9 @@ def __get_input_list(list_ij, height, width, gap):
 
 def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
                                               list_ij=None, num_point=None,
-                                              global_value="median",
+                                              global_value="mixed",
                                               sub_pixel=True, method="diff",
-                                              size=3, ncore=None, norm=True,
+                                              size=3, ncore=None, norm=False,
                                               return_list=False):
     """
     CPU function to find global shift between two images based on finding
@@ -2624,11 +2648,11 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
     win_size = 2 * (win_size // 2) + 1
     radi = win_size // 2
     start = radi + margin
-    msize = win_size + 2 * margin
-    if width < msize or height < msize:
+    als_size = win_size + 2 * margin
+    if width < als_size or height < als_size:
         raise ValueError("Shapes of the inputs {0} are smaller than the "
                          "requested size (win_size + 2*margin) = "
-                         "{1}".format(ref_mat.shape, msize))
+                         "{1}".format(ref_mat.shape, als_size))
     start1, radi1 = start + 1, radi + 1
     if norm:
         ref_mat = normalize_image(ref_mat)
@@ -2737,8 +2761,8 @@ def _get_local_shifts_gpu_kernel(shifts, ref_mat, mat, list_i, list_j,
 
 def _find_global_shift_based_local_shifts_gpu(ref_mat, mat, win_size, margin,
                                               list_ij=None, num_point=None,
-                                              global_value="median",
-                                              block=32, norm=True,
+                                              global_value="mixed",
+                                              block=32, norm=False,
                                               return_list=False):
     """
     GPU function to find global shift between two images based on finding
@@ -2841,10 +2865,10 @@ def _find_global_shift_based_local_shifts_gpu(ref_mat, mat, win_size, margin,
 
 def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
                                          list_ij=None, num_point=None,
-                                         global_value="median",
+                                         global_value="mixed",
                                          gpu=False, block=32,
                                          sub_pixel=True, method="diff",
-                                         size=3, ncore=None, norm=True,
+                                         size=3, ncore=None, norm=False,
                                          return_list=False):
     """
     Find global shift between two images based on finding local shifts.

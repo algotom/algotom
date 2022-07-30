@@ -476,9 +476,9 @@ def reconstruct_surface_from_gradient_SCS_method(grad_x, grad_y,
 
 
 def find_shift_between_image_stacks(ref_stack, sam_stack, win_size, margin,
-                                    list_ij, global_value="median", gpu=False,
+                                    list_ij, global_value="mixed", gpu=False,
                                     block=32, sub_pixel=True, method="diff",
-                                    size=3, ncore=None, norm=True):
+                                    size=3, ncore=None, norm=False):
     """
     Find shifts between each pair of two image-stacks. Can be used to
     align reference-images and sample-images in speckle-based imaging
@@ -551,7 +551,7 @@ def find_shift_between_sample_images(ref_stack, sam_stack, sr_shifts, win_size,
                                      margin, list_ij, global_value="median",
                                      gpu=False, block=32, sub_pixel=True,
                                      method="diff", size=3, ncore=None,
-                                     norm=True):
+                                     norm=False):
     """
     Find shifts between sample-images in a stack and the first sample-image.
     It is used to align sample-images of the same rotation angle from multiple
@@ -664,25 +664,21 @@ def align_image_stacks(ref_stack, sam_stack, sr_shifts, sam_shifts=None,
     if sam_shifts is not None:
         if len(ref_stack) != len(sam_shifts):
             raise ValueError(msg)
-    if len(ref_stack.shape) == 2:
-        ref_stack = np.expand_dims(ref_stack, axis=0)
-        sam_stack = np.expand_dims(sam_stack, axis=0)
+    if len(ref_stack.shape) != 3:
+        raise ValueError("Data shape must be 3d!!!")
     num_image = len(ref_stack)
-    if num_image == 1:
-        sam_stack[0] = ndi.shift(sam_stack[0],
-                                 np.flipud(np.squeeze(sr_shifts)), mode=mode)
-    else:
-        for i in range(num_image):
-            mat1 = ndi.shift(sam_stack[i], np.flipud(sr_shifts[i]), mode=mode)
-            if sam_shifts is not None:
-                mat1 = ndi.shift(mat1, np.flipud(sam_shifts[i]), mode=mode)
-                ref1 = ndi.shift(ref_stack[i], np.flipud(sam_shifts[i]),
-                                       mode=mode)
-            else:
-                ref1 = ref_stack[i]
-            sam_stack[i] = mat1
-            ref_stack[i] = ref1
-    return ref_stack, sam_stack
+    ref_stack1 = np.zeros_like(ref_stack)
+    sam_stack1 = np.zeros_like(sam_stack)
+    for i in range(num_image):
+        ref1 = ndi.shift(ref_stack[i], -np.flipud(sr_shifts[i]), mode=mode)
+        if sam_shifts is not None:
+            mat1 = ndi.shift(sam_stack[i], np.flipud(sam_shifts[i]), mode=mode)
+            ref1 = ndi.shift(ref1, np.flipud(sam_shifts[i]), mode=mode)
+        else:
+            mat1 = sam_stack[i]
+        sam_stack1[i] = mat1
+        ref_stack1[i] = ref1
+    return ref_stack1, sam_stack1
 
 
 def retrieve_phase_based_speckle_tracking(ref_stack, sam_stack, dim=1,

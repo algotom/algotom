@@ -57,9 +57,8 @@ class UtilityMethods(unittest.TestCase):
         check1 = True if (num1 < self.eps and num2 < self.eps) else False
         mat = np.random.normal(0.5, 0.6, (6, 64, 64))
         mat1 = corl.normalize_image(mat)
-        num1 = np.mean(mat1)
-        num2 = np.abs(np.std(mat1) - 1.0)
-        check2 = True if (num1 < self.eps and num2 < self.eps) else False
+        num1 = np.min(mat1)
+        check2 = True if num1 >= 0.0 else False
         self.assertTrue(check1 and check2)
 
     def test_generate_correlation_map(self):
