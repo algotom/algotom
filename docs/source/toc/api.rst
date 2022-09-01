@@ -1,16 +1,15 @@
-=============
-API reference
+API Reference
 =============
 
-1. Input-output
----------------
+Input-output
+------------
 
 .. toctree::
    api/algotom.io.converter
    api/algotom.io.loadersaver
 
-2. Pre-processing
------------------
+Pre-processing
+--------------
 
 .. toctree::
 
@@ -21,28 +20,28 @@ API reference
    api/algotom.prep.removal
    api/algotom.prep.phase
 
-3. Reconstruction
------------------
+Reconstruction
+--------------
 
 .. toctree::
    api/algotom.rec.reconstruction
 
-4. Post-processing
-------------------
+Post-processing
+---------------
 
 .. toctree::
    api/algotom.post.postprocessing
 
-5. Utility
-----------
+Utility
+-------
 
 .. toctree::
    api/algotom.util.calibration
    api/algotom.util.simulation
    api/algotom.util.utility
    api/algotom.util.correlation
-   
+
 .. automodule:: algotom
    :members:
    :undoc-members:
-   :show-inheritance: 
+   :show-inheritance:

@@ -41,8 +41,8 @@ extensions = [
 ]
 
 bibtex_bibfiles = [
-    'bibtex/ref.bib',
-    'bibtex/cite.bib'
+    'toc/bibtex/ref.bib',
+    'toc/bibtex/cite.bib'
 ]
 
 # Napoleon settings
@@ -72,9 +72,10 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-Affiliation = u'Diamond Light Source, UK'
-project = u'Algotom-Reference'
-copyright = u'2021, Nghia T. Vo ' + Affiliation
+Affiliation1 = u' Diamond Light Source, UK'
+Affiliation2 = u'; NSLS-II, Brookhaven National Lab, US'
+project = u'Algotom'
+copyright = u'2021, Nghia T. Vo ' + Affiliation1 + Affiliation2
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -242,7 +243,7 @@ latex_documents = [
     ('index',
      project + '.tex',
      project + u' Documentation',
-     Affiliation, 'manual'),
+     Affiliation1 + Affiliation2, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -273,7 +274,7 @@ latex_documents = [
 man_pages = [
     ('index', project,
      project + u' Documentation',
-     [Affiliation, ], 1)
+     [Affiliation1 + Affiliation2, ], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -289,7 +290,7 @@ texinfo_documents = [
     ('index',
      project,
      project + u' Documentation',
-     Affiliation,
+     Affiliation1 + Affiliation2,
      project,
      'Algotom'),
 ]
@@ -319,3 +320,7 @@ autodoc_mock_imports = [
     'scipy'
 ]
 autodoc_member_order = 'bysource'
+
+
+numfig = True
+numfig_secnum_depth = 2
