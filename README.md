@@ -83,7 +83,7 @@ Author
 How to install
 --------------
 
-- https://algotom.github.io/toc/section3.html
+- https://algotom.readthedocs.io/en/latest/toc/section3.html
 - If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
   + Downgrade Numpy and install Algotom/Numba again.
   + Create a new environment and install Algotom first, then other packages.
@@ -92,8 +92,9 @@ How to install
 
 How to use
 ----------
+- https://algotom.readthedocs.io/en/latest/toc/section4.html
+- https://algotom.readthedocs.io/en/latest/toc/section1/section1_4.html
 - https://github.com/algotom/algotom/tree/master/examples
-- https://algotom.readthedocs.io/en/latest/usage.html
  
 Highlights
 ----------
