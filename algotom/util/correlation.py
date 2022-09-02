@@ -32,12 +32,10 @@ stacks of images. The methods are designed to be flexible to:
 
 import math
 import numpy as np
-from numba import jit, cuda, NumbaWarning
+from numba import jit, cuda
 import multiprocessing as mp
 from joblib import Parallel, delayed
 import warnings
-
-warnings.filterwarnings("ignore", category=NumbaWarning)
 
 
 def normalize_image(mat):
