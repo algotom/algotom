@@ -36,6 +36,8 @@ from numba import jit, cuda, NumbaWarning
 import multiprocessing as mp
 from joblib import Parallel, delayed
 import warnings
+from scipy.signal import correlate
+from algotom.rec.reconstruction import make_smoothing_window
 
 warnings.filterwarnings("ignore", category=NumbaWarning)
 
@@ -932,7 +934,7 @@ def _get_1d_shift_multi_rows_3d_input(ref_mat, mat, direction="x", win_size=7,
         Size of a GPU block. E.g. (4,4), (8, 8), ...
     pad : bool, optional
         Padding the result to the same as the original images.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -1018,7 +1020,7 @@ def _get_1d_shift_full_image_3d_input_cpu(ref_mat, mat, direction="x",
     size : int
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -1106,7 +1108,7 @@ def _get_2d_shift_full_image_2d_input(ref_mat, mat, win_size=7, margin=10,
         Use GPU for computing if True.
     block : tuple of two integer-values, optional
         Size of a GPU block. E.g. (4,4), (8, 8), ...
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalizing the inputs.
@@ -1205,7 +1207,7 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
         Size of a GPU block. E.g. (4,4), (8, 8), ...
     pad : bool, optional
         Padding the result to the same as the original images.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalizing the inputs.
@@ -1232,8 +1234,6 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
     win_size = 2 * (win_size // 2) + 1
     radi = win_size // 2
     start = radi + margin
-    if ref_mat.shape != mat.shape:
-        raise ValueError("Shapes of the inputs are not the same !!!")
     als_size = win_size + 2 * margin
     if width < als_size or height < als_size:
         raise ValueError("Shapes of the inputs {0} are smaller than the "
@@ -1306,12 +1306,12 @@ def _get_2d_shift_full_image_3d_input_cpu(ref_mat, mat, chunk_size=None,
     sub_pixel : bool, optional
         Enable sub-pixel location.
     method : {"diff", "poly_fit"}
-        Method for finding 1d sub-pixel position. Two options: a differential
+        Method for finding sub-pixel position. Two options: a differential
         method or a polynomial method.
     size : int
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -1745,6 +1745,54 @@ def __locate_max_value(mat):
                 x_max = j
                 val_max = val
     return x_max, y_max
+
+
+@cuda.jit(device=True)
+def __get_max_value(mat):
+    """
+    GPU-kernel function to find the maximum value of a 2D array.
+
+    Parameters
+    ----------
+    mat : array_like
+        2D array.
+
+    Returns
+    -------
+    list of two floats.
+        (column-index, row-index)
+    """
+    (height, width) = mat.shape
+    val_max = mat[0, 0]
+    for i in range(height):
+        for j in range(width):
+            val = mat[i, j]
+            if val > val_max:
+                val_max = val
+    return val_max
+
+
+@cuda.jit(device=True)
+def __inverse_values(mat, val_max):
+    """
+    GPU-kernel function to inverse values of a 2D array.
+
+    Parameters
+    ----------
+    mat : array_like
+        2D array.
+    val_mat : float
+        Maximum value of the array.
+
+    Returns
+    -------
+    array_like
+    """
+    (height, width) = mat.shape
+    for i in range(height):
+        for j in range(width):
+            mat[i, j] = val_max - mat[i, j]
+    return mat
 
 
 @cuda.jit(device=True)
@@ -2264,7 +2312,7 @@ def _get_2d_shift_multi_rows_3d_input_cpu_gpu(ref_mat, mat, win_size=7,
         Size of a GPU block. E.g. (4,4), (8, 8), ...
     pad : bool, optional
         Padding the result to the same as the original images.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalizing the inputs.
@@ -2360,7 +2408,7 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
         Size of a GPU block. E.g. (4,4), (8, 8), ...
     pad : bool, optional
         Padding the result to the same as the original images.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalizing the inputs if True.
@@ -2415,9 +2463,9 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
 def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
                       method="diff", size=3, gpu=False, block=(16, 16),
                       ncore=None, norm=True, norm_global=False,
-                      chunk_size=None):
+                      chunk_size=100):
     """
-    To find local shifts (in y and x direction) between two images by selecting
+    To find local shifts (in x and y direction) between two images by selecting
     a small area/volume of the second image and sliding over a slightly larger
     area/volume of the reference image.
 
@@ -2445,7 +2493,7 @@ def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
         Use GPU for computing if True or in "hybrid" mode.
     block : tuple of two integer-values, optional
         Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalizing the inputs if True.
@@ -2457,7 +2505,7 @@ def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
     Returns
     -------
     list of two 2d-arrays
-        y-shift array and x-shift array. Zeros at the outer area of the size of
+        x-shift array and y-shift array. Zeros at the outer area of the size of
         (margin + win_size // 2).
 
     References
@@ -2604,7 +2652,7 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
     margin : int
         To define the searching range (in pixel) for finding shift.
         E.g. 20, 30,...
-    list_ij : list of list of int or None
+    list_ij : list of lists of int or None
         List of indices of points used for local search. Accept the value of
         [i_index, j_index] for a single point or
         [[i_index0, i_index1,...], [j_index0, j_index1,...]]
@@ -2621,7 +2669,7 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
     size : int, optional
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -2761,9 +2809,8 @@ def _get_local_shifts_gpu_kernel(shifts, ref_mat, mat, list_i, list_j,
 
 def _find_global_shift_based_local_shifts_gpu(ref_mat, mat, win_size, margin,
                                               list_ij=None, num_point=None,
-                                              global_value="mixed",
-                                              block=32, norm=False,
-                                              return_list=False):
+                                              global_value="mixed", block=32,
+                                              norm=False, return_list=False):
     """
     GPU function to find global shift between two images based on finding
     local shifts.
@@ -2780,7 +2827,7 @@ def _find_global_shift_based_local_shifts_gpu(ref_mat, mat, win_size, margin,
     margin : int
         To define the searching range (in pixel) for finding shift.
         E.g. 20, 30,...
-    list_ij : list of list of int or None
+    list_ij : list of lists of int or None
         List of indices of points used for local search. Accept the value of
         [i_index, j_index] for a single point or
         [[i_index0, i_index1,...], [j_index0, j_index1,...]]
@@ -2865,11 +2912,10 @@ def _find_global_shift_based_local_shifts_gpu(ref_mat, mat, win_size, margin,
 
 def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
                                          list_ij=None, num_point=None,
-                                         global_value="mixed",
-                                         gpu=False, block=32,
-                                         sub_pixel=True, method="diff",
-                                         size=3, ncore=None, norm=False,
-                                         return_list=False):
+                                         global_value="mixed", gpu=False,
+                                         block=32, sub_pixel=True,
+                                         method="diff", size=3, ncore=None,
+                                         norm=False, return_list=False):
     """
     Find global shift between two images based on finding local shifts.
 
@@ -2885,7 +2931,7 @@ def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
     margin : int
         To define the searching range (in pixel) for finding shift.
         E.g. 20, 30,...
-    list_ij : list of list of int or None
+    list_ij : list of lists of int or None
         List of indices of points used for local search. Accept the value of
         [i_index, j_index] for a single point or
         [[i_index0, i_index1,...], [j_index0, j_index1,...]]
@@ -2902,12 +2948,13 @@ def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
     sub_pixel : bool, optional
         Enable sub-pixel location.
     method : {"diff", "poly_fit"}
-        Method for finding 1d sub-pixel position. Two options: a differential
-        method (Ref. [1]_) or a polynomial method (Ref. [2]_).
+        Method for finding sub-pixel shift. Two options: a differential
+        method (Ref. [1]_) or a polynomial method (Ref. [2]_). The "poly_fit"
+        option is not available if using GPU.
     size : int, optional
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -2943,3 +2990,381 @@ def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
                                sub_pixel=sub_pixel, method=method, size=size,
                                ncore=ncore, norm=norm, return_list=return_list)
     return x_out, y_out
+
+
+def __calc_shift_umpa(ref_mat, mat, window, margin, t1, t3, t2, t4, t6,
+                      dark_signal=False, method="poly_fit", size=3):
+    """
+    Supplementary CPU-function for finding local shifts using the UMPA
+    approach.
+    """
+    t5 = np.zeros((2 * margin + 1, 2 * margin + 1), dtype=np.float32)
+    for i in range(len(ref_mat)):
+        t5 += correlate(ref_mat[i], window * mat[i], mode='valid')
+    if dark_signal:
+        mat_tmp = (t2 * t3 - t6 ** 2)
+        K = (t2 * t5 - t4 * t6) / mat_tmp
+        beta = (t3 * t4 - t5 * t6) / mat_tmp
+        A = beta + K
+        V = K / A
+    else:
+        K = t5 / t3
+        beta = 0.0
+    D = t1 + (beta ** 2) * t2 + (K ** 2) * t3 \
+        - 2 * beta * t4 - 2 * K * t5 + 2 * beta * K * t6
+    x_pos, y_pos = locate_peak(D, sub_pixel=True, method=method, dim=2,
+                               size=size, max_peak=False)
+    j, i = int(np.round(x_pos)), int(np.round(y_pos))
+    x_shift, y_shift = x_pos - margin, y_pos - margin
+    if dark_signal:
+        return x_shift, y_shift, np.abs(A[i, j]), np.abs(V[i, j])
+    else:
+        return x_shift, y_shift
+
+
+def __get_2d_shift_multi_rows_3d_input_umpa_cpu(ref_mat, mat, win_size, margin,
+                                                window, L1, L3, L2, L4, L6,
+                                                method="poly_fit", size=3,
+                                                ncore=None, dark_signal=False):
+    """
+    Supplementary CPU-function for finding local shifts using the UMPA
+    approach.
+    """
+    (height, width) = ref_mat.shape[-2:]
+    win_size = 2 * (win_size // 2) + 1
+    radi = win_size // 2
+    start = radi + margin
+    stop_col, stop_row = width - start, height - start
+    start1, radi1, margin1 = start + 1, radi + 1, margin + 1
+    f_alias = __calc_shift_umpa
+    if ncore is None:
+        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+    if dark_signal:
+        results = np.asarray(
+            Parallel(n_jobs=ncore)(delayed(f_alias)(
+                ref_mat[:, i - start:i + start1, j - start:j + start1],
+                mat[:, i - radi:i + radi1, j - radi:j + radi1], window, margin,
+                L1[i, j], L3[i - margin:i + margin1, j - margin:j + margin1],
+                L2, L4[i, j],
+                L6[i - margin:i + margin1, j - margin:j + margin1],
+                dark_signal, method=method, size=size) \
+                                   for i in range(start, stop_row) \
+                                   for j in range(start, stop_col)))
+        results = np.reshape(np.asarray(results),
+                             (stop_row - start, stop_col - start, 4))
+        x_shifts, y_shifts = results[:, :, 0], results[:, :, 1]
+        trans, dark = results[:, :, 2], results[:, :, 3]
+    else:
+        results = np.asarray(
+            Parallel(n_jobs=ncore)(delayed(f_alias)(
+                ref_mat[:, i - start:i + start1, j - start:j + start1],
+                mat[:, i - radi:i + radi1, j - radi:j + radi1], window, margin,
+                L1[i, j], L3[i - margin:i + margin1, j - margin:j + margin1],
+                0.0, 0.0, 0.0, dark_signal, method=method, size=size) \
+                                   for i in range(start, stop_row) \
+                                   for j in range(start, stop_col)))
+        results = np.reshape(np.asarray(results),
+                             (stop_row - start, stop_col - start, 2))
+        x_shifts, y_shifts = results[:, :, 0], results[:, :, 1]
+    if dark_signal:
+        return x_shifts, y_shifts, trans, dark
+    else:
+        return x_shifts, y_shifts
+
+
+@cuda.jit(device=True)
+def __sum_multiply_no_norm_2d(ref_mat, mat, window):
+    """
+    GPU-kernel function to calculate the sum of multiplies of 2d-arrays.
+
+    Parameters
+    ----------
+    ref_mat : array_like
+        2D array. The first image.
+    mat : array_like
+        2D array. The second image.
+    window : array_like
+        2D array. Smoothing window.
+
+    Returns
+    -------
+    float
+    """
+    (height, width) = ref_mat.shape
+    sum_mul = 0.0
+    for i in range(height):
+        for j in range(width):
+            val = ref_mat[i, j] * mat[i, j] * window[i, j]
+            sum_mul += val
+    return sum_mul
+
+
+@cuda.jit(device=True)
+def __accu_correlate(ref_mat, mat, window, coef_mat):
+    """
+    GPU-kernel function to calculate cross-correlation between two images.
+
+    Parameters
+    ----------
+    ref_mat : array_like
+        2D array. The first image.
+    mat : array_like
+        2D array. The second image.
+    window : array_like
+        2D array. Smoothing window.
+    coef_mat : array_like
+        2D array. Resulting map.
+
+    Returns
+    -------
+    array_like
+    """
+    (height0, width0) = ref_mat.shape
+    (height1, width1) = mat.shape
+    height2, width2 = height0 - height1 + 1, width0 - width1 + 1
+    # coef_mat is at GPU global memory with the size of (height2, width2)
+    for i in range(height2):
+        for j in range(width2):
+            row0, row1 = i, i + height1
+            col0, col1 = j, j + width1
+            ref_mat1 = ref_mat[row0:row1, col0:col1]
+            sum_mul = __sum_multiply_no_norm_2d(ref_mat1, mat, window)
+            coef_mat[i, j] += sum_mul
+    return coef_mat
+
+
+@cuda.jit
+def __calc_shift_umpa_gpu_kernel(shifts, trans, dark, ref_mat, mat, coef_4d,
+                                 depth, height, width, radi, margin, window,
+                                 L1, L3, L2, L4, L6, A0, V0, D0, get_dark):
+    """
+    Supplementary GPU-CPU function for finding local shifts using the UMPA
+    approach.
+    """
+    (x_index, y_index) = cuda.grid(2)
+    if (y_index < height) and (x_index < width):
+        radi_ref = margin + radi
+        radi_ref1 = radi_ref + 1
+        margin1 = margin + 1
+        radi1 = radi + 1
+        size = 2 * margin + 1
+        j = x_index + radi_ref
+        i = y_index + radi_ref
+        ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref1,
+                   j - radi_ref: j + radi_ref1]
+        mat1 = mat[:, i - radi:i + radi1, j - radi: j + radi1]
+        A = A0[y_index, x_index, :, :]
+        V = V0[y_index, x_index, :, :]
+        D = D0[y_index, x_index, :, :]
+        t5 = coef_4d[y_index, x_index, :, :]
+        for k in range(depth):
+            __accu_correlate(ref_mat1[k], mat1[k], window, t5)
+        t1 = L1[i, j]
+        t3 = L3[i - margin:i + margin1, j - margin:j + margin1]
+        t2, t4 = L2, L4[i, j]
+        t6 = L6[i - margin:i + margin1, j - margin:j + margin1]
+        for u in range(size):
+            for v in range(size):
+                if get_dark == 1:
+                    num = t2 * t3[u, v] - t6[u, v] ** 2
+                    K = (t2 * t5[u, v] - t4 * t6[u, v]) / num
+                    beta = (t3[u, v] * t4 - t5[u, v] * t6[u, v]) / num
+                    A[u, v] = beta + K
+                    if A[u, v] != 0.0:
+                        V[u, v] = K / A[u, v]
+                    num1 = t1 + (beta ** 2) * t2 + (K ** 2) * t3[u, v] \
+                           - 2 * beta * t4 - 2 * K * t5[u, v] \
+                           + 2 * beta * K * t6[u, v]
+                else:
+                    K = t5[u, v] / t3[u, v]
+                    num1 = t1 + (K ** 2) * t3[u, v] - 2 * K * t5[u, v]
+                D[u, v] = num1
+        val_max = __get_max_value(D)
+        D = __inverse_values(D, val_max)
+        x_max, y_max = __locate_max_value(D)
+        x_pos, y_pos = __locate_2d_peak_kernel(D, x_max, y_max)
+        j1, i1 = int(round(x_pos)), int(round(y_pos))
+        shifts[0, y_index, x_index] = x_pos - margin
+        shifts[1, y_index, x_index] = y_pos - margin
+        if get_dark == 1:
+            trans[y_index, x_index] = abs(A[i1, j1])
+            dark[y_index, x_index] = abs(V[i1, j1])
+
+
+def __get_2d_shift_multi_rows_3d_input_umpa_gpu(ref_mat, mat, win_size, margin,
+                                                window, L1, L3, L2, L4, L6,
+                                                block=(16, 16),
+                                                dark_signal=True):
+    """
+    Supplementary GPU-function for finding local shifts using the UMPA
+    approach.
+    """
+    if ref_mat.shape != mat.shape:
+        raise ValueError("Data shape must be the same !!!")
+    if len(ref_mat.shape) != 3:
+        raise ValueError("Inputs must be 3d-arrays !!!")
+    (depth, height, width) = ref_mat.shape
+    win_size = 2 * (win_size // 2) + 1
+    radi = win_size // 2
+    edge, size = radi + margin, 2 * margin + 1
+    height1, width1 = height - 2 * edge, width - 2 * edge
+    if width1 < 1 or height1 < 1:
+        if width1 < 1 or height1 < 1:
+            raise ValueError("Shapes of the inputs {0} are smaller than the "
+                             "requested size (win_size + 2*margin) = "
+                             "{1}".format(ref_mat[0].shape, edge))
+    shifts = np.zeros((2, height1, width1), dtype=np.float32)
+    trans = np.ones((height1, width1), dtype=np.float32)
+    dark = np.ones_like(trans)
+    ref_mat1 = np.float32(np.ascontiguousarray(ref_mat))
+    mat1 = np.float32(np.ascontiguousarray(mat))
+    coef_4d = np.zeros((height1, width1, size, size), dtype=np.float32)
+    A0 = np.zeros((height1, width1, size, size), dtype=np.float32)
+    V0 = np.zeros((height1, width1, size, size), dtype=np.float32)
+    D0 = np.zeros((height1, width1, size, size), dtype=np.float32)
+    L1, L3 = np.float32(L1), np.float32(L3)
+    L2, L4, L6 = np.float32(L2), np.float32(L4), np.float32(L6)
+    window = np.float32(window)
+    grid = (int(np.ceil(1.0 * width1 / block[0])),
+            int(np.ceil(1.0 * height1 / block[1])))
+    f_alias = __calc_shift_umpa_gpu_kernel
+    if dark_signal:
+        get_dark = 1
+    else:
+        get_dark = 0
+    f_alias[grid, block](shifts, trans, dark, ref_mat1, mat1, coef_4d,
+                         np.int32(depth), np.int32(height1),
+                         np.int32(width1), np.int32(radi), np.int32(margin),
+                         window, L1, L3, L2, L4, L6, A0, V0, D0,
+                         np.int32(get_dark))
+    return shifts[0], shifts[1], trans, dark
+
+
+def find_local_shifts_umpa(ref_mat, mat, win_size=7, margin=10,
+                           method="diff", size=3, gpu=True, block=(16, 16),
+                           ncore=None, chunk_size=100, filter_name="hamming",
+                           dark_signal=False):
+    """
+    To find local shifts (in x and y direction) of each pixel between
+    two 3d-images by selecting a small volume of the second image and sliding
+    over a slightly larger volume of the reference image. The cost function
+    uses the formula in Ref. [1]_, known as UMPA.
+
+    Parameters
+    ----------
+    ref_mat : array_like
+        3D array, can be a numpy array or hdf object. Reference image.
+    mat : array_like
+        3D array, can be a numpy array or hdf object. The second image, must
+        be the same size as the reference image.
+    win_size : int
+        Size of local areas in the second image.
+    margin : int
+        To define the sliding range of the second image.
+    method : {"diff", "poly_fit"}
+        Method for finding sub-pixel shift. Two options: a differential
+        method (Ref. [2]_) or a polynomial method (Ref. [3]_). The "poly_fit"
+        option is not available if using GPU.
+    size : int
+        Window size around the integer location of the maximum value used for
+        sub-pixel location. Adjustable if using the polynomial method.
+    gpu : bool
+        Use GPU for computing if True.
+    block : tuple of two integer-values, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
+    chunk_size : int or None
+        Size of each chunk extracted along the height of the image. Use to
+        avoid the out of memory problem.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+                  "nuttall", "parzen", "triang"}
+        To select a smoothing filter.
+    dark_signal : bool
+        Return both dark-signal image and transmission-signal image if True
+
+    Returns
+    -------
+    list of two 2d-arrays or four 2d-arrays
+        x-shift image and y-shift image. Zeros at the outer area of the size of
+        (margin + win_size // 2). And/or dark-signal image and
+        transmission-signal image If the 'dark_signal' option is True.
+
+    References
+    ----------
+    .. [1] https://doi.org/10.1103/PhysRevLett.118.203903
+    .. [2] https://doi.org/10.48550/arXiv.0712.4289
+    .. [3] https://doi.org/10.1088/0957-0233/17/6/045
+    """
+    if gpu is True:
+        if cuda.is_available() is False:
+            print("!!! No Nvidia GPU found !!! Run with CPU instead !!!")
+            gpu = False
+    if ref_mat.shape != mat.shape:
+        raise ValueError("Data shape must be the same !!!")
+    if len(ref_mat.shape) != 3:
+        raise ValueError("Inputs must be 3d-arrays !!!")
+    (depth, height, width) = ref_mat.shape
+    if chunk_size is None:
+        chunk_size = height + 1
+    else:
+        chunk_size = np.clip(chunk_size, 1, height)
+    num_chunk = np.clip(height // chunk_size + 1, 1, height)
+    win_size = 2 * (win_size // 2) + 1
+    edge = margin + win_size // 2
+    als_size = win_size + 2 * margin
+    if width < als_size or height < als_size:
+        raise ValueError("Shapes of the inputs {0} are smaller than the "
+                         "requested size (win_size + 2*margin) = "
+                         "{1} x {1}".format((height, width), als_size))
+    win_1d = make_smoothing_window(filter_name, win_size)
+    window = np.multiply.outer(win_1d, win_1d)
+    window = window / np.sum(window)
+    S2 = np.sum(mat ** 2, axis=0)
+    R2 = np.sum(ref_mat ** 2, axis=0)
+    L1 = correlate(S2, window, mode="same")
+    L3 = correlate(R2, window, mode="same")
+    S1 = np.sum(mat, axis=0)
+    R1 = np.sum(ref_mat, axis=0)
+    Im = np.mean(R1) / depth
+    L2 = (Im ** 2) * depth
+    L4 = Im * correlate(S1, window, mode="same")
+    L6 = Im * correlate(R1, window, mode="same")
+    x_shifts = np.zeros((height, width), dtype=np.float32)
+    y_shifts = np.zeros_like(x_shifts)
+    trans = np.ones_like(x_shifts)
+    dark = np.ones_like(x_shifts)
+    list_index = np.array_split(np.arange(edge, height - edge), num_chunk)
+    f_alias1 = __get_2d_shift_multi_rows_3d_input_umpa_gpu
+    f_alias2 = __get_2d_shift_multi_rows_3d_input_umpa_cpu
+    for pos in list_index:
+        b, e = pos[0], pos[-1] + 1
+        b1, e1 = b - edge, e + edge
+        ref_mat1 = ref_mat[:, b1:e1, :]
+        mat1 = mat[:, b1:e1, :]
+        if gpu:
+            results = f_alias1(ref_mat1, mat1, win_size, margin, window,
+                               L1[b1:e1], L3[b1:e1], L2, L4[b1:e1], L6[b1:e1],
+                               block=block, dark_signal=dark_signal)
+        else:
+            if dark_signal:
+                results = f_alias2(ref_mat1, mat1, win_size, margin, window,
+                                   L1[b1:e1], L3[b1:e1], L2, L4[b1:e1],
+                                   L6[b1:e1], method=method, size=size,
+                                   ncore=ncore, dark_signal=dark_signal)
+            else:
+                results = f_alias2(ref_mat1, mat1, win_size, margin, window,
+                                   L1[b1:e1], L3[b1:e1], 0.0, 0.0, 0.0,
+                                   method=method, size=size, ncore=ncore,
+                                   dark_signal=dark_signal)
+        x_shifts[b:e, edge:-edge] = results[0]
+        y_shifts[b:e, edge:-edge] = results[1]
+        if dark_signal:
+            trans[b:e, edge:-edge] = results[2]
+            dark[b:e, edge:-edge] = results[3]
+    if dark_signal:
+        trans = np.pad(trans[edge:-edge, edge:-edge], edge, mode="edge")
+        dark = np.pad(dark[edge:-edge, edge:-edge], edge, mode="edge")
+        return x_shifts, y_shifts, trans, dark
+    else:
+        return x_shifts, y_shifts

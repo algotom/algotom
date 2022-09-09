@@ -193,6 +193,9 @@ class PhaseMethods(unittest.TestCase):
         f_alias = ps.retrieve_phase_based_speckle_tracking
         margin = 5
         x_shifts, y_shifts, phase = f_alias(self.ref_stack, self.sam_stack1,
+                                            find_shift="correl",
+                                            filter_name="hamming",
+                                            dark_signal=False,
                                             dim=2, win_size=5, margin=margin,
                                             method="diff", size=3, gpu=False,
                                             block=(16, 16), ncore=1,
@@ -208,6 +211,9 @@ class PhaseMethods(unittest.TestCase):
         num3 = np.std(phase)
         check1 = True if (num1 < 0.1 and num2 < 0.1 and num3 < 1.0) else False
         x_shifts, y_shifts, phase = f_alias(self.ref_stack, self.sam_stack1,
+                                            find_shift="correl",
+                                            filter_name="hamming",
+                                            dark_signal=False,
                                             dim=2, win_size=5, margin=margin,
                                             method="poly_fit", size=3,
                                             gpu=False, block=(16, 16), ncore=1,
@@ -222,7 +228,25 @@ class PhaseMethods(unittest.TestCase):
             np.abs(y_shifts[margin:-margin, margin:-margin])) - self.shift)
         num3 = np.std(phase)
         check2 = True if (num1 < 0.1 and num2 < 0.1 and num3 < 1.0) else False
-        self.assertTrue(check1 and check2)
+        x_shifts, y_shifts, phase = f_alias(self.ref_stack, self.sam_stack1,
+                                            find_shift="umpa",
+                                            filter_name="hamming",
+                                            dark_signal=False,
+                                            dim=2, win_size=5, margin=margin,
+                                            method="diff", size=3,
+                                            gpu=False, block=(16, 16), ncore=1,
+                                            norm=False, norm_global=True,
+                                            chunk_size=None, surf_method="SCS",
+                                            correct_negative=True, window=None,
+                                            pad=0, pad_mode="linear_ramp",
+                                            return_shift=True)
+        num1 = np.abs(np.mean(
+            np.abs(x_shifts[margin:-margin, margin:-margin])) - self.shift)
+        num2 = np.abs(np.mean(
+            np.abs(y_shifts[margin:-margin, margin:-margin])) - self.shift)
+        num3 = np.std(phase)
+        check3 = True if (num1 < 0.1 and num2 < 0.1 and num3 < 1.0) else False
+        self.assertTrue(check1 and check2 and check3)
 
     def test_get_transmission_dark_field_signal(self):
         f_alias1 = ps.retrieve_phase_based_speckle_tracking

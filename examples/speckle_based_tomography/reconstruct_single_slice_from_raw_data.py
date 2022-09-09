@@ -104,7 +104,7 @@ if align:
     print(sr_shifts)
 
     # Align samples projections at the same rotation angle if need to.
-    sam_shifts = -sr_shifts
+    sam_shifts = None
     # Select a ROI to find the shifts between projections at the same angle
     # compared to the projection of the first dataset.
     # The ROI is pretty large (851 x 851) to detect global shifts. In such case

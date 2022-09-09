@@ -484,7 +484,7 @@ def find_shift_between_image_stacks(ref_stack, sam_stack, win_size, margin,
     align reference-images and sample-images in speckle-based imaging
     technique.
     The method finds the shift between two images by finding local shifts
-    between small areas of the images given by a list of middle points.
+    between small areas of the images given by a list of points.
 
     Parameters
     ----------
@@ -498,7 +498,7 @@ def find_shift_between_image_stacks(ref_stack, sam_stack, win_size, margin,
     margin : int
         To define the size of the area of the reference image for searching,
         i.e. size = 2 * margin + win_size.
-    list_ij : list of list of int
+    list_ij : list of lists of int
         List of indices of points used for local search. Accept the value of
         [i_index, j_index] for a single point or
         [[i_index0, i_index1,...], [j_index0, j_index1,...]]
@@ -517,7 +517,7 @@ def find_shift_between_image_stacks(ref_stack, sam_stack, win_size, margin,
     size : int
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -525,7 +525,9 @@ def find_shift_between_image_stacks(ref_stack, sam_stack, win_size, margin,
     Returns
     -------
     array_like
-        List of [[x_shift0, y_shift0], [x_shift1, y_shift1],...]
+        List of [[x_shift0, y_shift0], [x_shift1, y_shift1],...]. The
+        shift of each image in the second stacks against each image in the
+        first stack.
     """
     if ref_stack.shape != sam_stack.shape:
         raise ValueError("Data shape must be the same !!!")
@@ -553,10 +555,10 @@ def find_shift_between_sample_images(ref_stack, sam_stack, sr_shifts, win_size,
                                      method="diff", size=3, ncore=None,
                                      norm=False):
     """
-    Find shifts between sample-images in a stack and the first sample-image.
-    It is used to align sample-images of the same rotation angle from multiple
-    tomographic datasets. Reference-images are used for normalization before
-    finding the shifts.
+    Find shifts between sample-images in a stack against the first
+    sample-image. It is used to align sample-images of the same rotation-angle
+    from multiple tomographic datasets. Reference-images are used for
+    normalization before finding the shifts.
 
     Parameters
     ----------
@@ -572,7 +574,7 @@ def find_shift_between_sample_images(ref_stack, sam_stack, sr_shifts, win_size,
     margin : int
         To define the size of the area of the reference image for searching,
         i.e. size = 2 * margin + win_size.
-    list_ij : list of list of int
+    list_ij : list of lists of int
         List of indices of points used for local search. Accept the value of
         [i_index, j_index] for a single point or
         [[i_index0, i_index1,...], [j_index0, j_index1,...]]
@@ -591,7 +593,7 @@ def find_shift_between_sample_images(ref_stack, sam_stack, sr_shifts, win_size,
     size : int
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
-    ncore: int or None
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
         Normalize the input images if True.
@@ -644,6 +646,7 @@ def align_image_stacks(ref_stack, sam_stack, sr_shifts, sam_shifts=None,
         3D array. Sample images.
     sr_shifts : array_like
         List of shifts between each pair of reference-images and sample-images.
+        Each value is the shift of the second image against the first image.
     sam_shifts : array_like, optional
         List of shifts between each sample-image and the first sample-image.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
@@ -681,119 +684,6 @@ def align_image_stacks(ref_stack, sam_stack, sr_shifts, sam_shifts=None,
     return ref_stack1, sam_stack1
 
 
-def retrieve_phase_based_speckle_tracking(ref_stack, sam_stack, dim=1,
-                                          win_size=7, margin=10, method="diff",
-                                          size=3, gpu=False, block=(16, 16),
-                                          ncore=None, norm=True,
-                                          norm_global=True, chunk_size=None,
-                                          surf_method="SCS",
-                                          correct_negative=True, window=None,
-                                          pad=0, pad_mode="linear_ramp",
-                                          return_shift=False):
-    """
-    Retrieve the phase image from two stacks of speckle-images and
-    sample-images where the shift of each pixel is determined using a
-    correlation-based technique (Ref. [1-2]).
-
-    Parameters
-    ----------
-    ref_stack : array_like
-        3D array. Reference images (speckle images).
-    sam_stack : array_like
-        3D array. Sample images.
-    dim : {1, 2}
-        To find the shifts (in x and y) separately (1D) or together (2D).
-    win_size : int
-        Size of local areas in the sample image for finding shifts.
-    margin : int
-        To define the searching range of the sample images in finding the
-        shifts compared to the reference images.
-    method : {"diff", "poly_fit"}
-        Method for finding sub-pixel shift. Two options: a differential
-        method (Ref. [3]) or a polynomial method (Ref. [4]). The "poly_fit"
-        option is not available if using GPU.
-    size : int
-        Window size around the integer location of the maximum value used for
-        sub-pixel location. Adjustable if using the polynomial method.
-    gpu : {False, True, "hybrid"}
-        Use GPU for computing if True or in "hybrid" mode.
-    block : tuple of two integer-values, optional
-        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
-    ncore: int or None
-        Number of cpu-cores used for computing. Automatically selected if None.
-    norm : bool, optional
-        Normalizing the inputs if True.
-    norm_global : bool, optional
-        Normalize by using the full size of the inputs if True.
-    chunk_size : int or None
-        Size of each chunk extracted along the height of the image.
-    surf_method : {"SCS", "FC"}
-        Select method for surface reconstruction: "SCS" (Ref. [5]) or "FC"
-        (Ref. [6])
-    correct_negative : bool, optional
-        Correct negative offset if True.
-    window : list of array_like
-        List of three 2D-arrays. Spatial frequencies in x, y, and the window
-        in the Fourier space for the surface reconstruction method. Generated
-        if None.
-    pad : int
-        Padding-width used for the "SCS" method.
-    pad_mode : str
-        Padding-method used for the "SCS" method. Full list can be found at
-        numpy.pad documentation.
-    return_shift : bool, optional
-        Return a list of 3 arrays: x-shifts, y-shifts, and phase image if True.
-        The shifts can be used to determine transmission-signal and dark-signal
-        image.
-
-    Returns
-    -------
-    x_shifts : array_like
-        Return if return_shift is True. Shifts in x-direction.
-    y_shifts : array_like
-        return if return_shift is True. Shifts in y-direction.
-    phase : array_like
-        Phase image.
-
-    References
-    ----------
-    .. [1] https://doi.org/10.1038/srep08762
-    .. [2] https://doi.org/10.1103/PhysRevApplied.5.044014
-    .. [3] https://doi.org/10.48550/arXiv.0712.4289
-    .. [4] https://doi.org/10.1088/0957-0233/17/6/045
-    .. [5] https://doi.org/10.1109/34.55103
-    .. [6] https://doi.org/10.1109/34.3909
-    """
-    win_size = np.clip(win_size, 1, None)
-    margin = np.clip(margin, 1, None)
-    size = np.clip(size, 3, None)
-    (x_shifts, y_shifts) = corl.find_local_shifts(ref_stack, sam_stack,
-                                                  dim=dim, win_size=win_size,
-                                                  margin=margin, method=method,
-                                                  size=size, gpu=gpu,
-                                                  block=block, ncore=ncore,
-                                                  norm=norm,
-                                                  norm_global=norm_global,
-                                                  chunk_size=chunk_size)
-    edge = margin + 2
-    x_shifts = np.pad(x_shifts[edge:-edge, edge:-edge], edge,
-                      mode="reflect")
-    y_shifts = np.pad(y_shifts[edge:-edge, edge:-edge], edge,
-                      mode="reflect")
-    if surf_method == "SCS":
-        f_alias = reconstruct_surface_from_gradient_SCS_method
-        phase = f_alias(x_shifts, y_shifts, correct_negative=correct_negative,
-                        window=window, pad=pad, pad_mode=pad_mode)
-    else:
-        f_alias = reconstruct_surface_from_gradient_FC_method
-        phase = f_alias(x_shifts, y_shifts, correct_negative=correct_negative,
-                        window=window)
-    if return_shift:
-        return x_shifts, y_shifts, phase
-    else:
-        return phase
-
-
 @jit(nopython=True, parallel=False, cache=True)
 def _calculate_transmission_dark_field_values(ref_stack, sam_stack):
     """
@@ -808,9 +698,8 @@ def _calculate_transmission_dark_field_values(ref_stack, sam_stack):
         trans = num2 / num1
         num = np.std(ref_stack)
         if num != 0.0:
-            dark = (1 / trans) * (np.std(sam_stack) / num)
-        else:
-            dark = 1.0
+            num3 = np.std(sam_stack)
+            dark = (num1 / num2) * (num3 / num)
     return trans, dark
 
 
@@ -821,7 +710,6 @@ def _get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
     Supplementary method for determining transmission-signal image and
     dark-signal image.
     """
-    win_size = 2 * (win_size // 2) + 1
     radi = win_size // 2
     start = radi + margin
     radi1 = radi + 1
@@ -833,28 +721,39 @@ def _get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
     if len(ref_stack.shape) == 2:
         for i in range(start, stop_row):
             for j in range(start, stop_col):
-                i1 = i + int(y_shifts[i, j])
-                j1 = j + int(x_shifts[i, j])
+                i1 = i + int(np.round(y_shifts[i, j]))
+                j1 = j + int(np.round(x_shifts[i, j]))
                 mat1 = ref_stack[i - radi:i + radi1, j - radi:j + radi1]
                 mat2 = sam_stack[i1 - radi:i1 + radi1, j1 - radi:j1 + radi1]
                 (val1, val2) = f_alias(mat1, mat2)
                 i2, j2 = i - start, j - start
                 trans[i2, j2], dark[i2, j2] = val1, val2
     else:
+        num_image = len(ref_stack)
         for i in range(start, stop_row):
             for j in range(start, stop_col):
-                i1 = i + int(y_shifts[i, j])
-                j1 = j + int(x_shifts[i, j])
-                mat1 = ref_stack[:, i - radi:i + radi1, j - radi:j + radi1]
-                mat2 = sam_stack[:, i1 - radi:i1 + radi1, j1 - radi:j1 + radi1]
-                (val1, val2) = f_alias(mat1, mat2)
+                i1 = i + int(np.round(y_shifts[i, j]))
+                j1 = j + int(np.round(x_shifts[i, j]))
+                list1 = []
+                list2 = []
+                for k in range(num_image):
+                    mat1 = ref_stack[k, i - radi:i + radi1, j - radi:j + radi1]
+                    mat2 = sam_stack[k, i1 - radi:i1 + radi1,
+                           j1 - radi:j1 + radi1]
+                    (val1, val2) = f_alias(mat1, mat2)
+                    list1.append(val1)
+                    list2.append(val2)
+                val1 = np.mean(np.asarray(list1))
+                val2 = np.mean(np.asarray(list2))
                 i2, j2 = i - start, j - start
-                trans[i2, j2], dark[i2, j2] = val1, val2
+                trans[i2, j2] = val1
+                dark[i2, j2] = val2
     return trans, dark
 
 
 def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
-                                       y_shifts, win_size, ncore=None):
+                                       y_shifts, win_size, margin=None,
+                                       ncore=None):
     """
     Get the transmission-signal image and dark-signal image from two stacks of
     speckle-images and sample-images.
@@ -871,7 +770,9 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
         y-shift image.
     win_size : int
         Window size used for calculating signals.
-    ncore: int or None
+    margin : int or None
+        Margin value used for calculating signals.
+    ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
@@ -886,16 +787,21 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
     (height, width) = ref_stack.shape[-2:]
     win_size = 2 * (win_size // 2) + 1
     radi = win_size // 2
-    margin = int(max(np.max(np.abs(x_shifts)), np.max(np.abs(y_shifts))))
+    if margin is None:
+        margin = int(max(np.max(np.abs(x_shifts)), np.max(np.abs(y_shifts))))
     pad = radi + margin
+    als_size = 2 * pad
+    if width <= als_size or height <= als_size:
+        raise ValueError("Shapes of the inputs {0} are smaller than the "
+                         "requested size (win_size + 2*margin) = "
+                         "{1}".format((height, width), als_size))
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
     chunk_size = (height - 2 * pad) // ncore
     f_alias = _get_transmission_dark_field_signal
     if ncore == 1 or chunk_size < 20:
         trans, dark = f_alias(ref_stack, sam_stack, x_shifts, y_shifts,
-                              win_size,
-                              margin)
+                              win_size, margin)
     else:
         trans = np.ones((height - 2 * pad, width - 2 * pad), dtype=np.float32)
         dark = np.ones_like(trans)
@@ -917,3 +823,157 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
     trans = np.pad(trans, pad, mode="edge")
     dark = np.pad(dark, pad, mode="edge")
     return trans, dark
+
+
+def retrieve_phase_based_speckle_tracking(ref_stack, sam_stack,
+                                          find_shift="correl",
+                                          filter_name="hamming",
+                                          dark_signal=False, dim=1, win_size=7,
+                                          margin=10, method="diff", size=3,
+                                          gpu=False, block=(16, 16),
+                                          ncore=None, norm=True,
+                                          norm_global=False, chunk_size=None,
+                                          surf_method="SCS",
+                                          correct_negative=True, window=None,
+                                          pad=100, pad_mode="linear_ramp",
+                                          return_shift=False):
+    """
+    Retrieve the phase image from two stacks of speckle-images and
+    sample-images where the shift of each pixel is determined using a
+    correlation-based technique (Ref. [1-2]) or a cost-function-based method
+    (Ref. [3]). Results can be an image, a list of 3 images, or a list of 5
+    images.
+
+    Parameters
+    ----------
+    ref_stack : array_like
+        3D array. Reference images (speckle images).
+    sam_stack : array_like
+        3D array. Sample images.
+    find_shift : {"correl", "umpa"}
+        To select the back-end method for finding shifts. Using a
+        correlation-based method (Ref. [1-2]) or a cost-based method
+        (Ref. [3]).
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+                  "nuttall", "parzen", "triang"}
+        To select a smoothing filter.
+    dark_signal : bool
+        Return both dark-signal image and transmission-signal image if True
+    dim : {1, 2}
+        To find the shifts (in x and y) separately (1D) or together (2D).
+    win_size : int
+        Size of local areas in the sample image for finding shifts.
+    margin : int
+        To define the searching range of the sample images in finding the
+        shifts compared to the reference images.
+    method : {"diff", "poly_fit"}
+        Method for finding sub-pixel shift. Two options: a differential
+        method (Ref. [4]) or a polynomial method (Ref. [5]). The "poly_fit"
+        option is not available if using GPU.
+    size : int
+        Window size around the integer location of the maximum value used for
+        sub-pixel location. Adjustable if using the polynomial method.
+    gpu : {False, True, "hybrid"}
+        Use GPU for computing if True or in "hybrid" mode.
+    block : tuple of two integer-values, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
+    norm : bool, optional
+        Normalizing the inputs if True.
+    norm_global : bool, optional
+        Normalize by using the full size of the inputs if True.
+    chunk_size : int or None
+        Size of each chunk extracted along the height of the image.
+    surf_method : {"SCS", "FC"}
+        Select method for surface reconstruction: "SCS" (Ref. [6]) or "FC"
+        (Ref. [7])
+    correct_negative : bool, optional
+        Correct negative offset if True.
+    window : list of array_like
+        List of three 2D-arrays. Spatial frequencies in x, y, and the window
+        in the Fourier space for the surface reconstruction method. Generated
+        if None.
+    pad : int
+        Padding-width used for the "SCS" method.
+    pad_mode : str
+        Padding-method used for the "SCS" method. Full list can be found at
+        numpy.pad documentation.
+    return_shift : bool, optional
+        Return a list of 3 arrays: x-shifts, y-shifts, and phase image if True.
+        The shifts can be used to determine transmission-signal and dark-signal
+        image.
+
+    Returns
+    -------
+    phase : array_like
+        Phase image. If dark_signal is False and return_shifts is False.
+    phase, trans, dark : list of array_like
+        Phase image, transmission image, and dark-signal image. If dark_signal
+        is True and return_shifts is False.
+    x_shifts, y_shifts, phase: list of array_like
+        x-shift image and y-shift image. If dark_signal is False and
+        return_shifts is True.
+    x_shifts, y_shifts, phase, trans, dark : list of array_like
+        x-shift image, y-shift image, phase image, transmission image, and
+        dark-signal image. If dark_signal is True and return_shifts is True.
+
+    References
+    ----------
+    .. [1] https://doi.org/10.1038/srep08762
+    .. [2] https://doi.org/10.1103/PhysRevApplied.5.044014
+    .. [3] https://doi.org/10.1103/PhysRevLett.118.203903
+    .. [4] https://doi.org/10.48550/arXiv.0712.4289
+    .. [5] https://doi.org/10.1088/0957-0233/17/6/045
+    .. [6] https://doi.org/10.1109/34.55103
+    .. [7] https://doi.org/10.1109/34.3909
+    """
+    win_size = np.clip(win_size, 1, None)
+    margin = np.clip(margin, 1, None)
+    size = np.clip(size, 3, None)
+    if find_shift == "umpa":
+        results = corl.find_local_shifts_umpa(ref_stack, sam_stack,
+                                              win_size=win_size, margin=margin,
+                                              method=method, size=size,
+                                              gpu=gpu, block=block,
+                                              ncore=ncore,
+                                              chunk_size=chunk_size,
+                                              filter_name=filter_name,
+                                              dark_signal=dark_signal)
+        if dark_signal:
+            (x_shifts, y_shifts, trans, dark) = results
+        else:
+            (x_shifts, y_shifts) = results
+    else:
+        results = corl.find_local_shifts(ref_stack, sam_stack, dim=dim,
+                                         win_size=win_size, margin=margin,
+                                         method=method, size=size, gpu=gpu,
+                                         block=block, ncore=ncore, norm=norm,
+                                         norm_global=norm_global,
+                                         chunk_size=chunk_size)
+        (x_shifts, y_shifts) = results
+        if dark_signal:
+            f_alias = get_transmission_dark_field_signal
+            trans, dark = f_alias(ref_stack, sam_stack, x_shifts, y_shifts,
+                                  win_size, margin, ncore=ncore)
+    edge = margin + 2
+    x_shifts = np.pad(x_shifts[edge:-edge, edge:-edge], edge,
+                      mode="reflect")
+    y_shifts = np.pad(y_shifts[edge:-edge, edge:-edge], edge,
+                      mode="reflect")
+    if surf_method == "SCS":
+        f_alias = reconstruct_surface_from_gradient_SCS_method
+        phase = f_alias(x_shifts, y_shifts, correct_negative=correct_negative,
+                        window=window, pad=pad, pad_mode=pad_mode)
+    else:
+        f_alias = reconstruct_surface_from_gradient_FC_method
+        phase = f_alias(x_shifts, y_shifts, correct_negative=correct_negative,
+                        window=window)
+    if return_shift is True and dark_signal is False:
+        return x_shifts, y_shifts, phase
+    elif return_shift is False and dark_signal is True:
+        return phase, trans, dark
+    elif return_shift is True and dark_signal is True:
+        return x_shifts, y_shifts, phase, trans, dark
+    else:
+        return phase
