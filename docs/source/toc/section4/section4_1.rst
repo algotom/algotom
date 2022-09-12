@@ -1,3 +1,5 @@
+.. _section4_1:
+
 Setting up a Python workspace
 =============================
 

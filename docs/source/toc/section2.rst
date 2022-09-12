@@ -1,3 +1,5 @@
+.. _section2:
+
 Features and capabilities
 =========================
 

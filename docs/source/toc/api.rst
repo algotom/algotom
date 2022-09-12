@@ -1,6 +1,8 @@
 API Reference
 =============
 
+.. _input-output:
+
 Input-output
 ------------
 
