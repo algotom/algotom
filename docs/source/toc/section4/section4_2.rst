@@ -136,28 +136,71 @@ Because of that, we have to switch between spaces, i.e. slicing 3D data along di
 cannot be done efficiently if using the tiff format. In such case, users can convert tiff images to
 the hdf format first before processing them with options to add metadata.
 
-        .. code-block:: python
+    .. code-block:: python
 
-            input_folder = "E:/raw_tif/" # Folder with tiff files inside. Note that the names of the
-                                         # tiff files must be corresponding to the increasing order of angles
-            output_file = "E:/convert_hdf/tomo_data.hdf"
-            num_angle = len(losa.file_file(input_folder + "/*tif*"))
-            angles = np.linspace(0.0, 180.0, num_angle)
-            conv.convert_tif_to_hdf(input_folder, output_file, key_path='entry/data',
-                                    crop=(0, 0, 0, 0), pattern=None,
-                                    options={"entry/angles": angles, "entry/energy_keV": 20})
+        input_folder = "E:/raw_tif/" # Folder with tiff files inside. Note that the names of the
+                                     # tiff files must be corresponding to the increasing order of angles
+        output_file = "E:/convert_hdf/tomo_data.hdf"
+        num_angle = len(losa.file_file(input_folder + "/*tif*"))
+        angles = np.linspace(0.0, 180.0, num_angle)
+        conv.convert_tif_to_hdf(input_folder, output_file, key_path='entry/data',
+                                crop=(0, 0, 0, 0), pattern=None,
+                                options={"entry/angles": angles, "entry/energy_keV": 20})
 
 
 In some cases, we may want to load a stack of tiff images and average them such as flat-field images or
 dark-field images. This can be done in different ways
 
-        .. code-block:: python
+    .. code-block:: python
 
-            input_folder = "E:/flat_field/"
-            # 1st way
-            flat_field = np.mean(losa.get_tif_stack(input_folder, idx=None, crop=(0, 0, 0, 0)), axis=0)
-            # 2nd way. The method was written for speckle-tracking tomography but can be used here
-            flat_field = losa.get_image_stack(None, input_folder, average=True, crop=(0, 0, 0, 0))
-            # 3rd way
-            list_file = losa.find_file(input_folder + "/*tif*")
-            flat_field = np.mean(np.asarray([losa.load_image(file) for file in list_file]), axis=0)
+        input_folder = "E:/flat_field/"
+        # 1st way
+        flat_field = np.mean(losa.get_tif_stack(input_folder, idx=None, crop=(0, 0, 0, 0)), axis=0)
+        # 2nd way. The method was written for speckle-tracking tomography but can be used here
+        flat_field = losa.get_image_stack(None, input_folder, average=True, crop=(0, 0, 0, 0))
+        # 3rd way
+        list_file = losa.find_file(input_folder + "/*tif*")
+        flat_field = np.mean(np.asarray([losa.load_image(file) for file in list_file]), axis=0)
+
+
+Mrc files
+---------
+
+`Mrc format <https://www.ccpem.ac.uk/mrc_format/mrc_format.php>`__ is a standard format in electron tomography.
+To load this data, users need to install the `Mrcfile library <https://pypi.org/project/mrcfile/>`__
+
+    .. code-block:: console
+
+        conda install -c conda-forge mrcfile
+
+and check the `documentation page <https://mrcfile.readthedocs.io/en/stable/>`__ to know how to extract
+data and metadata from this format. For large files, we use memory-mapped mode to read only part
+of data needed as shown below.
+
+    .. code-block:: python
+
+        import mrcfile
+        import algotom.io.loadersaver as losa
+
+        mrc = mrcfile.mmap("E:/etomo/tomo.mrc", mode='r+')
+        output_base = "E:/output"
+        (depth, height, width) = mrc.data.shape
+        for i in range(0, depth, 10):
+            name = "0000" + str(i)
+            losa.save_image(output_base + "/img_" + name[-5:] + ".tif", mrc.data[i])
+
+Methods in Algotom assume that the rotation axis of a tomographic data is parallel to the columns of
+an image. Users may need to rotate images loaded from a mrc file because the rotation axis is often
+parallel to image-rows instead.
+
+Other file formats
+------------------
+
+For other file formats such as xrm, txrm, fits, ... users can use the `DXchange library <https://github.com/data-exchange/dxchange>`__
+to load data
+
+    .. code-block:: console
+
+        conda install -c conda-forge dxchange
+
+and refer `the documentation page <http://dxchange.readthedocs.io/>`__ for more details.
