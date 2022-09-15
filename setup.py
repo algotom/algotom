@@ -9,7 +9,7 @@ if python_version == "3.7":
         "numpy>=1.17,<1.21",
         "scipy<=1.7",
         "numba<=0.55.2",
-        "pywavelets",
+        "pywavelets<1.4",
         "pillow",
         "h5py",
         "joblib"]
@@ -18,7 +18,7 @@ else:
         "numpy>=1.18,<1.23",
         "scipy",
         "numba<=0.55.2",
-        "pywavelets",
+        "pywavelets<1.4",
         "pillow",
         "h5py",
         "joblib"]
