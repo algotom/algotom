@@ -133,7 +133,7 @@ and less troublesome for beginners.
             :width: 100 %
             :align: center
 
-**4. Write and run codes interactively using Jupyter notebook (optional)**
+**4. Write and run codes interactively using Jupyter Notebook (optional)**
 
     Using Python scripts is efficient and practical for processing multiple datasets.
     However, if users want to work with data interactively to define a workflow,
@@ -147,6 +147,8 @@ and less troublesome for beginners.
             conda install -c conda-forge jupyter
 
     Run the following command to enable the current environment in notebook
+    (only need for the first time setup). Note to change the name of the environment if
+    users use a different name.
 
         .. code-block:: console
 
@@ -171,3 +173,34 @@ and less troublesome for beginners.
             :name: fig_4_1_5
             :width: 100 %
             :align: center
+
+    Note that the working folder (drive) of the notebook is where we run the command *jupyter notebook* from.
+    If users want to work at a different drive, e.g. D:, they must navigate to that drive before running the notebook.
+    (FYI, Press Ctrl+C to terminate a current running notebook from the Powershell Prompt)
+
+        .. code-block:: console
+
+            cd D:
+            jupyter notebook
+
+**For who would like to use JupyterLab instead of Jupyter Notebook**
+
+    Similar as above but for JupyterLab
+
+        .. code-block:: console
+
+            conda install -c conda-forge jupyterlab
+
+    Run the following command only for the first time setup. Note to change the name of the environment if
+    users use a different name.
+
+        .. code-block:: console
+
+            ipython kernel install --user --name="myspace"
+
+    Then run JupyterLab by
+
+        .. code-block:: console
+
+            jupyter lab
+
