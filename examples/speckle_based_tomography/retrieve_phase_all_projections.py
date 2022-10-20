@@ -92,12 +92,12 @@ if align:
     # This needs to be changed for each experiment.
     list_ij = [np.random.randint(71, 700, size=20),
                np.random.randint(71, 150, size=20)]
-    sr_shifts = f_alias2(ref_stack, sam_stack, 21, 20, gpu=True, list_ij=list_ij)
+    sr_shifts = f_alias2(ref_stack, sam_stack, 21, 20, gpu=False, list_ij=list_ij)
     print("Speckle-sample shifts: ")
     print(sr_shifts)
 
     # Align samples projections at the same rotation angle if need to.
-    sam_shifts = -sr_shifts
+    sam_shifts = None
     # Select a ROI to find the shifts between projections at the same angle
     # compared to the projection of the first dataset.
     # The ROI is pretty large (851 x 851) to detect global shifts. In such case

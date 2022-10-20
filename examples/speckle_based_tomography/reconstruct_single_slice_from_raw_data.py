@@ -99,7 +99,7 @@ if align:
     # This needs to be changed for each experiment.
     list_ij = [np.random.randint(71, 700, size=20),
                np.random.randint(71, 150, size=20)]
-    sr_shifts = f_alias2(ref_stack, sam_stack, 21, 20, gpu=True, list_ij=list_ij)
+    sr_shifts = f_alias2(ref_stack, sam_stack, 21, 20, gpu=False, list_ij=list_ij)
     print("Speckle-sample shifts: ")
     print(sr_shifts)
 
