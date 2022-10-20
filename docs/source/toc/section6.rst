@@ -20,3 +20,7 @@ Update notes
 - 27/06/2022:
 
 	+ Publish https://algotom.github.io/
+
+- 20/10/2022:
+
+    + Publish implementation of the UMPA method.

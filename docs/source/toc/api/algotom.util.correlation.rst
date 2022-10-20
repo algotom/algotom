@@ -16,3 +16,4 @@
     find_shift_based_correlation_map
     find_local_shifts
     find_global_shift_based_local_shifts
+    find_local_shifts_umpa
