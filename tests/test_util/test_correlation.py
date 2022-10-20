@@ -27,6 +27,7 @@ Tests for the methods in util/correlation.py
 
 import unittest
 import numpy as np
+from numba import cuda
 import scipy.ndimage as ndi
 import algotom.util.correlation as corl
 
@@ -149,6 +150,7 @@ class UtilityMethods(unittest.TestCase):
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
         check1 = True if (num1 < 0.1 and num2 < 0.1) else False
+
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
                                      dim=1, win_size=5, margin=margin,
                                      method="poly_fit", size=3, gpu=False,
@@ -157,6 +159,7 @@ class UtilityMethods(unittest.TestCase):
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
         check2 = True if (num1 < 0.1 and num2 < 0.1) else False
+
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
                                      dim=2, win_size=5, margin=margin,
                                      method="diff", size=3, gpu=False,
@@ -165,6 +168,7 @@ class UtilityMethods(unittest.TestCase):
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
         check3 = True if (num1 < 0.1 and num2 < 0.1) else False
+
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
                                      dim=2, win_size=5, margin=margin,
                                      method="poly_fit", size=3, gpu=False,
@@ -182,6 +186,7 @@ class UtilityMethods(unittest.TestCase):
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
         check5 = True if (num1 < 0.1 and num2 < 0.1) else False
+
         x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
                                      dim=2, win_size=5, margin=margin,
                                      method="poly_fit", size=3, gpu=False,
@@ -225,3 +230,54 @@ class UtilityMethods(unittest.TestCase):
         check3 = True if (num1 < 0.05 and num2 < 0.05 \
                           and len(x_shifts) == 3) else False
         self.assertTrue(check1 and check2 and check3)
+
+    def test_find_local_shifts_umpa(self):
+        f_alias = corl.find_local_shifts_umpa
+        margin = 5
+        edge = margin + 2
+        x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                     win_size=5, margin=margin,
+                                     method="diff", size=3, gpu=False,
+                                     block=(16, 16), ncore=None,
+                                     chunk_size=None, filter_name="hamming",
+                                     dark_signal=False)
+        num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+        num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+        check1 = True if (num1 < 0.1 and num2 < 0.1) else False
+
+        x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                     win_size=5, margin=margin,
+                                     method="diff", size=3, gpu=False,
+                                     block=(16, 16), ncore=None,
+                                     chunk_size=None, filter_name=None,
+                                     dark_signal=False)
+        num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+        num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+        check2 = True if (num1 < 0.1 and num2 < 0.1) else False
+        check3, check4 = True, True
+        if cuda.is_available() is True:
+            x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                         win_size=5, margin=margin,
+                                         method="diff", size=3, gpu=True,
+                                         block=(16, 16), ncore=None,
+                                         chunk_size=None,
+                                         filter_name="hamming",
+                                         dark_signal=False)
+            num1 = np.abs(
+                np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+            num2 = np.abs(
+                np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+            check3 = True if (num1 < 0.1 and num2 < 0.1) else False
+
+            x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                         win_size=5, margin=margin,
+                                         method="diff", size=3, gpu=True,
+                                         block=(16, 16), ncore=None,
+                                         chunk_size=None, filter_name=None,
+                                         dark_signal=False)
+            num1 = np.abs(
+                np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+            num2 = np.abs(
+                np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+            check4 = True if (num1 < 0.1 and num2 < 0.1) else False
+        self.assertTrue(check1 and check2 and check3 and check4)
