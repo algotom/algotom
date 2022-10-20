@@ -3,17 +3,14 @@
 
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
 
-**Algotom** is a Python package implementing methods for processing tomographic
-data acquired by non-standard scanning techniques such as grid scans, helical 
-scans, half-acquisition scans, or their combinations. Certainly, Algotom can 
-also be used for standard scans. The software includes methods in a full 
-pipeline of data processing: reading-writing data, pre-processing, tomographic 
-reconstruction, post-processing, and data simulation. Many utility methods are 
-provided to help users quickly develop prototype-methods or build a pipeline for
-processing their own data. From version 1.1, methods for speckle-based phase-contrast
-tomography were added to the package.
+**Algotom** is a Python package implementing data processing methods for 
+tomography. It has methods in a full pipeline of data processing: reading-writing data, 
+pre-processing, tomographic reconstruction, post-processing, and data simulation. 
+Many utility methods are provided to help users quickly develop prototype-methods 
+or build a pipeline for processing their own data. From version 1.1, methods for 
+speckle-based phase-contrast tomography were added to the package.
 
-The software is made available for the paper; *"Data processing methods and data 
+The software was published for the paper; *"Data processing methods and data 
 acquisition for samples larger than the field of view in parallel-beam tomography,"*
 Nghia T. Vo, Robert C. Atwood, Michael Drakopoulos, and Thomas Connolley, Opt. 
 Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448.      
@@ -74,6 +71,7 @@ Update notes
   + Add methods for image alignment.
   + Release version 1.1.
 - 27/06/2022: Publish https://algotom.github.io
+- 20/10/2022: Publish implementation of the UMPA method.
 
 Author
 ------
