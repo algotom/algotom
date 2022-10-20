@@ -756,7 +756,7 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
                                        ncore=None):
     """
     Get the transmission-signal image and dark-signal image from two stacks of
-    speckle-images and sample-images.
+    speckle-images and sample-images for correlation-based methods.
 
     Parameters
     ----------
