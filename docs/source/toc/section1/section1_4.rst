@@ -179,7 +179,7 @@ in Algotom
 Ring artifact removal
 ---------------------
 
-Causes of ring artifacts and methods for removing them have been documented in detailed
+Causes of ring artifacts and methods for removing them :cite:`Vo:2018` have been documented in detailed
 `here <https://sarepy.readthedocs.io/>`__. There are many methods to choose from
 in Algotom. However the `combination of methods <https://doi.org/10.1364/OE.26.028396>`__
 has been proven to be the most effective way to clean most of ring artifact types.
@@ -204,7 +204,7 @@ Center-of-rotation determination
 --------------------------------
 
 There are `a few methods <https://algotom.readthedocs.io/en/latest/api/algotom.prep.calculation.html>`__
-to determine the center-of-rotation. The demonstrated method below uses a 180-degree
+to determine the center-of-rotation. The demonstrated method :cite:`Vo:2014` below uses a 180-degree
 sinogram for calculation.
 
 	.. code-block:: python
@@ -304,7 +304,7 @@ If a detecting system suffers from the lens-distortion problem, the working
 routine is as follows:
 
 - Acquire a `grid-pattern image <https://discorpy.readthedocs.io/en/latest/tutorials/methods.html#extracting-reference-points-from-a-calibration-image>`__.
-- Calculate distortion coefficients using the `Discorpy package <https://discorpy.readthedocs.io/en/latest/usage/demo_01.html>`__. The output is a text file.
+- Calculate distortion coefficients :cite:`Vo:2015` using the `Discorpy package <https://discorpy.readthedocs.io/en/latest/usage/demo_01.html>`__. The output is a text file.
 - Use the calculated coefficients for correction.
 
 	.. code-block:: python
@@ -370,7 +370,7 @@ converted to an equivalent 180-degree sinogram by stitching two halves of
 the 360-degree sinogram, before reconstruction. For stitching, we need to know
 either the center-of-rotation, or the overlap-area and overlap-side between
 two halves of the sinogram. Algotom provides `methods <https://algotom.readthedocs.io/en/latest/api/algotom.prep.calculation.html#algotom.prep.calculation.find_center_360>`__
-for automatically finding these parameters.
+:cite:`Vo:21` for automatically finding these parameters.
 
 	.. code-block:: python
 		:emphasize-lines: 31
