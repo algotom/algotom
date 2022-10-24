@@ -524,7 +524,7 @@ def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):
     v : int
         Number of rows (* 2) to be applied the filter.
     sort : bool, optional
-        Apply sorting (Ref. [2]_) if True.
+        Apply sorting (Ref. [2]) if True.
 
     Returns
     -------
@@ -533,8 +533,8 @@ def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):
 
     References
     ----------
-    .. [1] https://doi.org/10.1063/1.1149043
-    .. [2] https://doi.org/10.1364/OE.26.028396
+    [1] : https://doi.org/10.1063/1.1149043
+    [2] : https://doi.org/10.1364/OE.26.028396
     """
     (nrow, ncol) = mat.shape
     if nrow != ncol:
@@ -553,7 +553,7 @@ def remove_ring_based_wavelet_fft(mat, level=5, size=1, wavelet_name="db9",
                                   sort=False):
     """
     Remove ring artifacts in a reconstructed image by combining the polar
-    transform and the wavelet-fft-based method (Ref. [1]_).
+    transform and the wavelet-fft-based method (Ref. [1]).
 
     Parameters
     ----------
@@ -566,7 +566,7 @@ def remove_ring_based_wavelet_fft(mat, level=5, size=1, wavelet_name="db9",
     wavelet_name : str
         Name of a wavelet. Search pywavelets API for a full list.
     sort : bool, optional
-        Apply sorting (Ref. [2]_) if True.
+        Apply sorting (Ref. [2]) if True.
 
     Returns
     -------
@@ -575,8 +575,8 @@ def remove_ring_based_wavelet_fft(mat, level=5, size=1, wavelet_name="db9",
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.17.008567
-    .. [2] https://doi.org/10.1364/OE.26.028396
+    [1] : https://doi.org/10.1364/OE.17.008567
+    [2] : https://doi.org/10.1364/OE.26.028396
     """
     (nrow, ncol) = mat.shape
     if nrow != ncol:

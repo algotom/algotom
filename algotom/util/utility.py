@@ -319,7 +319,7 @@ def generate_fitted_image(mat, order, axis=0, num_chunk=1):
 
 def detect_stripe(list_data, snr):
     """
-    Locate stripe positions using Algorithm 4 in Ref. [1]_
+    Locate stripe positions using Algorithm 4 in Ref. [1]
 
     Parameters
     ----------
@@ -335,7 +335,7 @@ def detect_stripe(list_data, snr):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.26.028396
+    [1] : https://doi.org/10.1364/OE.26.028396
     """
     npoint = len(list_data)
     list_sort = np.sort(list_data)
@@ -364,7 +364,7 @@ def detect_stripe(list_data, snr):
 def calculate_regularization_coefficient(width, alpha):
     """
     Calculate coefficients used for the regularization-based method.
-    Eq. (7) in Ref. [1]_.
+    Eq. (7) in Ref. [1].
 
     Parameters
     ----------
@@ -380,7 +380,7 @@ def calculate_regularization_coefficient(width, alpha):
 
     References
     ----------
-    .. [1] https://doi.org/10.1016/j.aml.2010.08.022
+    [1] : https://doi.org/10.1016/j.aml.2010.08.022
     """
     tau = 2.0 * np.arcsinh(np.sqrt(alpha) * 0.5)
     ilist = np.arange(0, width)
@@ -859,7 +859,7 @@ def apply_1d_regularizer(list_data, sijmat):
 
 def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
     """
-    Apply a regularization filter using the method in Ref. [1]_.
+    Apply a regularization filter using the method in Ref. [1].
     Note that it's computationally costly.
 
     Parameters
@@ -880,7 +880,7 @@ def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
 
     References
     ----------
-    .. [1] https://doi.org/10.1016/j.aml.2010.08.022
+    [1] : https://doi.org/10.1016/j.aml.2010.08.022
     """
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
@@ -933,7 +933,7 @@ def transform_1d_window_to_2d(win_1d):
 def detect_sample(sinogram, sino_type="180"):
     """
     To check if there is a sample in a sinogram using the "double-wedge"
-    property of the Fourier transform of the sinogram (Ref. [1]_).
+    property of the Fourier transform of the sinogram (Ref. [1]).
 
     Parameters
     ----------
@@ -949,7 +949,7 @@ def detect_sample(sinogram, sino_type="180"):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
 
     """
     check = True
