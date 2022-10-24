@@ -16,20 +16,21 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:
-# Description: Python implementations of phase-imaging-related techniques.
+# Description: Python module of phase-imaging-related techniques.
 # Contributors:
 # ============================================================================
 
 """
 Module for phase contrast imaging:
-    - Unwrap phase images.
-    - Generate a quality map, weight mask.
-    - Methods for speckle-based phase-contrast imaging.
-        + Find shifts between two stacks of images.
-        + Find shifts between sample-images.
-        + Align between two stacks of images.
-        + Retrieve phase image.
-        + Generate transmission-signal and dark-signal images.
+
+    -   Unwrap phase images.
+    -   Generate a quality map, weight mask.
+    -   Methods for speckle-based phase-contrast imaging.
+            +   Find shifts between two stacks of images.
+            +   Find shifts between sample-images.
+            +   Align between two stacks of images.
+            +   Retrieve phase image.
+            +   Generate transmission-signal and dark-signal images.
 """
 
 import multiprocessing as mp
@@ -739,7 +740,7 @@ def _get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
                 for k in range(num_image):
                     mat1 = ref_stack[k, i - radi:i + radi1, j - radi:j + radi1]
                     mat2 = sam_stack[k, i1 - radi:i1 + radi1,
-                           j1 - radi:j1 + radi1]
+                                     j1 - radi:j1 + radi1]
                     (val1, val2) = f_alias(mat1, mat2)
                     list1.append(val1)
                     list2.append(val2)

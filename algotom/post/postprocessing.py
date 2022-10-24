@@ -16,17 +16,18 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python implementations of postprocessing techniques.
+# Description: Python module for postprocessing techniques.
 # Contributors:
 # ============================================================================
 
 """
 Module of methods in the postprocessing stage:
-    - Get statistical information of reconstructed images or a dataset.
-    - Downsample 2D, 3D array, or a dataset.
-    - Rescale 2D, 3D array or a dataset to 8-bit or 16-bit data-type.
-    - Removing ring artifacts in a reconstructed image by transform back and
-      forth between the polar coordinates and the Cartesian coordinates.
+
+    -   Get statistical information of reconstructed images or a dataset.
+    -   Downsample 2D, 3D array, or a dataset.
+    -   Rescale 2D, 3D array or a dataset to 8-bit or 16-bit data-type.
+    -   Removing ring artifacts in a reconstructed image by transform back and
+        forth between the polar coordinates and the Cartesian coordinates.
 """
 
 import os
@@ -37,9 +38,9 @@ import algotom.io.loadersaver as losa
 import algotom.prep.removal as remo
 
 
-def get_statical_information(mat, percentile=(1, 99), denoise=False):
+def get_statistical_information(mat, percentile=(1, 99), denoise=False):
     """
-    Get statical information of an image.
+    Get statistical information of an image.
 
     Parameters
     ----------
@@ -80,8 +81,8 @@ def get_statical_information(mat, percentile=(1, 99), denoise=False):
     return gmin, gmax, min_percent, max_percent, mean, median, variance
 
 
-def get_statical_information_dataset(input_, percentile=(1, 99), skip=5,
-                                     denoise=False, key_path=None):
+def get_statistical_information_dataset(input_, percentile=(1, 99), skip=5,
+                                        denoise=False, key_path=None):
     """
     Get statical information of a dataset. This can be a folder of tif files,
     a hdf file, or a 3D array.
@@ -127,7 +128,8 @@ def get_statical_information_dataset(input_, percentile=(1, 99), skip=5,
             mat = losa.load_image(list_file[i])
             if denoise is True:
                 mat = gaussian_filter(mat, 2)
-            list_stat.append(get_statical_information(mat, percentile, denoise))
+            list_stat.append(get_statistical_information(mat, percentile,
+                                                         denoise))
     else:
         if isinstance(input_, str):
             file_ext = os.path.splitext(input_)[-1]
@@ -145,7 +147,8 @@ def get_statical_information_dataset(input_, percentile=(1, 99), skip=5,
             mat = input_[i]
             if denoise is True:
                 mat = gaussian_filter(mat, 2)
-            list_stat.append(get_statical_information(mat, percentile, denoise))
+            list_stat.append(get_statistical_information(mat, percentile,
+                                                         denoise))
     list_stat = np.asarray(list_stat)
     gmin = np.min(list_stat[:, 0])
     gmax = np.max(list_stat[:, 1])
@@ -195,7 +198,8 @@ def downsample(mat, cell_size, method="mean"):
     return mat_dsp
 
 
-def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
+def downsample_dataset(input_, output, cell_size, method="mean",
+                       key_path=None):
     """
     Downsample a dataset. This can be a folder of tif files, a hdf file,
     or a 3D array.
@@ -267,7 +271,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                         mat.append(losa.load_image(list_file[j]))
                     mat = np.asarray(mat)
                     mat = mat[:, :height_dsp * cell_size[1],
-                              :width_dsp * cell_size[2]]
+                          :width_dsp * cell_size[2]]
                     mat = mat.reshape(1, cell_size[0], height_dsp,
                                       cell_size[1], width_dsp, cell_size[2])
                     mat_dsp = dsp_method(
@@ -303,8 +307,8 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
         if (depth_dsp != 0) and (height_dsp != 0) and (width_dsp != 0):
             if output is None:
                 input_ = input_[:depth_dsp * cell_size[0],
-                                :height_dsp * cell_size[1],
-                                :width_dsp * cell_size[2]]
+                         :height_dsp * cell_size[1],
+                         :width_dsp * cell_size[2]]
                 input_ = input_.reshape(
                     depth_dsp, cell_size[0], height_dsp, cell_size[1],
                     width_dsp, cell_size[2])
@@ -328,10 +332,11 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None):
                         break
                     else:
                         mat = input_[i:i + cell_size[0],
-                                     :height_dsp * cell_size[1],
-                                     :width_dsp * cell_size[2]]
+                              :height_dsp * cell_size[1],
+                              :width_dsp * cell_size[2]]
                         mat = mat.reshape(1, cell_size[0], height_dsp,
-                                          cell_size[1], width_dsp, cell_size[2])
+                                          cell_size[1], width_dsp,
+                                          cell_size[2])
                         mat_dsp = dsp_method(dsp_method(
                             dsp_method(mat, axis=-1), axis=1), axis=2)
                         if file_ext != "":
@@ -396,7 +401,7 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         Minimum and maximum values used for rescaling. They are calculated if
         None is given.
     skip : int or None
-        Skipping step of reading input used for getting statistical information.
+        Skipping step of images used for getting statistical information.
     key_path : str, optional
         Key path to the dataset if the input is the hdf file.
 
@@ -419,8 +424,8 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         if minmax is None:
             if skip is None:
                 skip = int(np.ceil(0.15 * depth))
-            (gmin, gmax) = get_statical_information_dataset(input_, skip=skip)[
-                           0:2]
+            (gmin, gmax) = get_statistical_information_dataset(input_,
+                                                               skip=skip)[0:2]
         else:
             (gmin, gmax) = minmax
         if output is not None:
@@ -468,8 +473,8 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         if minmax is None:
             if skip is None:
                 skip = int(np.ceil(0.15 * depth))
-            f_alias = get_statical_information_dataset
-            (gmin, gmax) = f_alias(input_,skip=skip,key_path=key_path)[0:2]
+            f_alias = get_statistical_information_dataset
+            (gmin, gmax) = f_alias(input_, skip=skip, key_path=key_path)[0:2]
         else:
             (gmin, gmax) = minmax
         data_res = []

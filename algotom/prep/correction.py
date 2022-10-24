@@ -16,18 +16,19 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python implementations of preprocessing techniques.
+# Description: Python module of correction techniques.
 # Contributors:
 # ============================================================================
 
 """
 Module of correction methods in the preprocessing stage:
-    - Flat-field correction.
-    - Distortion correction.
-    - MTF deconvolution.
-    - Tilted sinogram generation.
-    - Tilted 1D intensity-profile generation.
-    - Beam hardening correction.
+
+    -   Flat-field correction.
+    -   Distortion correction.
+    -   MTF deconvolution.
+    -   Tilted sinogram generation.
+    -   Tilted 1D intensity-profile generation.
+    -   Beam hardening correction.
 """
 
 import numpy as np
@@ -41,8 +42,8 @@ import algotom.util.utility as util
 def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
                           **options):
     """
-    Do flat-field correction with options to remove zinger arifacts and/or
-    stripe artifacts.
+    Perform flat-field correction with options to remove zinger artifacts
+    and/or stripe artifacts.
 
     Parameters
     ----------
@@ -56,7 +57,7 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
         Ratio between exposure time used for recording projections
         and exposure time used for recording flat field.
     use_dark : bool
-        Subtracting dark field if True. May no need in some cases.
+        Subtracting dark field if True.
     options : dict, optional
         Apply a zinger removal method and/or ring removal methods.
         E.g option1={"method": "dezinger", "para1": 0.001, "para2": 1},
@@ -70,16 +71,16 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     """
     flat = ratio * flat
     if use_dark:
-        flatdark = flat - dark
+        flat_dark = flat - dark
         try:
-            proj_corr = (np.float32(proj) - dark) / flatdark
+            proj_corr = (np.float32(proj) - dark) / flat_dark
         except ZeroDivisionError:
-            nmean = np.mean(flatdark)
+            nmean = np.mean(flat_dark)
             if nmean != 0.0:
-                flatdark[flatdark == 0.0] = nmean
+                flat_dark[flat_dark == 0.0] = nmean
             else:
-                flatdark[flatdark == 0.0] = 1
-            proj_corr = (np.float32(proj) - dark) / flatdark
+                flat_dark[flat_dark == 0.0] = 1
+            proj_corr = (np.float32(proj) - dark) / flat_dark
     else:
         try:
             proj_corr = np.float32(proj) / flat
@@ -99,12 +100,14 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
                     list_para = tuple(opt.values())[1:]
                     if proj_corr.ndim == 2:
                         if method in dir(remo):
-                            proj_corr = getattr(remo, method)(proj_corr, *list_para)
+                            proj_corr = getattr(remo, method)(proj_corr,
+                                                              *list_para)
                         elif method in dir(filt):
-                            proj_corr = getattr(filt, method)(proj_corr, *list_para)
+                            proj_corr = getattr(filt, method)(proj_corr,
+                                                              *list_para)
                         else:
-                            raise ValueError("Can't find the method: '{}' in the"
-                                             " namespace".format(method))
+                            raise ValueError("Can't find the method: '{}' in"
+                                             " the namespace".format(method))
                     else:
                         for i in np.arange(proj_corr.shape[1]):
                             if method in dir(remo):
@@ -114,8 +117,9 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
                                 proj_corr[:, i, :] = getattr(filt, method)(
                                     proj_corr[:, i, :], *list_para)
                             else:
-                                raise ValueError("Can't find the method: '{}' in "
-                                                 "the namespace".format(method))
+                                raise ValueError("Can't find the method: '{}'"
+                                                 " in the namespace"
+                                                 "".format(method))
                 else:
                     raise ValueError("Incorrect option: {}".format(opt))
     return proj_corr
@@ -284,7 +288,7 @@ def unwarp_sinogram_chunk(data, start_index, stop_index, xcenter, ycenter,
 
 def mtf_deconvolution(mat, window, pad):
     """
-    Deconvolve an projection image using division in the Fourier domain.
+    Deconvolve a projection-image using division in the Fourier domain.
     Window can be determined using the approach in Ref. [1]_.
 
     Parameters
@@ -557,8 +561,8 @@ def beam_hardening_correction(mat, q, n, opt=True):
         Corrected image.
     """
     if np.max(mat) >= 2.0:
-        raise ValueError("!!! Input image must be normalized, i.e. gray-scales "
-                         "are in the range of [0.0, 1.0]) !!!")
+        raise ValueError("Input image must be normalized, i.e. gray-scales"
+                         " are in the range of [0.0, 1.0]) !!!")
     if n < 2.0:
         raise ValueError("!!! n must be larger than or equal to 2 !!!")
     return np.asarray([non_linear_function(x, q, n, opt) for x in mat])

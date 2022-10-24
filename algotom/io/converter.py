@@ -16,14 +16,15 @@
 # ===========================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python codes for converting data format.
+# Description: Python module for converting data format.
 # Contributors:
 # ===========================================================================
 
 """
 Module for converting data type:
-    - Convert a list of tif files to a hdf/nxs file.
-    - Extract tif images from a hdf/nxs file.
+
+    -   Convert a list of tif files to a hdf/nxs file.
+    -   Extract tif images from a hdf/nxs file.
 """
 
 import os
@@ -50,7 +51,7 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
     pattern : str, optional
         Used to find tif files with names matching the pattern.
     options : dict, optional
-        Add metadata. E.g. options={"entry/angles": angles, "entry/energy": 53}.
+        Add metadata. E.g options={"entry/angles": angles, "entry/energy": 53}.
 
     Returns
     -------

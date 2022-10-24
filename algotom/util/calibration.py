@@ -22,10 +22,11 @@
 
 """
 Module of calibration methods:
-    - Correcting the non-uniform background of an image.
-    - Binarizing an image.
-    - Calculating the distance between two point-like objects segmented from
-      two images. Useful for determining pixel-size in helical scans.
+
+    -   Correcting the non-uniform background of an image.
+    -   Binarizing an image.
+    -   Calculating the distance between two point-like objects segmented from
+        two images. Useful for determining pixel-size in helical scans.
 """
 
 import numpy as np
@@ -86,13 +87,13 @@ def normalize_background_based_fft(mat, sigma=5, pad=None, mode="reflect"):
     (height, width) = mat.shape
     if height <= width:
         ratio = 1.0 * height / width
-        sigmax = int(np.ceil(sigma / ratio))
-        sigmay = sigma
+        sigma_x = int(np.ceil(sigma / ratio))
+        sigma_y = sigma
     else:
         ratio = 1.0 * width / height
-        sigmay = int(np.ceil(sigma / ratio))
-        sigmax = sigma
-    mat_bck = util.apply_gaussian_filter(mat, sigmax, sigmay,
+        sigma_y = int(np.ceil(sigma / ratio))
+        sigma_x = sigma
+    mat_bck = util.apply_gaussian_filter(mat, sigma_x, sigma_y,
                                          pad=pad, mode=mode)
     mean_val = np.mean(mat_bck)
     try:
@@ -292,8 +293,8 @@ def select_dot_based_size(mat, dot_size, ratio=0.01):
     return mat1
 
 
-def calculate_distance(mat1, mat2, size_opt="max", threshold=None, bgr='bright',
-                       norm=False, denoise=True, invert=True):
+def calculate_distance(mat1, mat2, size_opt="max", threshold=None,
+                       bgr='bright', norm=False, denoise=True, invert=True):
     """
     Calculate the distance between two point-like objects segmented from
     two images. Useful for measuring pixel-size in helical scans (Ref. [1]_).

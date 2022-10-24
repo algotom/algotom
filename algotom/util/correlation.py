@@ -16,7 +16,7 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:
-# Description: Python implementations of correlation-related methods.
+# Description: Python module of correlation-related methods.
 # Publication date: 20th June 2022
 # Contributors:
 # ============================================================================
@@ -24,10 +24,11 @@
 """
 Module of correlation-based methods for finding shifts between images or
 stacks of images. The methods are designed to be flexible to:
-    - Run on multicore CPU or GPU.
-    - Use small/large RAM or small/large GPU memory.
-    - Work with small/large size of data.
-    - Find shifts locally or globally.
+
+    -   Run on multicore CPU or GPU.
+    -   Use small/large RAM or small/large GPU memory.
+    -   Work with small/large size of data.
+    -   Find shifts locally or globally.
 """
 
 import math
@@ -847,8 +848,8 @@ def _get_1d_shift_single_row_2d_input(ref_mat, mat, win_size=7, margin=10,
     sub_pixel : bool, optional
         Enable sub-pixel location.
     method : {"diff", "poly_fit"}
-        Method for finding 1d sub-pixel position. Two options: a difference-
-        based method or a polynomial method.
+        Method for finding 1d sub-pixel position. Two options: a
+        differential method or a polynomial method.
     size : int
         Window size around the integer location of the maximum value used for
         sub-pixel searching.
@@ -1886,7 +1887,7 @@ def _get_2d_shift_multi_rows_2d_input_kernel(shifts, ref_mat, mat, coef_4d,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[i - radi_ref:i + radi_ref + 1,
-                   j - radi_ref: j + radi_ref + 1]
+                           j - radi_ref: j + radi_ref + 1]
         mat1 = mat[i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = coef_4d[y_index, x_index, :, :]
         coef_mat1 = __gen_2d_corr_map_2d_input(ref_mat1, mat1, coef_mat1)
@@ -2075,7 +2076,7 @@ def _get_2d_shift_multi_rows_3d_input_kernel(shifts, ref_mat, mat, coef_4d,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref + 1,
-                   j - radi_ref: j + radi_ref + 1]
+                           j - radi_ref: j + radi_ref + 1]
         mat1 = mat[:, i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = coef_4d[y_index, x_index, :, :]
         coef_mat1 = __gen_2d_corr_map_3d_input(ref_mat1, mat1, coef_mat1)
@@ -2120,9 +2121,10 @@ def _get_2d_shift_multi_rows_3d_input_gpu(ref_mat, mat, win_size=7, margin=10,
     -------
     list of two 2d-arrays
         x-shift array and y-shift array, corresponding to the pixel-locations
-        in the 2nd image where the starting location is at (margin + win_size/2,
-        margin + win_size/2). Using the pad option to make it easier to find
-        which value corresponding to which pixel-location.
+        in the 2nd image where the starting location is at
+        (margin + win_size/2, margin + win_size/2). Using the pad option to
+        make it easier to find which value corresponding to
+        which pixel-location.
     """
     if ref_mat.shape != mat.shape:
         raise ValueError("Data shape must be the same !!!")
@@ -2268,7 +2270,7 @@ def _generate_4d_correlation_map_3d_input_kernel(coef_4d, ref_mat, mat, height,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref + 1,
-                   j - radi_ref: j + radi_ref + 1]
+                           j - radi_ref: j + radi_ref + 1]
         mat1 = mat[:, i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = coef_4d[y_index, x_index, :, :]
         coef_mat1 = __gen_2d_corr_map_3d_input(ref_mat1, mat1, coef_mat1)
@@ -2321,9 +2323,10 @@ def _get_2d_shift_multi_rows_3d_input_cpu_gpu(ref_mat, mat, win_size=7,
     -------
     list of two 2d-arrays
         x-shift array and y-shift array, corresponding to the pixel-locations
-        in the 2nd image where the starting location is at (margin + win_size/2,
-        margin + win_size/2). Using the pad option to make it easier to find
-        which value corresponding to which pixel-location.
+        in the 2nd image where the starting location is at
+        (margin + win_size/2, margin + win_size/2). Using the pad option to
+        make it easier to find which value corresponding to
+        which pixel-location.
 
     References
     ----------
@@ -2728,9 +2731,9 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
         shifts = np.asarray(Parallel(n_jobs=ncore)(
             delayed(f_alias)(
                 ref_mat[list_i[k] - start:list_i[k] + start1,
-                list_j[k] - start:list_j[k] + start1],
+                        list_j[k] - start:list_j[k] + start1],
                 mat[list_i[k] - radi:list_i[k] + radi1,
-                list_j[k] - radi:list_j[k] + radi1],
+                    list_j[k] - radi:list_j[k] + radi1],
                 margin, None, sub_pixel, method, 2, size, False, None)
             for k in range(num_point)))
     x_shifts, y_shifts = shifts[:, 0], shifts[:, 1]
@@ -2797,7 +2800,7 @@ def _get_local_shifts_gpu_kernel(shifts, ref_mat, mat, list_i, list_j,
         i = list_i[idx]
         j = list_j[idx]
         ref_mat1 = ref_mat[i - radi_ref:i + radi_ref + 1,
-                   j - radi_ref: j + radi_ref + 1]
+                           j - radi_ref: j + radi_ref + 1]
         mat1 = mat[i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = list_2d_coef[idx, :, :]
         coef_mat1 = __gen_2d_corr_map_2d_input(ref_mat1, mat1, coef_mat1)
@@ -3047,8 +3050,8 @@ def __get_2d_shift_multi_rows_3d_input_umpa_cpu(ref_mat, mat, win_size, margin,
                 L1[i, j], L3[i - margin:i + margin1, j - margin:j + margin1],
                 L2, L4[i, j],
                 L6[i - margin:i + margin1, j - margin:j + margin1],
-                dark_signal, method=method, size=size) \
-                                   for i in range(start, stop_row) \
+                dark_signal, method=method, size=size)
+                                   for i in range(start, stop_row)
                                    for j in range(start, stop_col)))
         results = np.reshape(np.asarray(results),
                              (stop_row - start, stop_col - start, 4))
@@ -3060,8 +3063,8 @@ def __get_2d_shift_multi_rows_3d_input_umpa_cpu(ref_mat, mat, win_size, margin,
                 ref_mat[:, i - start:i + start1, j - start:j + start1],
                 mat[:, i - radi:i + radi1, j - radi:j + radi1], window, margin,
                 L1[i, j], L3[i - margin:i + margin1, j - margin:j + margin1],
-                0.0, 0.0, 0.0, dark_signal, method=method, size=size) \
-                                   for i in range(start, stop_row) \
+                0.0, 0.0, 0.0, dark_signal, method=method, size=size)
+                                   for i in range(start, stop_row)
                                    for j in range(start, stop_col)))
         results = np.reshape(np.asarray(results),
                              (stop_row - start, stop_col - start, 2))
@@ -3151,7 +3154,7 @@ def __calc_shift_umpa_gpu_kernel(shifts, trans, dark, ref_mat, mat, coef_4d,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref1,
-                   j - radi_ref: j + radi_ref1]
+                           j - radi_ref: j + radi_ref1]
         mat1 = mat[:, i - radi:i + radi1, j - radi: j + radi1]
         A = A0[y_index, x_index, :, :]
         V = V0[y_index, x_index, :, :]

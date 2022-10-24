@@ -16,15 +16,16 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python implementations of preprocessing techniques.
+# Description: Python module of filtering techniques.
 # Contributors:
 # ============================================================================
 
 """
 Module of filtering methods in the preprocessing stage:
-    - Fresnel filter (denoising or low-pass filter), a simplified version of
-      the well-known Paganin's filter.
-    - Double-wedge filter.
+
+    -   Fresnel filter (denoising or low-pass filter), a simplified version of
+        the well-known Paganin's filter.
+    -   Double-wedge filter.
 """
 
 import numpy as np
@@ -99,7 +100,7 @@ def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
     References
     ----------
     .. [1] https://doi.org/10.1364/OE.418448
-    .. [2] https://www.researchgate.net/profile/Nghia-T-Vo/publication/351559034_Data_processing_methods_and_data_acquisition_for_samples_larger_than_the_field_of_view_in_parallel-beam_tomography_selected_replies_to_technical_questions_from_reviewers/data/609d2c69a6fdcc9aa7e697ea/Selected-replies-to-technical-questions-from-reviewers.pdf
+    .. [2] https://tinyurl.com/2f8nv875
     """
     if apply_log:
         mat = -np.log(mat)

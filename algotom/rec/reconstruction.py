@@ -16,16 +16,18 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python implementations of FFT-based reconstruction methods
+# Description: Python module of reconstruction methods
 # Contributors:
 # ============================================================================
 
 """
 Module of FFT-based reconstruction methods in the reconstruction stage:
-    - Filtered back-projection (FBP) method for GPU (using numba and cuda) and CPU.
-    - Direct Fourier inversion (DFI) method.
-    - Wrapper for Astra Toolbox reconstruction (optional)
-    - Wrapper for Tomopy-gridrec reconstruction (optional)
+
+    -   Filtered back-projection (FBP) method for GPU (using numba and cuda)
+        and CPU.
+    -   Direct Fourier inversion (DFI) method.
+    -   Wrapper for Astra-Toolbox reconstruction methods (optional)
+    -   Wrapper for Tomopy-gridrec reconstruction method (optional)
 """
 
 import math
@@ -84,8 +86,8 @@ def make_2d_ramp_window(height, width, filter_name=None):
         Height of the window.
     width : int
         Width of the window.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming", "nuttall",\\
-                  "parzen", "triang"}
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+                  "nuttall", "parzen", "triang"}
          Name of a smoothing window used.
 
     Returns
@@ -114,11 +116,11 @@ def apply_ramp_filter(sinogram, ramp_win=None, filter_name=None, pad=None,
     Parameters
     ----------
     sinogram : array_like
-        2D rray. Sinogram image.
+        2D array. Sinogram image.
     ramp_win : complex ndarray or None
         Ramp window in the Fourier space.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming", "nuttall",\\
-                  "parzen", "triang"}
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+                  "nuttall", "parzen", "triang"}
          Name of a smoothing window used.
     pad : int or None
         To apply padding before the FFT. The value is set to 10% of the image
@@ -266,9 +268,9 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
     ratio : float, optional
         To apply a circle mask to the reconstructed image.
     ramp_win : complex ndarray, optional
-        Ramp window in the Fourier space. It will be generated if None is given.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming", "nuttall",\\
-                  "parzen", "triang"}
+        Ramp window in the Fourier space. Generated if None.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+                  "nuttall", "parzen", "triang"}
         Apply a smoothing filter.
     pad : int, optional
         To apply padding before the FFT. The value is set to 10% of the image
@@ -312,7 +314,8 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
                                                  np.float32(sino_filtered),
                                                  np.float32(angles), xlist,
                                                  np.float32(center),
-                                                 np.int32(nrow), np.int32(ncol))
+                                                 np.int32(nrow),
+                                                 np.int32(ncol))
     else:
         recon = back_projection_cpu(np.float32(sino_filtered),
                                     np.float32(angles), np.float32(xlist),
@@ -325,7 +328,8 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
     return recon * np.pi / (nrow - 1)
 
 
-def generate_mapping_coordinate(width_sino, height_sino, width_rec, height_rec):
+def generate_mapping_coordinate(width_sino, height_sino, width_rec,
+                                height_rec):
     """
     Calculate coordinates in the sinogram space from coordinates in the
     reconstruction space (in the Fourier domain). They are used for the
@@ -382,8 +386,8 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
         1D array. List of angles (in radian) corresponding to the sinogram.
     ratio : float
         To apply a circle mask to the reconstructed image.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming", "nuttall",\\
-                  "parzen", "triang"}
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+                  "nuttall", "parzen", "triang"}
         Apply a smoothing filter.
     pad_rate : float
         To apply padding before the FFT. The padding width equals to
@@ -473,6 +477,8 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
         Apply the logarithm function to the sinogram before reconstruction.
     pad : bool
         Apply edge padding to the nearest power of 2.
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -496,7 +502,7 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
                               mode='edge')
     else:
         pad_left = pad
-        sinogram = np.pad(sinogram, ((0, 0), (pad, pad)),mode='edge')
+        sinogram = np.pad(sinogram, ((0, 0), (pad, pad)), mode='edge')
     if apply_log is True:
         sinogram = -np.log(sinogram)
     if filter_name is None:
