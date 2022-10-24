@@ -10,8 +10,8 @@
 
    .. autosummary::
    
-	get_statical_information
-	get_statical_information_dataset
+	get_statistical_information
+	get_statistical_information_dataset
 	downsample
 	downsample_dataset
 	rescale
