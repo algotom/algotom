@@ -15,9 +15,9 @@ if python_version == "3.7":
         "joblib"]
 else:
     dependencies = [
-        "numpy>=1.18,<1.23",
+        "numpy>=1.18",
         "scipy",
-        "numba<=0.55.2",
+        "numba",
         "pywavelets",
         "pillow",
         "h5py",
@@ -28,14 +28,15 @@ readme = (current_folder / "README.md").read_text()
 
 setuptools.setup(
     name="algotom",
-    version="1.1.0",
+    version="1.2.0",
     author="Nghia Vo",
-    author_email="nghia.vo@diamond.ac.uk",
+    author_email="nvo@bnl.gov",
     description="Data processing algorithms for tomography",
     long_description=readme,
     long_description_content_type="text/markdown",
     keywords=["Parallel-beam Computed Tomography", "Image Processing",
-              "Tomography", "X-ray Imaging", "Phase Contrast Imaging"],
+              "Tomography", "X-ray Imaging", "Phase Contrast Imaging",
+              "Artifact removal"],
     url="https://github.com/algotom/algotom",
     license="Apache 2.0",
     platforms="Any",
