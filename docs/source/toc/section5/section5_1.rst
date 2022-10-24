@@ -327,3 +327,6 @@ is a very promising application of the technique.
 
    Horizontal slice and vertical slice of reconstructed volumes from 3 imaging modes: phase-shift image (a,d);
    transmission image (b,e); and dark-signal image (c,f).
+
+Python codes used to process data for this report are at `here <https://github.com/algotom/algotom/tree/master/examples/speckle_based_tomography/i12_data>`__.
+Detailed references can be found in :cite:`Vo:2022`.
