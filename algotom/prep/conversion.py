@@ -16,20 +16,21 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python implementations of preprocessing techniques.
+# Description: Python module of conversion techniques.
 # Contributors:
 # ============================================================================
 
 """
 Module of conversion methods in the preprocessing stage:
-    - Stitching images.
-    - Joining images if there is no overlapping.
-    - Converting a 360-degree sinogram with offset center-of-rotation (COR) to
-      a 180-degree sinogram.
-    - Extending a 360-degree sinogram with offset COR for direct reconstruction
-      instead of converting it to a 180-degree sinogram.
-    - Converting a 180-degree sinogram to a 360-sinogram.
-    - Generating a sinogram from a helical data.
+
+    -   Stitching images.
+    -   Joining images if there is no overlapping.
+    -   Converting a 360-degree sinogram with offset center-of-rotation (COR)
+        to a 180-degree sinogram.
+    -   Extending a 360-degree sinogram with offset COR for direct
+        reconstruction instead of converting it to a 180-degree sinogram.
+    -   Converting a 180-degree sinogram to a 360-sinogram.
+    -   Generating a sinogram from a helical data.
 """
 
 import numpy as np
@@ -117,7 +118,8 @@ def stitch_image(mat1, mat2, overlap, side, wei_mat1=None, wei_mat2=None,
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
     if (wei_mat1 is None) or (wei_mat2 is None):
-        (wei_mat1, wei_mat2) = make_weight_matrix(mat1, mat2, overlap_int, side)
+        (wei_mat1, wei_mat2) = make_weight_matrix(mat1, mat2,
+                                                  overlap_int, side)
     total_width0 = ncol1 + ncol2 - overlap_int
     if (total_width is None) or (total_width < total_width0):
         total_width = total_width0
@@ -327,7 +329,7 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
 
     Returns
     -------
-    sino_stiched : array_like
+    sino_stitch : array_like
         Converted sinogram.
     cor : float
         Updated center-of-rotation referred to the converted sinogram.
@@ -448,8 +450,8 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                                    angles=None, flat=None, dark=None,
                                    mask=None, crop=(0, 0, 0, 0)):
     """
-    Generate a 180-degree sinogram or a 360-degree sinogram from a helical
-    scan dataset which is a hdf/nxs object (Ref. [1]_).
+    Generate a 180-degree/360-degree sinogram from a helical-scan dataset
+    which is a hdf/nxs object (Ref. [1]_).
 
     Parameters
     ----------
@@ -471,7 +473,7 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
         One of two options: "180" for generating a 180-degree sinogram or
         "360" for generating a 360-degree sinogram.
     angles : array_like, optional
-        1D array. List of angles (degree) corresponding to acquired projections.
+        1D array. Angles (degree) corresponding to acquired projections.
     flat : array_like, optional
         Flat-field image used for flat-field correction.
     dark : array_like, optional
@@ -519,7 +521,7 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
         step_angle = 180.0 / (num_proj - 1)
         angles = np.arange(0, depth0) * step_angle
     flat_dark = flat - dark
-    FoV = pixel_size * height
+    fov = pixel_size * height
     y_step = pitch / (2.0 * (num_proj - 1))
     if scan_type == "180":
         num_proj_used = num_proj
@@ -534,7 +536,7 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                 index, i0, depth0 - 1))
     sinogram = np.zeros((num_proj_used, width), dtype=np.float32)
     for i in range(i0, i0 + num_proj_used):
-        j0 = (y_e + FoV - i * y_step - y_pos) / pixel_size - 1
+        j0 = (y_e + fov - i * y_step - y_pos) / pixel_size - 1
         if (j0 < 0) or (j0 >= height):
             raise ValueError(
                 "Requested row index {0} of projection {1} is out of the"
@@ -565,13 +567,14 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
 
 
 def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
-                                        y_start, y_stop, pitch, scan_type="180",
-                                        angles=None, flat=None, dark=None,
+                                        y_start, y_stop, pitch,
+                                        scan_type="180", angles=None,
+                                        flat=None, dark=None,
                                         mask=None, crop=(0, 0, 0, 0)):
     """
-    Generate a full sinogram from a helical scan dataset which is a hdf/nxs
-    object (Ref. [1]_). Full sinogram is all 1D projection of the same slice of
-    a sample staying inside the field of view.
+    Generate a full sinogram from a helical-scan dataset which is a hdf/nxs
+    object (Ref. [1]_). Full sinogram is all 1D projections of the same slice
+    of a sample staying inside the field of view.
 
     Parameters
     ----------
@@ -592,7 +595,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
     scan_type : {"180", "360"}
         Data acquired is the 180-degree type or 360-degree type [1].
     angles : array_like, optional
-        1D array. List of angles (degree) corresponding to acquired projections.
+        1D array. Angles (degree) corresponding to acquired projections.
     flat : array_like, optional
         Flat-field image used for flat-field correction.
     dark : array_like, optional
@@ -630,7 +633,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
         step_angle = 180.0 / (num_proj - 1)
         angles = np.arange(0, depth0) * step_angle
     flat_dark = flat - dark
-    FoV = pixel_size * height
+    fov = pixel_size * height
     y_step = pitch / (2.0 * (num_proj - 1))
     if scan_type == "180":
         y_e = y_stop - pitch / 2.0
@@ -638,7 +641,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
     else:
         y_e = y_stop - pitch
         y_s = y_start + pitch
-    num_proj_used = int(np.floor(FoV / y_step)) - 1
+    num_proj_used = int(np.floor(fov / y_step)) - 1
     y_pos = (index - 1) * pixel_size + y_s
     i0 = int(np.ceil((y_e - y_pos) / y_step))
     if (i0 < 0) or (i0 >= depth0):
@@ -653,7 +656,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                 index, i0, i0 + num_proj_used, depth0 - 1))
     sinogram = np.zeros((num_proj_used, width), dtype=np.float32)
     for i in range(i0, i0 + num_proj_used):
-        j0 = (y_e + FoV - i * y_step - y_pos) / pixel_size - 1
+        j0 = (y_e + fov - i * y_step - y_pos) / pixel_size - 1
         if (j0 < 0) or (j0 >= height):
             raise ValueError(
                 "Requested row index {0} of projection {1} is out of"

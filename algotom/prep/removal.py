@@ -16,16 +16,17 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python implementations of preprocessing techniques.
+# Description: Python module of artifact removal techniques.
 # Contributors:
 # ============================================================================
 
 """
 Module of removal methods in the preprocessing stage:
-    - Many methods for removing stripe artifact in a sinogram (<-> ring artifact
-      in a reconstructed image).
-    - A zinger removal method.
-    - Blob removal methods.
+
+    -   Many methods for removing stripe artifact in a sinogram
+        (<-> ring artifact in a reconstructed image).
+    -   A zinger removal method.
+    -   Blob removal methods.
 """
 
 import numpy as np
@@ -79,13 +80,13 @@ def remove_stripe_based_sorting(sinogram, size=21, dim=1, **options):
             if method in dir(ndi):
                 try:
                     sino_sort = getattr(ndi, method)(sino_sort, *para)
-                except:
+                except AttributeError:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_sort = getattr(util, method)(sino_sort, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -147,13 +148,13 @@ def remove_stripe_based_filtering(sinogram, sigma=3, size=21, dim=1, sort=True,
                 para = tuple(opt.values())[1:]
                 try:
                     sino_smooth = getattr(ndi, method)(sino_smooth, *para)
-                except:
+                except AttributeError:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_smooth = getattr(util, method)(sino_smooth, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -216,13 +217,13 @@ def remove_stripe_based_fitting(sinogram, order=2, sigma=10, sort=False,
                 para = tuple(opt.values())[1:]
                 try:
                     sino_filt = getattr(ndi, method)(sino_filt, *para)
-                except:
+                except AttributeError:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_filt = getattr(util, method)(sino_filt, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -246,11 +247,11 @@ def remove_large_stripe(sinogram, snr=3.0, size=51, drop_ratio=0.1, norm=True,
     sinogram : array_like
         2D array. Sinogram image
     snr : float
-        Ratio (>1.0) used to detect stripe locations. Greater is less sensitive.
+        Ratio (>1.0) for stripe detection. Greater is less sensitive.
     size : int
         Window size of the median filter.
     drop_ratio : float, optional
-        Ratio of pixels to be dropped, which is used to to reduce
+        Ratio of pixels to be dropped, which is used to reduce
         the possibility of the false detection of stripes.
     norm : bool, optional
         Apply normalization if True.
@@ -287,13 +288,13 @@ def remove_large_stripe(sinogram, snr=3.0, size=51, drop_ratio=0.1, norm=True,
                 para = tuple(opt.values())[1:]
                 try:
                     sino_smooth = getattr(ndi, method)(sino_smooth, *para)
-                except:
+                except AttributeError:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_smooth = getattr(util, method)(sino_smooth, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -323,7 +324,7 @@ def remove_dead_stripe(sinogram, snr=3.0, size=51, residual=True,
     sinogram : array_like
         2D array. Sinogram image.
     snr : float
-        Ratio (>1.0) used to detect stripe locations. Greater is less sensitive.
+        Ratio (>1.0) for stripe detection. Greater is less sensitive.
     size : int
         Window size of the median filter.
     residual : bool, optional
@@ -365,8 +366,8 @@ def remove_dead_stripe(sinogram, snr=3.0, size=51, residual=True,
     return sinogram
 
 
-def remove_all_stripe(sinogram, snr=3.0, la_size=51, sm_size=21, drop_ratio=0.1,
-                      dim=1, **options):
+def remove_all_stripe(sinogram, snr=3.0, la_size=51, sm_size=21,
+                      drop_ratio=0.1, dim=1, **options):
     """
     Remove all types of stripe artifacts in a sinogram by combining algorithm
     6, 5, 4, and 3 in Ref. [1]_. Angular direction is along the axis 0.
@@ -376,7 +377,7 @@ def remove_all_stripe(sinogram, snr=3.0, la_size=51, sm_size=21, drop_ratio=0.1,
     sinogram : array_like
         2D array. Sinogram image.
     snr : float
-        Ratio (>1.0) used to detect stripe locations. Greater is less sensitive.
+        Ratio (>1.0) for stripe detection. Greater is less sensitive.
     la_size : int
         Window size of the median filter to remove large stripes.
     sm_size : int
@@ -497,13 +498,13 @@ def remove_stripe_based_normalization(sinogram, sigma=15, num_chunk=1,
                     para = tuple(opt.values())[1:]
                     try:
                         list_filt = getattr(ndi, method)(list_filt, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     if method in dir(util):
                         try:
                             list_filt = getattr(util, method)(list_filt, *para)
-                        except:
+                        except AttributeError:
                             raise ValueError(msg)
                     else:
                         raise ValueError("Can't find the method: '{}' in the"
@@ -683,12 +684,12 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
                 if method in dir(ndi):
                     try:
                         mat_smooth = getattr(ndi, method)(mat_smooth, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 elif method in dir(util):
                     try:
                         mat_smooth = getattr(util, method)(mat_smooth, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -713,7 +714,7 @@ def remove_stripe_based_interpolation(sinogram, snr=3.0, size=51,
     sinogram : array_like
         2D array. Sinogram image
     snr : float
-        Ratio (>1.0) used to detect stripe locations. Greater is less sensitive.
+        Ratio (>1.0) for stripe detection. Greater is less sensitive.
     size : int
         Window size of the median filter used to detect stripes.
     drop_ratio : float, optional
@@ -756,13 +757,13 @@ def remove_stripe_based_interpolation(sinogram, snr=3.0, size=51,
             if method in dir(ndi):
                 try:
                     sino_smooth = getattr(ndi, method)(sino_smooth, *para)
-                except:
+                except AttributeError:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_smooth = getattr(util, method)(sino_smooth, *para)
-                    except:
+                    except AttributeError:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"

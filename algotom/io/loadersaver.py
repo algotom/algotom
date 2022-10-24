@@ -16,21 +16,22 @@
 # ============================================================================
 # Author: Nghia T. Vo
 # E-mail:  
-# Description: Python codes for loading and saving data.
+# Description: Python module for loading and saving data.
 # Contributors:
 # ============================================================================
 
 """
 Module for I/O tasks:
-    - Load data from an image file (tif, png, jpeg) or a hdf/nxs file.
-    - Get dataset information in a hdf/nxs file.
-    - Search for datasets in a hdf/nxs file.
-    - Save a 2D array as a tif image or 2D, 3D array to a hdf/nxs file.
-    - Search file names, make a file/folder name.
-    - Load distortion coefficients from a txt file.
-    - Get the tree view of a hdf/nxs file.
-    - Functions for loading stacks of images from multiple datasets, e.g. to be
-      used by speckle-based phase contrast tomography.
+
+    -   Load data from an image file (tif, png, jpeg) or a hdf/nxs file.
+    -   Get information from a hdf/nxs file.
+    -   Search for datasets in a hdf/nxs file.
+    -   Save a 2D array as a tif image or 2D, 3D array to a hdf/nxs file.
+    -   Get file names, make file/folder name.
+    -   Load distortion coefficients from a txt file.
+    -   Get the tree view of a hdf/nxs file.
+    -   Functions for loading stacks of images from multiple datasets, e.g. to
+        be used by speckle-based phase contrast tomography.
 """
 
 import os
@@ -395,7 +396,7 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
     overwrite : bool
         Overwrite the existing file if True.
     options : dict, optional
-        Add metadata. E.g. options={"entry/angles": angles, "entry/energy": 53}.
+        Add metadata. E.g options={"entry/angles": angles, "entry/energy": 53}.
 
     Returns
     -------
@@ -419,9 +420,9 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
             opts = options[opt_name]
             for key in opts:
                 if key_path in key:
-                    msg = "!!! Selected key path, '{0}', can not be a child " \
-                          "key-path of '{1}' !!!\n!!! Change to make sure " \
-                          "they are at the same level !!!".format(key, key_path)
+                    msg = "!!!Selected key path, '{0}', can not be a child " \
+                          "key-path of '{1}'!!!\n!!!Change to make sure " \
+                          "they are at the same level!!!".format(key, key_path)
                     raise ValueError(msg)
                 ofile.create_dataset(key, data=opts[key])
     data_out = ofile.create_dataset(key_path, data_shape, dtype=data_type)
@@ -631,8 +632,8 @@ def __get_ref_sam_stacks_dls(proj_idx, list_data_obj, list_sam_idx,
     width1 = right - left
     if flat_field is not None:
         if flat_field.shape != (height, width):
-            raise ValueError("Shape of flat-field images is not "
-                             "the same as projection images "
+            raise ValueError("Shape of flat-field image is not "
+                             "the same as projection image "
                              "({0}, {1})".format(height, width))
         else:
             flat_ave = flat_field[top: bot, left:right]
@@ -640,8 +641,8 @@ def __get_ref_sam_stacks_dls(proj_idx, list_data_obj, list_sam_idx,
         flat_ave = np.ones((height1, width1), dtype=np.float32)
     if dark_field is not None:
         if dark_field.shape != (height, width):
-            raise ValueError("Shape of dark-field images is not "
-                             "the same as projection images "
+            raise ValueError("Shape of dark-field image is not "
+                             "the same as projection image "
                              "({0}, {1})".format(height, width))
         else:
             dark_ave = dark_field[top: bot, left:right]
@@ -816,7 +817,7 @@ def get_reference_sample_stacks_dls(proj_idx, list_path, data_key=None,
         stop_idx = start_idx + num_proj - 1
     idx_off = proj_idx + start_idx
     if idx_off > stop_idx or idx_off < start_idx:
-        raise ValueError("Requested projection index is out of the range"
+        raise ValueError("Requested projection-index is out of the range"
                          " [{0}, {1}] given the offset of "
                          "{2}".format(start_idx, stop_idx, start_idx))
     else:
@@ -840,8 +841,8 @@ def __check_dark_flat_field(flat_field, dark_field, height, width):
             flat_field = np.mean(flat_field, axis=0)
         (height2, width2) = flat_field.shape
         if height2 != height or width2 != width:
-            raise ValueError("Shape of flat-field images is not "
-                             "the same as projection images")
+            raise ValueError("Shape of flat-field image is not "
+                             "the same as projection image")
     else:
         flat_field = np.ones((height, width))
     if dark_field is not None:
@@ -849,8 +850,8 @@ def __check_dark_flat_field(flat_field, dark_field, height, width):
             dark_field = np.mean(dark_field, axis=0)
         (height2, width2) = dark_field.shape
         if height2 != height or width2 != width:
-            raise ValueError("Shape of dark-field images is not "
-                             "the same as projection images")
+            raise ValueError("Shape of dark-field image is not "
+                             "the same as projection image")
     else:
         dark_field = np.zeros((height, width))
     return flat_field, dark_field
@@ -861,9 +862,9 @@ def get_reference_sample_stacks(proj_idx, ref_path, sam_path, ref_key, sam_key,
                                 dark_field=None, num_use=None,
                                 fix_zero_div=True):
     """
-    A method for multi-position speckle-based phase-contrast tomography to get
-    two stacks of reference images (speckle images) and sample images (at the
-    same rotation angle from each tomographic dataset).
+    Get two stacks of reference images (speckle images) and sample images (at
+    the same rotation angle from each tomographic dataset). A method for
+    multi-position speckle-based phase-contrast tomography.
 
     Parameters
     ----------
@@ -899,7 +900,7 @@ def get_reference_sample_stacks(proj_idx, ref_path, sam_path, ref_key, sam_key,
     if not isinstance(ref_path, list):
         raise ValueError("Input-path must be a list of strings!!!")
     if len(ref_path) != len(sam_path):
-        raise ValueError("Number of input datasets must be the same")
+        raise ValueError("Number of inputs must be the same!!!")
     num_file = len(ref_path)
     if num_use is None:
         num_use = num_file
@@ -988,7 +989,7 @@ def get_tif_stack(file_base, idx=None, crop=(0, 0, 0, 0), flat_field=None,
     if num_file != 0:
         (height, width) = np.shape(load_image(list_file[0]))
     else:
-        raise ValueError("There're no tif images in: {}".format(file_base))
+        raise ValueError("No tif-images in: {}".format(file_base))
     if idx is not None:
         if idx < 0:
             idx = num_file + idx
@@ -1044,9 +1045,9 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
                     crop=(0, 0, 0, 0), flat_field=None, dark_field=None,
                     num_use=None, fix_zero_div=True):
     """
-    Stack images of the same index from different datasets. For tif images,
+    Stack images having the same index from multiple datasets. For tif images,
     if only one dataset is provided (list_path is a string, not a list),
-    there's an option, idx = None, to load the whole stack.
+    there is an option, idx = None, to load the whole stack.
 
     Parameters
     ----------
@@ -1056,7 +1057,7 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
     list_path : list of str
         List of hdf/nxs file-paths or folders of tif-images to datasets.
     data_key : str
-        Requested if datasets are hdf/nxs files.
+        Requested if input is a hdf/nxs files.
     average : bool, optional
         Average images in a dataset if True.
     crop : tuple of int, optional
@@ -1089,15 +1090,13 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
         else:
             if data_key is None:
                 raise ValueError(
-                    "Please provide the key to datasets of hdf/nxs "
-                    "files")
+                    "Please provide the key to a dataset in the hdf/nxs file")
         if tif_format:
             list_file = find_file(file_base + "/*tif*")
             if len(list_file) != 0:
                 (height, width) = np.shape(load_image(list_file[0]))
             else:
-                raise ValueError("There're no tif images in: "
-                                 "{}".format(file_base))
+                raise ValueError("No tif-images in: {}".format(file_base))
         else:
             (height, width) = load_hdf(list_path[0], data_key).shape[-2:]
         cr_top, cr_bot, cr_left, cr_right = crop
@@ -1140,7 +1139,7 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
                 list_file = find_file(list_path[i] + "/*tif*")
                 if average:
                     img = np.mean(
-                        np.asarray([load_image(file)[top:bot, left:right] \
+                        np.asarray([load_image(file)[top:bot, left:right]
                                     for file in list_file]), axis=0)
                 else:
                     img = load_image(list_file[idx])[top:bot, left:right]

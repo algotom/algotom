@@ -61,15 +61,15 @@ class UtilityMethods(unittest.TestCase):
         self.mat = np.ones_like(mask1) - np.ceil(self.mask)
         self.size = size
 
-    def test_get_statical_information(self):
+    def test_get_statistical_information(self):
         mat = np.random.rand(64, 64)
-        results = post.get_statical_information(mat)
+        results = post.get_statistical_information(mat)
         num = np.abs(0.5 - results[5])
         self.assertTrue(len(results) == 7 and num < 0.1)
 
-    def test_get_statical_information_dataset(self):
+    def test_get_statistical_information_dataset(self):
         mat = np.random.rand(32, 64, 64)
-        results =post.get_statical_information_dataset(mat)
+        results =post.get_statistical_information_dataset(mat)
         num = np.abs(0.5 - results[5])
         self.assertTrue(len(results) == 7 and num < 0.1)
 
