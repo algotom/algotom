@@ -61,7 +61,7 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     options : dict, optional
         Apply a zinger removal method and/or ring removal methods.
         E.g option1={"method": "dezinger", "para1": 0.001, "para2": 1},
-        option2={"method": "remove_stripe_based_sorting",
+        option2={"method": "remove_stripe_based_sorting",\
                 "para1": 15, "para2": 1}
 
     Returns

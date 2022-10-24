@@ -855,7 +855,7 @@ def retrieve_phase_based_speckle_tracking(ref_stack, sam_stack,
         To select the back-end method for finding shifts. Using a
         correlation-based method (Ref. [1-2]) or a cost-based method
         (Ref. [3]).
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
                   "nuttall", "parzen", "triang"}
         To select a smoothing filter.
     dark_signal : bool

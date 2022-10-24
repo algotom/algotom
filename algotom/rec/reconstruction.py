@@ -45,7 +45,7 @@ def make_smoothing_window(filter_name, width):
 
     Parameters
     ----------
-    filter_name : {"hann", "bartlett", "blackman", "hamming", "nuttall",\\
+    filter_name : {"hann", "bartlett", "blackman", "hamming", "nuttall",\
                    "parzen", "triang"}
         Window function used for filtering.
     width : int
@@ -86,7 +86,7 @@ def make_2d_ramp_window(height, width, filter_name=None):
         Height of the window.
     width : int
         Width of the window.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
                   "nuttall", "parzen", "triang"}
          Name of a smoothing window used.
 
@@ -119,7 +119,7 @@ def apply_ramp_filter(sinogram, ramp_win=None, filter_name=None, pad=None,
         2D array. Sinogram image.
     ramp_win : complex ndarray or None
         Ramp window in the Fourier space.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
                   "nuttall", "parzen", "triang"}
          Name of a smoothing window used.
     pad : int or None
@@ -269,7 +269,7 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
         To apply a circle mask to the reconstructed image.
     ramp_win : complex ndarray, optional
         Ramp window in the Fourier space. Generated if None.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
                   "nuttall", "parzen", "triang"}
         Apply a smoothing filter.
     pad : int, optional
@@ -386,7 +386,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
         1D array. List of angles (in radian) corresponding to the sinogram.
     ratio : float
         To apply a circle mask to the reconstructed image.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
                   "nuttall", "parzen", "triang"}
         Apply a smoothing filter.
     pad_rate : float

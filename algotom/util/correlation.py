@@ -3280,7 +3280,7 @@ def find_local_shifts_umpa(ref_mat, mat, win_size=7, margin=10,
     chunk_size : int or None
         Size of each chunk extracted along the height of the image. Use to
         avoid the out of memory problem.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\\
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
                   "nuttall", "parzen", "triang"}
         To select a smoothing filter.
     dark_signal : bool
