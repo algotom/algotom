@@ -73,8 +73,8 @@ def make_fresnel_window(height, width, ratio, dim):
 def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
     """
     Apply a low-pass filter based on the Fresnel propagator to an image
-    (Ref. [1]_). It can be used for improving the contrast of an image.
-    It's simpler than the well-known Paganin's filter (Ref. [2]_).
+    (Ref. [1]). It can be used for improving the contrast of an image.
+    It's simpler than the well-known Paganin's filter (Ref. [2]).
 
     Parameters
     ----------
@@ -99,8 +99,8 @@ def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
-    .. [2] https://tinyurl.com/2f8nv875
+    [1] : https://doi.org/10.1364/OE.418448
+    [2] : https://tinyurl.com/2f8nv875
     """
     if apply_log:
         mat = -np.log(mat)
@@ -127,7 +127,7 @@ def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
 
 def make_double_wedge_mask(height, width, radius):
     """
-    Generate a double-wedge binary mask using Eq. (3) in Ref. [1]_.
+    Generate a double-wedge binary mask using Eq. (3) in Ref. [1].
     Values outside the double-wedge region correspond to 0.0.
 
     Parameters
@@ -146,7 +146,7 @@ def make_double_wedge_mask(height, width, radius):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.22.019078
+    [1] : https://doi.org/10.1364/OE.22.019078
     """
     du = 1.0 / width
     dv = (height - 1.0) / (height * 2.0 * np.pi)
@@ -166,7 +166,7 @@ def make_double_wedge_mask(height, width, radius):
 def double_wedge_filter(sinogram, center=0, sino_type="180", iteration=5,
                         mask=None, ratio=1.0, pad=250):
     """
-    Apply double-wedge filter to a sinogram image (Ref. [1]_).
+    Apply double-wedge filter to a sinogram image (Ref. [1]).
 
     Parameters
     ----------
@@ -192,7 +192,7 @@ def double_wedge_filter(sinogram, center=0, sino_type="180", iteration=5,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     if not (sino_type == "180" or sino_type == "360"):
         raise ValueError("!!! Use only one of two options: '180' or '360'!!!")

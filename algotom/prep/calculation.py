@@ -46,7 +46,7 @@ import numpy.fft as fft
 
 def make_inverse_double_wedge_mask(height, width, radius):
     """
-    Generate a double-wedge binary mask using Eq. (3) in Ref. [1]_.
+    Generate a double-wedge binary mask using Eq. (3) in Ref. [1].
     Values outside the double-wedge region correspond to 1.0.
 
     Parameters
@@ -65,7 +65,7 @@ def make_inverse_double_wedge_mask(height, width, radius):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.22.019078
+    [1] : https://doi.org/10.1364/OE.22.019078
     """
     du = 1.0 / width
     dv = (height - 1.0) / (height * 2.0 * np.pi)
@@ -273,7 +273,7 @@ def downsample_cor(image, dsp_fact0, dsp_fact1):
 def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
                    ratio=0.5, dsp=True, ncore=None):
     """
-    Find the center-of-rotation using the method described in Ref. [1]_.
+    Find the center-of-rotation using the method described in Ref. [1].
 
     Parameters
     ----------
@@ -303,7 +303,7 @@ def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.22.019078
+    [1] : https://doi.org/10.1364/OE.22.019078
     """
     (nrow, ncol) = sino_180.shape
     if start is None:
@@ -479,7 +479,7 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
 def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
                  use_overlap=False):
     """
-    Find the overlap area and overlap side between two images (Ref. [1]_) where
+    Find the overlap area and overlap side between two images (Ref. [1]) where
     the overlap side referring to the first image.
 
     Parameters
@@ -514,7 +514,7 @@ def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     (_, ncol1) = mat1.shape
     (_, ncol2) = mat2.shape
@@ -600,7 +600,7 @@ def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
                     use_overlap=False):
     """
     Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
-    the method presented in Ref. [1]_.
+    the method presented in Ref. [1].
 
     Parameters
     ----------
@@ -634,7 +634,7 @@ def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     (nrow, ncol) = sino_360.shape
     nrow_180 = nrow // 2 + 1
@@ -668,7 +668,7 @@ def complex_gradient(mat):
 def find_shift_based_phase_correlation(mat1, mat2, gradient=True):
     """
     Find relative translation in x and y direction between images with
-    haft-pixel accuracy (Ref. [1]_).
+    haft-pixel accuracy (Ref. [1]).
 
     Parameters
     ----------
@@ -688,7 +688,7 @@ def find_shift_based_phase_correlation(mat1, mat2, gradient=True):
 
     References
     ----------
-    .. [1] https://doi.org/10.1049/el:20030666
+    [1] : https://doi.org/10.1049/el:20030666
     """
     if gradient is True:
         mat1 = complex_gradient(mat1)
@@ -758,7 +758,7 @@ def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
                            use_overlap=False):
     """
     Find the center-of-rotation (COR) using projection images at 0-degree
-    and 180-degree based on a method in Ref. [1]_.
+    and 180-degree based on a method in Ref. [1].
 
     Parameters
     ----------
@@ -788,7 +788,7 @@ def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     (nrow, ncol) = mat1.shape
     if flip is True:

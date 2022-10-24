@@ -373,8 +373,8 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
                        apply_log=True):
     """
     Apply the DFI (direct Fourier inversion) reconstruction method to a
-    sinogram image (Ref. [1]_). The method is a practical and direct
-    implementation of the Fourier slice theorem (Ref. [2]_).
+    sinogram image (Ref. [1]). The method is a practical and direct
+    implementation of the Fourier slice theorem (Ref. [2]).
 
     Parameters
     ----------
@@ -404,8 +404,8 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
-    .. [2] https://doi.org/10.1071/PH560198
+    [1] : https://doi.org/10.1364/OE.418448
+    [2] : https://doi.org/10.1071/PH560198
     """
     if apply_log is True:
         sinogram = -np.log(sinogram)

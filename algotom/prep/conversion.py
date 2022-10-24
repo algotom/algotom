@@ -357,7 +357,7 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
 
 def convert_sinogram_180_to_360(sino_180, center):
     """
-    Convert a 180-degree sinogram to a 360-degree sinogram (Ref. [1]_).
+    Convert a 180-degree sinogram to a 360-degree sinogram (Ref. [1]).
 
     Parameters
     ----------
@@ -373,7 +373,7 @@ def convert_sinogram_180_to_360(sino_180, center):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.22.019078
+    [1] : https://doi.org/10.1364/OE.22.019078
     """
     (nrow, ncol) = sino_180.shape
     xcenter = (ncol - 1.0) / 2.0
@@ -386,7 +386,7 @@ def convert_sinogram_180_to_360(sino_180, center):
 def extend_sinogram(sino_360, cor, apply_log=True):
     """
     Extend a 360-degree sinogram (with offset center-of-rotation) for
-    later reconstruction (Ref. [1]_).
+    later reconstruction (Ref. [1]).
 
     Parameters
     ----------
@@ -406,7 +406,7 @@ def extend_sinogram(sino_360, cor, apply_log=True):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     if apply_log is True:
         sino_360 = -np.log(sino_360)
@@ -451,7 +451,7 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                                    mask=None, crop=(0, 0, 0, 0)):
     """
     Generate a 180-degree/360-degree sinogram from a helical-scan dataset
-    which is a hdf/nxs object (Ref. [1]_).
+    which is a hdf/nxs object (Ref. [1]).
 
     Parameters
     ----------
@@ -493,7 +493,7 @@ def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     max_index = calc.calculate_maximum_index(y_start, y_stop, pitch,
                                              pixel_size, scan_type)
@@ -573,7 +573,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
                                         mask=None, crop=(0, 0, 0, 0)):
     """
     Generate a full sinogram from a helical-scan dataset which is a hdf/nxs
-    object (Ref. [1]_). Full sinogram is all 1D projections of the same slice
+    object (Ref. [1]). Full sinogram is all 1D projections of the same slice
     of a sample staying inside the field of view.
 
     Parameters
@@ -615,7 +615,7 @@ def generate_full_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
+    [1] : https://doi.org/10.1364/OE.418448
     """
     (depth0, height0, width0) = tomo_data.shape
     (crop_top, crop_bottom, crop_left, crop_right) = crop

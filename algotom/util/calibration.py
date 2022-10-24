@@ -128,7 +128,7 @@ def invert_dot_contrast(mat):
 
 def calculate_threshold(mat, bgr="bright"):
     """
-    Calculate threshold value based on Algorithm 4 in Ref. [1]_.
+    Calculate threshold value based on Algorithm 4 in Ref. [1].
 
     Parameters
     ----------
@@ -144,7 +144,7 @@ def calculate_threshold(mat, bgr="bright"):
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.26.028396
+    [1] : https://doi.org/10.1364/OE.26.028396
     """
     size = max(mat.shape)
     list1 = np.sort(np.ndarray.flatten(mat))
@@ -168,7 +168,7 @@ def binarize_image(mat, threshold=None, bgr="bright", norm=False, denoise=True,
         2D array.
     threshold : float, optional
         Threshold value for binarization. Automatically calculated using
-        Algorithm 4 in Ref. [1]_ if None.
+        Algorithm 4 in Ref. [1] if None.
     bgr : {"bright", "dark"}
         To indicate the brightness of the background against image features.
     norm : bool, optional
@@ -185,7 +185,7 @@ def binarize_image(mat, threshold=None, bgr="bright", norm=False, denoise=True,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.26.028396
+    [1] : https://doi.org/10.1364/OE.26.028396
     """
     if denoise is True:
         mat = ndi.median_filter(np.abs(mat), (3, 3))
@@ -297,7 +297,7 @@ def calculate_distance(mat1, mat2, size_opt="max", threshold=None,
                        bgr='bright', norm=False, denoise=True, invert=True):
     """
     Calculate the distance between two point-like objects segmented from
-    two images. Useful for measuring pixel-size in helical scans (Ref. [1]_).
+    two images. Useful for measuring pixel-size in helical scans (Ref. [1]).
 
     Parameters
     ----------
@@ -309,7 +309,7 @@ def calculate_distance(mat1, mat2, size_opt="max", threshold=None,
         Options to select binary objects based on their size.
     threshold : float, optional
         Threshold value for binarization. Automatically calculated using
-        Algorithm 4 in Ref. [2]_ if None.
+        Algorithm 4 in Ref. [2] if None.
     bgr : {"bright", "dark"}
         To indicate the brightness of the background against image features.
     norm : bool, optional
@@ -321,8 +321,8 @@ def calculate_distance(mat1, mat2, size_opt="max", threshold=None,
 
     References
     ----------
-    .. [1] https://doi.org/10.1364/OE.418448
-    .. [2] https://doi.org/10.1364/OE.26.028396
+    [1] : https://doi.org/10.1364/OE.418448
+    [2] : https://doi.org/10.1364/OE.26.028396
     """
     mat_bin1 = binarize_image(mat1, threshold=threshold, bgr=bgr, norm=norm,
                               denoise=denoise, invert=invert)
