@@ -9,7 +9,7 @@ appreciated.
 
 .. bibliography:: bibtex/cite.bib
    :style: plain
-   :labelprefix: R
+   :labelprefix: C
 
 Algorithms, methods, or techniques implemented in a scientific software package
 are crucial for its success. This is the same for Algotom. Acknowledging
@@ -21,5 +21,5 @@ References
 
 .. bibliography:: bibtex/ref.bib
    :style: unsrt
-   :labelprefix: M
+   :labelprefix: R
    :all:

@@ -24,3 +24,7 @@ Update notes
 - 20/10/2022:
 
     + Publish implementation of the UMPA method.
+
+- 24/10/2022:
+
+    + Release version 1.2.
