@@ -3295,7 +3295,7 @@ def find_local_shifts_umpa(ref_mat, mat, win_size=7, margin=10,
     ----------
     [1] : https://doi.org/10.1103/PhysRevLett.118.203903
     [2] : https://doi.org/10.48550/arXiv.0712.4289
-    .. [3] https://doi.org/10.1088/0957-0233/17/6/045
+    [3] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if gpu is True:
         if cuda.is_available() is False:
