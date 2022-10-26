@@ -40,6 +40,11 @@ the mean value of pixel intensities, above 10% is good enough for use. For high-
 users can stack sandpapers together or using a box of material powder to improve the contrast of a
 speckle-image. Other practical considerations for setting up an experiment are as follows:
 
+    .. image:: section5_1/figs/img_5_1_1.png
+        :name: img_5_1_1
+        :width: 100 %
+        :align: center
+
 -   The diffuser can be positioned before or after a sample depending on experiment conditions. For example,
     in a parallel-beam system with a highly spatial-coherent source the diffuser can be placed closer to
     the source than the sample to make use of the edge-enhancement effect which helps to improve
@@ -214,9 +219,9 @@ It includes many options for processing at the lower-level blocks. The chunk-siz
 either small memory or large memory of RAM or GPU. Other top-layer methods listed in the previous section are
 straightforward to implement either directly or by making use of the methods in the *correlation* module.
 
-.. figure:: section5_1/figs/fig_5_1_6.jpg
+.. figure:: section5_1/figs/fig_5_1_6.png
    :name: fig_5_1_6
-   :figwidth: 85 %
+   :figwidth: 50 %
    :align: center
    :figclass: align-center
 
@@ -253,7 +258,7 @@ at Diamond Light Source are used for demonstration. Details of how data were acq
 
 .. figure:: section5_1/figs/fig_5_1_8.jpg
    :name: fig_5_1_8
-   :figwidth: 70 %
+   :figwidth: 60 %
    :align: center
    :figclass: align-center
 
@@ -273,7 +278,7 @@ The following presents how the data were processed:
 
 .. figure:: section5_1/figs/fig_5_1_9.jpg
    :name: fig_5_1_9
-   :figwidth: 90 %
+   :figwidth: 95 %
    :align: center
    :figclass: align-center
 
@@ -287,7 +292,7 @@ speed-up of computing time if using GPU.
 
 .. figure:: section5_1/figs/fig_5_1_10.png
    :name: fig_5_1_10
-   :figwidth: 80 %
+   :figwidth: 70 %
    :align: center
    :figclass: align-center
 
@@ -312,7 +317,7 @@ is a very promising application of the technique.
 
 .. figure:: section5_1/figs/fig_5_1_11.jpg
    :name: fig_5_1_11
-   :figwidth: 90 %
+   :figwidth: 95 %
    :align: center
    :figclass: align-center
 
@@ -321,7 +326,7 @@ is a very promising application of the technique.
 
 .. figure:: section5_1/figs/fig_5_1_12.jpg
    :name: fig_5_1_12
-   :figwidth: 90 %
+   :figwidth: 95 %
    :align: center
    :figclass: align-center
 
