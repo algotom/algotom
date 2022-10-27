@@ -405,6 +405,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
     References
     ----------
     [1] : https://doi.org/10.1364/OE.418448
+
     [2] : https://doi.org/10.1071/PH560198
     """
     if apply_log is True:

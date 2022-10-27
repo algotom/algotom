@@ -23,7 +23,6 @@
     make_2d_damping_window
     apply_wavelet_decomposition
     apply_wavelet_reconstruction
-    check_level
     apply_filter_to_wavelet_component
     interpolate_inside_stripe
     rectangular_from_polar
@@ -32,7 +31,6 @@
     transform_slice_backward
     make_2d_gaussian_window
     apply_gaussian_filter
-    apply_1d_regularizer
     apply_regularization_filter
     transform_1d_window_to_2d
     detect_sample

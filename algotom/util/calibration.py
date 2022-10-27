@@ -322,6 +322,7 @@ def calculate_distance(mat1, mat2, size_opt="max", threshold=None,
     References
     ----------
     [1] : https://doi.org/10.1364/OE.418448
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     mat_bin1 = binarize_image(mat1, threshold=threshold, bgr=bgr, norm=norm,

@@ -100,6 +100,7 @@ def fresnel_filter(mat, ratio, dim=1, window=None, pad=150, apply_log=True):
     References
     ----------
     [1] : https://doi.org/10.1364/OE.418448
+
     [2] : https://tinyurl.com/2f8nv875
     """
     if apply_log:

@@ -922,11 +922,17 @@ def retrieve_phase_based_speckle_tracking(ref_stack, sam_stack,
     References
     ----------
     [1] : https://doi.org/10.1038/srep08762
+
     [2] : https://doi.org/10.1103/PhysRevApplied.5.044014
+
     [3] : https://doi.org/10.1103/PhysRevLett.118.203903
+
     [4] : https://doi.org/10.48550/arXiv.0712.4289
+
     [5] : https://doi.org/10.1088/0957-0233/17/6/045
+
     [6] : https://doi.org/10.1109/34.55103
+
     [7] : https://doi.org/10.1109/34.3909
     """
     win_size = np.clip(win_size, 1, None)

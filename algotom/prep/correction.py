@@ -149,7 +149,6 @@ def unwarp_projection(proj, xcenter, ycenter, list_fact):
     References
     ----------
     [1] : https://doi.org/10.1364/OE.23.032859
-
     """
     (height, width) = proj.shape
     xu_list = np.arange(width) - xcenter

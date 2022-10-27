@@ -534,6 +534,7 @@ def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):
     References
     ----------
     [1] : https://doi.org/10.1063/1.1149043
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     (nrow, ncol) = mat.shape
@@ -576,6 +577,7 @@ def remove_ring_based_wavelet_fft(mat, level=5, size=1, wavelet_name="db9",
     References
     ----------
     [1] : https://doi.org/10.1364/OE.17.008567
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     (nrow, ncol) = mat.shape
