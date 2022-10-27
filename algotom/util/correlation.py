@@ -579,6 +579,7 @@ def _locate_2d_peak_subpixel(mat, method="diff"):
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     (height, width) = mat.shape
@@ -667,6 +668,7 @@ def locate_peak(mat, sub_pixel=True, method="diff", dim=2, size=3,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     (height, width) = mat.shape
@@ -757,6 +759,7 @@ def find_shift_based_correlation_map(ref_mat, mat, margin=10, axis=None,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     (height0, width0) = ref_mat.shape[-2:]
@@ -1123,6 +1126,7 @@ def _get_2d_shift_full_image_2d_input(ref_mat, mat, win_size=7, margin=10,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if ref_mat.shape != mat.shape:
@@ -1225,6 +1229,7 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if ref_mat.shape != mat.shape:
@@ -2331,6 +2336,7 @@ def _get_2d_shift_multi_rows_3d_input_cpu_gpu(ref_mat, mat, win_size=7,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if ref_mat.shape != mat.shape:
@@ -2427,6 +2433,7 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if ref_mat.shape != mat.shape:
@@ -2514,6 +2521,7 @@ def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if gpu is True:
@@ -2689,6 +2697,7 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if ref_mat.shape != mat.shape:
@@ -2974,6 +2983,7 @@ def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
     References
     ----------
     [1] : https://doi.org/10.48550/arXiv.0712.4289
+
     [2] : https://doi.org/10.1088/0957-0233/17/6/045
     """
 
@@ -3296,7 +3306,9 @@ def find_local_shifts_umpa(ref_mat, mat, win_size=7, margin=10,
     References
     ----------
     [1] : https://doi.org/10.1103/PhysRevLett.118.203903
+
     [2] : https://doi.org/10.48550/arXiv.0712.4289
+
     [3] : https://doi.org/10.1088/0957-0233/17/6/045
     """
     if gpu is True:

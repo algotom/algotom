@@ -470,6 +470,7 @@ def remove_stripe_based_normalization(sinogram, sigma=15, num_chunk=1,
     References
     ----------
     [1] : https://www.mcs.anl.gov/research/projects/X-ray-cmt/rivers/tutorial.html
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     msg = "\n Please use the dictionary format: options={'method':" \
@@ -543,6 +544,7 @@ def remove_stripe_based_regularization(sinogram, alpha=0.0005, num_chunk=1,
     References
     ----------
     [1] : https://doi.org/10.1016/j.aml.2010.08.022
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     (nrow, ncol) = sinogram.shape
@@ -604,6 +606,7 @@ def remove_stripe_based_fft(sinogram, u=20, n=8, v=1, sort=False):
     References
     ----------
     [1] : https://doi.org/10.1063/1.1149043
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     if sort is True:
@@ -651,6 +654,7 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
     References
     ----------
     [1] : https://doi.org/10.1364/OE.17.008567
+
     [2] : https://doi.org/10.1364/OE.26.028396
     """
     msg = "\n Please use the dictionary format: options={'method':" \
@@ -858,7 +862,6 @@ def remove_zinger(mat, threshold, size=2):
     References
     ----------
     [1] : https://doi.org/10.1364/OE.418448
-
     """
     step = np.clip(size, 1, None)
     mat = np.copy(mat)

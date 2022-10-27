@@ -950,7 +950,6 @@ def detect_sample(sinogram, sino_type="180"):
     References
     ----------
     [1] : https://doi.org/10.1364/OE.418448
-
     """
     check = True
     if not (sino_type == "180" or sino_type == "360"):
