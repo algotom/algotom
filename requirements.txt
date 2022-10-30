@@ -1,5 +1,5 @@
 #python>=3.7
-numpy>=1.17,<1.23
+numpy>=1.17
 scipy
 numba>=0.50.1
 pywavelets
