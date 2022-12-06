@@ -15,7 +15,7 @@ if python_version == "3.7":
         "joblib"]
 else:
     dependencies = [
-        "numpy>=1.18",
+        "numpy>=1.18,<1.24",
         "scipy",
         "numba",
         "pywavelets",
