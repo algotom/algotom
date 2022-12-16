@@ -10,10 +10,7 @@ Many utility methods are provided to help users quickly develop prototype-method
 or build a pipeline for processing their own data. From version 1.1, methods for 
 speckle-based phase-contrast tomography were added to the package.
 
-The software was published for the paper; *"Data processing methods and data 
-acquisition for samples larger than the field of view in parallel-beam tomography,"*
-Nghia T. Vo, Robert C. Atwood, Michael Drakopoulos, and Thomas Connolley, Opt. 
-Express 29, 17849-17874 (2021); https://doi.org/10.1364/OE.418448.      
+The software was published for the paper: https://doi.org/10.1364/OE.418448.
 
 Features
 --------
