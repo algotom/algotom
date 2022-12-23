@@ -1,3 +1,5 @@
+.. _section4_3:
+
 Methods and tools for removing ring artifacts
 =============================================
 

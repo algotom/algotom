@@ -18,11 +18,11 @@ Users can use Algotom to re-process some old data collected at synchrotron facil
         FFT-based reconstruction methods without proper padding; polychromatic X-ray sources;
         or low-dynamic-range detectors to record high-dynamic-range projection-images.
 
-There are tools and `methods <https://sarepy.readthedocs.io/toc/section5.html>`__ users can use to customize their own algorithms:
+There are tools and :ref:`methods <section4_3>` users can use to customize their own algorithms:
 
-	+   Methods to transform images back-and-forth between the polar coordinate system and the Cartesian coordinate system.
+	+   Methods to transform images between the polar coordinate system and the Cartesian coordinate system.
 	+   Methods to separate stripe artifacts.
-	+   Methods to transform back-and-forth between reconstruction images and sinogram images.
+	+   Methods to transform an image between the reconstruction space and the sinogram space.
 
 Tomographic data for testing or developing methods can be downloaded from `Zenodo.org <https://zenodo.org/search?page=1&size=20&q=%22tomographic%20data%22%20%26%20%22nghia%20t.%20vo%22&type=dataset#>`__
 or `TomoBank <https://tomobank.readthedocs.io/en/latest/>`__. Methods can also be tested using
