@@ -1,3 +1,5 @@
+.. _api_util_utility:
+
 :mod:`algotom.util.utility`
 ===========================
 

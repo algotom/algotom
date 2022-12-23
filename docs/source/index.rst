@@ -17,7 +17,7 @@ Table of Contents
 
 .. toctree::
    :numbered:
-   :maxdepth: 3
+   :maxdepth: 4
 
    toc/section1
    toc/section2
