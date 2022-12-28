@@ -40,10 +40,9 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_rtd_theme'
 ]
-
 # extensions = 'autoapi.extension'
 # autoapi_dirs = ['../../algotom']
-# autosummary_ignore_module_all = True
+# autoapi_add_toctree_entry = False
 
 bibtex_bibfiles = [
     'toc/bibtex/ref.bib',

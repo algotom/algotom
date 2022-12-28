@@ -51,3 +51,8 @@ Utility
     api/algotom.util.simulation
     api/algotom.util.utility
     api/algotom.util.correlation
+
+.. automodule:: algotom
+    :members:
+    :undoc-members:
+    :show-inheritance:
