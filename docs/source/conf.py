@@ -38,11 +38,12 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinxcontrib.bibtex',
     'sphinx.ext.viewcode',
+    'sphinx_rtd_theme'
 ]
 
 # extensions = 'autoapi.extension'
 # autoapi_dirs = ['../../algotom']
-autosummary_ignore_module_all = True
+# autosummary_ignore_module_all = True
 
 bibtex_bibfiles = [
     'toc/bibtex/ref.bib',
@@ -131,22 +132,16 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
-
-# on_rtd is whether we are on readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 # html_theme_options = {}
-html_theme_options = {'includehidden': False}
+html_theme_options = {
+    'includehidden': False,
+    'titles_only': False
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
