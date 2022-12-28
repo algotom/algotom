@@ -2,18 +2,18 @@
 ===============================
 
 .. automodule:: algotom.util.correlation
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :members:
+    :show-inheritance:
+    :undoc-members:
 
-   .. rubric:: **Functions:**
+    .. rubric:: **Functions:**
 
-   .. autosummary::
+    .. autosummary::
 
-    normalize_image
-    generate_correlation_map
-    locate_peak
-    find_shift_based_correlation_map
-    find_local_shifts
-    find_global_shift_based_local_shifts
-    find_local_shifts_umpa
+        normalize_image
+        generate_correlation_map
+        locate_peak
+        find_shift_based_correlation_map
+        find_local_shifts
+        find_global_shift_based_local_shifts
+        find_local_shifts_umpa

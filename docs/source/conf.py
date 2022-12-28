@@ -40,6 +40,10 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
+# extensions = 'autoapi.extension'
+# autoapi_dirs = ['../../algotom']
+autosummary_ignore_module_all = True
+
 bibtex_bibfiles = [
     'toc/bibtex/ref.bib',
     'toc/bibtex/cite.bib'

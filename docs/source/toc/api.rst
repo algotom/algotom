@@ -7,52 +7,52 @@ Input-output
 ------------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   api/algotom.io.converter
-   api/algotom.io.loadersaver
+    api/algotom.io.converter
+    api/algotom.io.loadersaver
 
 Pre-processing
 --------------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   api/algotom.prep.calculation
-   api/algotom.prep.conversion
-   api/algotom.prep.correction
-   api/algotom.prep.filtering
-   api/algotom.prep.removal
-   api/algotom.prep.phase
+    api/algotom.prep.calculation
+    api/algotom.prep.conversion
+    api/algotom.prep.correction
+    api/algotom.prep.filtering
+    api/algotom.prep.removal
+    api/algotom.prep.phase
 
 Reconstruction
 --------------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 0
 
-   api/algotom.rec.reconstruction
+    api/algotom.rec.reconstruction
 
 Post-processing
 ---------------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   api/algotom.post.postprocessing
+    api/algotom.post.postprocessing
 
 Utility
 -------
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   api/algotom.util.calibration
-   api/algotom.util.simulation
-   api/algotom.util.utility
-   api/algotom.util.correlation
+    api/algotom.util.calibration
+    api/algotom.util.simulation
+    api/algotom.util.utility
+    api/algotom.util.correlation
 
 .. automodule:: algotom
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    :members:
+    :undoc-members:
+    :show-inheritance:

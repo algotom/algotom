@@ -2,13 +2,14 @@
 ===========================
 
 .. automodule:: algotom.io.converter
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :members:
+    :show-inheritance:
+    :undoc-members:
 
-   .. rubric:: **Functions:**
+    .. rubric:: **Functions:**
 
-   .. autosummary::
-   
-      convert_tif_to_hdf
-      extract_tif_from_hdf
+    .. autosummary::
+
+
+        convert_tif_to_hdf
+        extract_tif_from_hdf

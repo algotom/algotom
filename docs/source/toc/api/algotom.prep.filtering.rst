@@ -2,16 +2,16 @@
 =============================
 
 .. automodule:: algotom.prep.filtering
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :members:
+    :show-inheritance:
+    :undoc-members:
 
-   .. rubric:: **Functions:**
+    .. rubric:: **Functions:**
 
-   .. autosummary::
+    .. autosummary::
 
-    make_fresnel_window
-    fresnel_filter
-    make_double_wedge_mask
-    double_wedge_filter
+        make_fresnel_window
+        fresnel_filter
+        make_double_wedge_mask
+        double_wedge_filter
 
