@@ -29,7 +29,7 @@ Reconstruction
 --------------
 
 .. toctree::
-    :maxdepth: 0
+    :maxdepth: 1
 
     api/algotom.rec.reconstruction
 
