@@ -4,7 +4,7 @@ Basic workflow for processing tomographic data
 Read/write data
 ---------------
 
-The very first step is to know how to load data to workspace. Different
+The first step is to know how to load data to workspace. Different
 communities use different file formats: hdf/nxs, mrc, txrm, xrm, tif, dicom,
 raw,... and they need specific Python libraries to work with. The common format
 used by synchrotron/neutron community is hdf/nxs. To load a dataset from a hdf/nxs
@@ -12,7 +12,7 @@ file we need to know the key or path to the data. This can be done using `Hdfvie
 or Algotom's function as shown in :ref:`section 1.2 <hdf_format>`. For a tomographic
 hdf file, some basic metadata we need to know:
 
-- Keys/paths to projections images, flat-field images, and dark-field images.
+- Keys to projections images, flat-field images, and dark-field images.
 - Key to rotation angles corresponding to projection images. This information may be
   not needed if the data was acquired in the ange range of [0; 180-degree].
 - If the data is from a helical scan, extra information such as pixel size,
@@ -20,16 +20,16 @@ hdf file, some basic metadata we need to know:
 - Information which is used by specific data processing methods such as pixel
   size, sample-detector distance, or X-ray energy.
 
-:numref:`fig_1_4_1` shows the content of a hdf file where users can find key/path
+:numref:`fig_1_4_1` shows the content of a hdf file where users can find key
 to datasets used for tomographic reconstruction.
 
 	.. figure:: section1_4/figs/fig_1_4_1.png
-	   :name: fig_1_4_1
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_1
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
-	   Datasets of a tomographic `hdf file <https://tomobank.readthedocs.io/en/latest/source/data/docs.data.phasecontrast.html#multi-distance>`__.
+		Datasets of a tomographic `hdf file <https://tomobank.readthedocs.io/en/latest/source/data/docs.data.phasecontrast.html#multi-distance>`__.
 
 To load these data using Algotom's functions:
 
@@ -44,18 +44,18 @@ To load these data using Algotom's functions:
 		angles = losa.load_hdf(file, key_path="exchange/theta")
 
 Another tomographic hdf/nxs file acquired at beamline I12, Diamond Light Source (DLS) where
-the file structure, keys, and paths are different to the one before. In this data,
+the file structure and keys are different to the one before. In this data,
 dark-field images and flat-field images are at the same dataset as projection images
 where there is a dataset named "image_key" used to distinguish these images.
 
 	.. figure:: section1_4/figs/fig_1_4_2.png
-	   :name: fig_1_4_2
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_2
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
-	   Datasets of a tomographic hdf file acquired at DLS. Image-key value of 2 is
-	   for dark-field, 1 is for flat-field, and 0 is for projection image.
+		Datasets of a tomographic hdf file acquired at DLS. Image-key value of 2 is
+		for dark-field, 1 is for flat-field, and 0 is for projection image.
 
 We can load the data, extract a projection image, and save it to tif.
 
@@ -80,13 +80,13 @@ The flat-field correction process is based on the Beer-Lambert’s law
 
 .. math::
 
-  \frac{I}{I_0} = \int_{}e^{-\alpha (x,y,z) dx}
+	\frac{I}{I_0} = \int_{}e^{-\alpha (x,y,z) dx}
 
 in practice, it is done using the following formula
 
 .. math::
 
-  \frac{P_{\theta}-D}{F-D}
+	\frac{P_{\theta}-D}{F-D}
 
 where :math:`P_{\theta}` is a projection image of a sample at a rotation
 angle of :math:`\theta`, :math:`D` is a dark-field image (camera’s dark noise)
@@ -122,10 +122,10 @@ demonstration can be download from `here <https://doi.org/10.5281/zenodo.1443568
 Running the code gives the output images
 
 	.. figure:: section1_4/figs/fig_1_4_3.jpg
-	   :name: fig_1_4_3
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_3
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
 We can apply the process to a sinogram.
 
@@ -146,10 +146,10 @@ We can apply the process to a sinogram.
 which results in
 
 	.. figure:: section1_4/figs/fig_1_4_4.jpg
-	   :name: fig_1_4_4
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_4
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
 Zinger removal
 --------------
@@ -159,13 +159,13 @@ the detector system CCD or CMOS chip (:numref:`fig_1_4_5` (a,b)). They produce
 line artifacts across a reconstructed image (:numref:`fig_1_4_5` (c)).
 
 	.. figure:: section1_4/figs/fig_1_4_5.jpg
-	   :name: fig_1_4_5
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_5
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
-	   Artifacts caused by zingers. (a) Zingers in the sinogram space. (b) Zingers
-	   in the projection space. (c) Line artifacts caused by the zingers.
+		Artifacts caused by zingers. (a) Zingers in the sinogram space. (b) Zingers
+		in the projection space. (c) Line artifacts caused by the zingers.
 
 Zingers are easily removed by using a `method <https://algotom.readthedocs.io/en/latest/api/algotom.prep.removal.html#algotom.prep.removal.remove_zinger>`__
 in Algotom
@@ -195,10 +195,10 @@ of how to use the methods
 resulting in
 
 	.. figure:: section1_4/figs/fig_1_4_6.jpg
-	   :name: fig_1_4_6
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_6
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
 Center-of-rotation determination
 --------------------------------
@@ -241,13 +241,13 @@ Blurring an image will impact the performance of these methods.
 
 
 	.. figure:: section1_4/figs/fig_1_4_7.jpg
-	   :name: fig_1_4_7
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_7
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
-	   Results of using the `Fresnel filter <https://algotom.readthedocs.io/en/latest/api/algotom.prep.filtering.html#algotom.prep.filtering.fresnel_filter>`__. (a)
-	   Ratio = 200. (b) Ratio = 1000.
+		Results of using the `Fresnel filter <https://algotom.readthedocs.io/en/latest/api/algotom.prep.filtering.html#algotom.prep.filtering.fresnel_filter>`__. (a)
+		Ratio = 200. (b) Ratio = 1000.
 
 Image reconstruction
 --------------------
@@ -272,10 +272,10 @@ Examples of comparing reconstructed images before and after artifacts removal:
 
 
 	.. figure:: section1_4/figs/fig_1_4_8.jpg
-	   :name: fig_1_4_8
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_8
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
 Examples of comparing reconstructed images after using the Fresnel filter with
 different strengths:
@@ -289,10 +289,10 @@ different strengths:
 
 
 	.. figure:: section1_4/figs/fig_1_4_9.jpg
-	   :name: fig_1_4_9
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_9
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
 Other data processing steps
 ---------------------------
@@ -352,10 +352,10 @@ routine is as follows:
 
 
 	.. figure:: section1_4/figs/fig_1_4_10.jpg
-	   :name: fig_1_4_10
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_10
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
 
 .. _half_acquisition:
 
@@ -433,7 +433,7 @@ two halves of the sinogram. Algotom provides `methods <https://algotom.readthedo
 
 
 	.. figure:: section1_4/figs/fig_1_4_11.jpg
-	   :name: fig_1_4_11
-	   :figwidth: 100 %
-	   :align: center
-	   :figclass: align-center
+		:name: fig_1_4_11
+		:figwidth: 100 %
+		:align: center
+		:figclass: align-center
