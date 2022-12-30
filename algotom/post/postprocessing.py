@@ -31,6 +31,7 @@ Module of methods in the postprocessing stage:
 """
 
 import os
+import h5py
 import numpy as np
 from scipy.ndimage import gaussian_filter
 import algotom.util.utility as util
@@ -38,7 +39,97 @@ import algotom.io.loadersaver as losa
 import algotom.prep.removal as remo
 
 
-def get_statistical_information(mat, percentile=(1, 99), denoise=False):
+def __check_input(input_):
+    """
+    Supplementary method: to check input type
+    """
+    in_type = None
+    if isinstance(input_, np.ndarray):
+        in_type = "numpy_array"
+    else:
+        if isinstance(input_, str):
+            file_ext = os.path.splitext(input_)[-1]
+            if file_ext == "":
+                list_file = losa.find_file(input_ + "/*.tif*")
+                if list_file:
+                    in_type = "tif"
+                else:
+                    raise ValueError(
+                        "No tif files in the folder: {}".format(input_))
+            else:
+                if (file_ext == '.hdf' or file_ext == '.h5'
+                        or file_ext == ".nxs"):
+                    in_type = "hdf"
+    return in_type
+
+
+def __check_output(output):
+    """
+    Supplementary method: to check output type
+    """
+    out_type = None
+    if isinstance(output, str):
+        file_ext = os.path.splitext(output)[-1]
+        if file_ext == "":
+            out_type = "tif"
+        else:
+            if (file_ext == '.hdf' or file_ext == '.h5'
+                    or file_ext == ".nxs"):
+                out_type = "hdf"
+    return out_type
+
+
+def __get_shape(input_, key_path=None):
+    """
+    Supplementary method: to get the shape of a 3D data which can be given as
+    a folder of tif files, a hdf file-path, or a 3D array.
+    """
+    in_type = __check_input(input_)
+    if in_type == "numpy_array":
+        (depth, height, width) = input_.shape
+    elif in_type == "tif":
+        list_file = losa.find_file(input_ + "/*.tif*")
+        depth = len(list_file)
+        (height, width) = np.shape(losa.load_image(list_file[0]))
+    elif in_type == "hdf":
+        if key_path is None:
+            raise ValueError(
+                "Please provide the key path to the dataset!!!")
+        else:
+            hdf_object = h5py.File(input_, 'r')
+            check = key_path in hdf_object
+            if not check:
+                raise ValueError("!!! Wrong key !!!")
+            data = hdf_object[key_path]
+            (depth, height, width) = data.shape
+            hdf_object.close()
+    else:
+        raise ValueError("Input must be a folder-path to tif files, a hdf "
+                         "file-path, or a numpy array!!!")
+    return depth, height, width
+
+
+def __get_cropped_shape(input_, crop, key_path=None):
+    """
+    Supplementary method: to get the cropped information of a 3D data which
+    can be given as a folder of tif files, a hdf file-path, or a 3D array.
+    """
+    if len(crop) != 6:
+        raise ValueError("Crop must be a tuple/list with the length of 6")
+    (cr_d1, cr_d2, cr_h1, cr_h2, cr_w1, cr_w2) = crop
+    (depth, height, width) = __get_shape(input_, key_path=key_path)
+    d1, d2 = cr_d1, depth - cr_d2
+    depth1 = d2 - d1
+    h1, h2 = cr_h1, height - cr_h2
+    w1, w2 = cr_w1, width - cr_w2
+    height1, width1 = h2 - h1, w2 - w1
+    if (depth1 <= 0) or (height1 <= 0) or (width1 <= 0):
+        raise ValueError("Can't crop the data with shape: "
+                         "{}".format((depth, height, width)))
+    return (d1, d2, h1, h2, w1, w2), (depth1, height1, width1)
+
+
+def get_statistical_information(mat, percentile=(0, 100), denoise=False):
     """
     Get statistical information of an image.
 
@@ -81,8 +172,9 @@ def get_statistical_information(mat, percentile=(1, 99), denoise=False):
     return gmin, gmax, min_percent, max_percent, mean, median, variance
 
 
-def get_statistical_information_dataset(input_, percentile=(1, 99), skip=5,
-                                        denoise=False, key_path=None):
+def get_statistical_information_dataset(input_, percentile=(0, 100), skip=5,
+                                        denoise=False, key_path=None,
+                                        crop=(0, 0, 0, 0, 0, 0)):
     """
     Get statical information of a dataset. This can be a folder of tif files,
     a hdf file, or a 3D array.
@@ -99,7 +191,11 @@ def get_statistical_information_dataset(input_, percentile=(1, 99), skip=5,
     denoise: bool, optional
         Enable/disable denoising before extracting statistical information.
     key_path : str, optional
-        Key path to the dataset if the input is the hdf file.
+        Key path to the dataset if input is a hdf file.
+    crop : tuple of int, optional
+        Crop 3D data from the edges, i.e.
+        crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
+        crop_width1, crop_width2).
 
     Returns
     -------
@@ -118,44 +214,39 @@ def get_statistical_information_dataset(input_, percentile=(1, 99), skip=5,
     variance : float
         The mean of the variance of the data array.
     """
-    if isinstance(input_, str) and (os.path.splitext(input_)[-1] == ""):
+    results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
+    (d1, d2, h1, h2, w1, w2) = results[0]
+    depth1 = results[1][0]
+    skip = int(np.clip(skip, 1, depth1 - 1))
+    in_type = __check_input(input_)
+    f_alias = get_statistical_information
+    if in_type == "tif":
         list_file = losa.find_file(input_ + "/*.tif*")
-        depth = len(list_file)
-        if depth == 0:
-            raise ValueError("No tif files in the folder: {}".format(input_))
         list_stat = []
-        for i in range(0, depth, skip):
-            mat = losa.load_image(list_file[i])
+        for i in range(d1, d2, skip):
+            mat = losa.load_image(list_file[i])[h1:h2, w1:w2]
             if denoise is True:
                 mat = gaussian_filter(mat, 2)
-            list_stat.append(get_statistical_information(mat, percentile,
-                                                         denoise))
+            list_stat.append(f_alias(mat, percentile, denoise))
+    elif in_type == "hdf":
+        data = losa.load_hdf(input_, key_path)
+        list_stat = []
+        for i in range(d1, d2, skip):
+            mat = data[i, h1:h2, w1:w2]
+            if denoise is True:
+                mat = gaussian_filter(mat, 2)
+            list_stat.append(f_alias(mat, percentile, denoise))
     else:
-        if isinstance(input_, str):
-            file_ext = os.path.splitext(input_)[-1]
-            if not (file_ext == '.hdf' or file_ext == '.h5'
-                    or file_ext == ".nxs"):
-                raise ValueError(
-                    "Can't open this type of file format {}".format(file_ext))
-            if key_path is None:
-                raise ValueError(
-                    "Please provide the key path to the dataset!!!")
-            input_ = losa.load_hdf(input_, key_path)
-        depth = len(input_)
         list_stat = []
-        for i in range(0, depth, skip):
-            mat = input_[i]
+        for i in range(d1, d2, skip):
+            mat = input_[i, h1:h2, w1:w2]
             if denoise is True:
                 mat = gaussian_filter(mat, 2)
-            list_stat.append(get_statistical_information(mat, percentile,
-                                                         denoise))
+            list_stat.append(f_alias(mat, percentile, denoise))
     list_stat = np.asarray(list_stat)
-    gmin = np.min(list_stat[:, 0])
-    gmax = np.max(list_stat[:, 1])
-    min_percent = np.min(list_stat[:, 2])
-    max_percent = np.max(list_stat[:, 3])
-    median = np.median(list_stat[:, 4])
-    mean = np.mean(list_stat[:, 5])
+    gmin, gmax = np.min(list_stat[:, 0]), np.max(list_stat[:, 1])
+    min_percent, max_percent = np.min(list_stat[:, 2]), np.max(list_stat[:, 3])
+    median, mean = np.median(list_stat[:, 4]), np.mean(list_stat[:, 5])
     variance = np.mean(list_stat[:, 6])
     return gmin, gmax, min_percent, max_percent, mean, median, variance
 
@@ -199,15 +290,15 @@ def downsample(mat, cell_size, method="mean"):
 
 
 def downsample_dataset(input_, output, cell_size, method="mean",
-                       key_path=None):
+                       key_path=None, crop=(0, 0, 0, 0, 0, 0)):
     """
-    Downsample a dataset. This can be a folder of tif files, a hdf file,
+    Downsample a dataset. Input can be a folder of tif files, a hdf file,
     or a 3D array.
 
     Parameters
     ----------
     input_ : str, array_like
-        It can be a folder path to tif files, a hdf file, or 3D array.
+        It can be a folder path to tif files, a hdf file, or a 3D array.
     output : str, None
         It can be a folder path, a hdf file path, or None (memory consuming).
     cell_size : int or tuple of int
@@ -216,6 +307,10 @@ def downsample_dataset(input_, output, cell_size, method="mean",
         Downsampling method.
     key_path : str, optional
         Key path to the dataset if the input is the hdf file.
+    crop : tuple of int, optional
+        Crop 3D data from the edges, i.e.
+        crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
+        crop_width1, crop_width2).
 
     Returns
     -------
@@ -228,129 +323,75 @@ def downsample_dataset(input_, output, cell_size, method="mean",
             file_base = os.path.dirname(output)
         if os.path.exists(file_base):
             raise ValueError("Folder exists!!! Please choose another path!!!")
+    results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
+    (d1, d2, h1, h2, w1, w2) = results[0]
+    (depth1, height1, width1) = results[1]
     if method == "median":
         dsp_method = np.median
     elif method == "max":
-        dsp_method = np.max
+        dsp_method = np.amax
     elif method == "min":
         dsp_method = np.amin
     else:
         dsp_method = np.mean
     if isinstance(cell_size, int):
         cell_size = (cell_size, cell_size, cell_size)
-    if isinstance(input_, str) and (os.path.splitext(input_)[-1] == ""):
-        list_file = losa.find_file(input_ + "/*.tif*")
-        depth = len(list_file)
-        if depth == 0:
-            raise ValueError("No tif files in the folder: {}".format(input_))
-        (height, width) = np.shape(losa.load_image(list_file[0]))
-        depth_dsp = depth // cell_size[0]
-        height_dsp = height // cell_size[1]
-        width_dsp = width // cell_size[2]
-        num = 0
-        if (depth_dsp != 0) and (height_dsp != 0) and (width_dsp != 0):
-            if output is not None:
-                file_base, file_ext = os.path.splitext(output)
-                if file_ext != "":
-                    if not (file_ext == '.hdf' or file_ext == '.h5'
-                            or file_ext == ".nxs"):
-                        raise ValueError(
-                            "File extension must be hdf, h5, or nxs")
-                    else:
-                        output = file_base + file_ext
-                        data_out = losa.open_hdf_stream(
-                            output, (depth_dsp, height_dsp, width_dsp),
-                            key_path="downsample/data", overwrite=False)
-            data_dsp = []
-            for i in range(0, depth, cell_size[0]):
-                if (i + cell_size[0]) > depth:
-                    break
-                else:
-                    mat = []
-                    for j in range(i, i + cell_size[0]):
-                        mat.append(losa.load_image(list_file[j]))
-                    mat = np.asarray(mat)
-                    mat = mat[:, :height_dsp * cell_size[1],
-                          :width_dsp * cell_size[2]]
-                    mat = mat.reshape(1, cell_size[0], height_dsp,
-                                      cell_size[1], width_dsp, cell_size[2])
-                    mat_dsp = dsp_method(
-                        dsp_method(dsp_method(mat, axis=-1), axis=1), axis=2)
-                    if output is None:
-                        data_dsp.append(mat_dsp[0])
-                    else:
-                        if file_ext == "":
-                            out_name = "0000" + str(num)
-                            losa.save_image(
-                                output + "/img_" + out_name[-5:] + ".tif",
-                                mat_dsp[0])
-                        else:
-                            data_out[num] = mat_dsp[0]
-                        num += 1
-        else:
-            raise ValueError("Incorrect cell size {}".format(cell_size))
+    depth_dsp = depth1 // cell_size[0]
+    height_dsp = height1 // cell_size[1]
+    width_dsp = width1 // cell_size[2]
+    if (depth_dsp == 0) or (height_dsp == 0) or (width_dsp == 0):
+        raise ValueError("Incorrect cell size {}".format(cell_size))
+    out_type = __check_output(output)
+    if out_type == "hdf":
+        data_dsp = losa.open_hdf_stream(
+            output, (depth_dsp, height_dsp, width_dsp),
+            key_path="entry/data", overwrite=False)
+    elif out_type is None:
+        data_dsp = []
     else:
-        if isinstance(input_, str):
-            file_ext = os.path.splitext(input_)[-1]
-            if not (file_ext == '.hdf' or file_ext == '.h5'
-                    or file_ext == ".nxs"):
-                raise ValueError(
-                    "Can't open this type of file format {}".format(file_ext))
-            if key_path is None:
-                raise ValueError(
-                    "Please provide the key path to the dataset!!!")
-            input_ = losa.load_hdf(input_, key_path)
-        (depth, height, width) = input_.shape
-        depth_dsp = depth // cell_size[0]
-        height_dsp = height // cell_size[1]
-        width_dsp = width // cell_size[2]
-        if (depth_dsp != 0) and (height_dsp != 0) and (width_dsp != 0):
-            if output is None:
-                input_ = input_[:depth_dsp * cell_size[0],
-                         :height_dsp * cell_size[1],
-                         :width_dsp * cell_size[2]]
-                input_ = input_.reshape(
-                    depth_dsp, cell_size[0], height_dsp, cell_size[1],
-                    width_dsp, cell_size[2])
-                data_dsp = dsp_method(
-                    dsp_method(dsp_method(input_, axis=-1), axis=1), axis=2)
-            else:
-                file_base, file_ext = os.path.splitext(output)
-                if file_ext != "":
-                    if not (file_ext == '.hdf' or file_ext == '.h5'
-                            or file_ext == ".nxs"):
-                        raise ValueError(
-                            "File extension must be hdf, h5, or nxs")
-                    else:
-                        output = file_base + file_ext
-                        data_out = losa.open_hdf_stream(
-                            output, (depth_dsp, height_dsp, width_dsp),
-                            key_path="downsample/data", overwrite=False)
-                num = 0
-                for i in range(0, depth, cell_size[0]):
-                    if (i + cell_size[0]) > depth:
-                        break
-                    else:
-                        mat = input_[i:i + cell_size[0],
-                              :height_dsp * cell_size[1],
-                              :width_dsp * cell_size[2]]
-                        mat = mat.reshape(1, cell_size[0], height_dsp,
-                                          cell_size[1], width_dsp,
-                                          cell_size[2])
-                        mat_dsp = dsp_method(dsp_method(
-                            dsp_method(mat, axis=-1), axis=1), axis=2)
-                        if file_ext != "":
-                            data_out[num] = mat_dsp[0]
-                        else:
-                            out_name = "0000" + str(num)
-                            losa.save_image(
-                                output + "/img_" + out_name[-5:] + ".tif",
-                                mat_dsp[0])
-                        num += 1
+        data_dsp = None
+    in_type = __check_input(input_)
+    if in_type == "tif":
+        data = losa.find_file(input_ + "/*.tif*")
+    elif in_type == "hdf":
+        data = losa.load_hdf(input_, key_path)
+    else:
+        data = input_
+    num = 0
+    for i in range(d1, d2, cell_size[0]):
+        if (i + cell_size[0]) > (d1 + depth1):
+            break
         else:
-            raise ValueError("Incorrect cell size {}".format(cell_size))
-    if output is None:
-        return np.asarray(data_dsp)
+            if in_type == "tif":
+                mat = np.asarray([losa.load_image(data[j])[h1:h2, w1:w2] \
+                                  for j in range(i, i + cell_size[0])])
+                mat = mat[:, :height_dsp * cell_size[1],
+                      :width_dsp * cell_size[2]]
+                mat = mat.reshape(1, cell_size[0], height_dsp,
+                                  cell_size[1], width_dsp, cell_size[2])
+                mat_dsp = dsp_method(
+                    dsp_method(dsp_method(mat, axis=-1), axis=1), axis=2)
+            else:
+                mat = data[i:i + cell_size[0],
+                      h1:h1 + height_dsp * cell_size[1],
+                      w1:w1 + width_dsp * cell_size[2]]
+                mat = mat.reshape(1, cell_size[0], height_dsp,
+                                  cell_size[1], width_dsp,
+                                  cell_size[2])
+                mat_dsp = dsp_method(dsp_method(
+                    dsp_method(mat, axis=-1), axis=1), axis=2)
+            if out_type is None:
+                data_dsp.append(mat_dsp[0])
+            elif out_type == "hdf":
+                data_dsp[num] = mat_dsp[0]
+            else:
+                out_name = "0000" + str(num)
+                losa.save_image(output + "/img_" + out_name[-5:] + ".tif",
+                                mat_dsp[0])
+            num += 1
+    if out_type is None:
+        data_dsp = np.asarray(data_dsp)
+    return data_dsp
 
 
 def rescale(mat, nbit=16, minmax=None):
@@ -384,7 +425,7 @@ def rescale(mat, nbit=16, minmax=None):
 
 
 def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
-                    key_path=None):
+                    key_path=None, crop=(0, 0, 0, 0, 0, 0)):
     """
     Rescale a dataset to 8-bit or 16-bit data-type. The dataset can be a
     folder of tif files, a hdf file, or a 3D array.
@@ -404,6 +445,10 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         Skipping step of images used for getting statistical information.
     key_path : str, optional
         Key path to the dataset if the input is the hdf file.
+    crop : tuple of int, optional
+        Crop 3D data from the edges, i.e.
+        crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
+        crop_width1, crop_width2).
 
     Returns
     -------
@@ -416,96 +461,54 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
             file_base = os.path.dirname(output)
         if os.path.exists(file_base):
             raise ValueError("Folder exists!!! Please choose another path!!!")
-    if isinstance(input_, str) and (os.path.splitext(input_)[-1] == ""):
-        list_file = losa.find_file(input_ + "/*.tif*")
-        depth = len(list_file)
-        if depth == 0:
-            raise ValueError("No tif files in the folder: {}".format(input_))
-        if minmax is None:
-            if skip is None:
-                skip = int(np.ceil(0.15 * depth))
-            (gmin, gmax) = get_statistical_information_dataset(input_,
-                                                               skip=skip)[0:2]
-        else:
-            (gmin, gmax) = minmax
-        if output is not None:
-            file_base, file_ext = os.path.splitext(output)
-            if file_ext != "":
-                if not (file_ext == '.hdf' or file_ext == '.h5'
-                        or file_ext == ".nxs"):
-                    raise ValueError("File extension must be hdf, h5, or nxs")
-                output = file_base + file_ext
-                (height, width) = np.shape(losa.load_image(list_file[0]))
-                if nbit == 8:
-                    data_type = "uint8"
-                else:
-                    data_type = "uint16"
-                data_out = losa.open_hdf_stream(output, (depth, height, width),
-                                                key_path="rescale/data",
-                                                data_type=data_type,
-                                                overwrite=False)
-        data_res = []
-        for i in range(0, depth):
-            mat = rescale(
-                losa.load_image(list_file[i]), nbit=nbit, minmax=(gmin, gmax))
-            if output is None:
-                data_res.append(mat)
-            else:
-                file_base, file_ext = os.path.splitext(output)
-                if file_ext == "":
-                    out_name = "0000" + str(i)
-                    losa.save_image(output + "/img_" + out_name[-5:] + ".tif",
-                                    mat)
-                else:
-                    data_out[i] = mat
+    results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
+    (d1, d2, h1, h2, w1, w2) = results[0]
+    (depth1, height1, width1) = results[1]
+    if minmax is None:
+        if skip is None:
+            skip = int(np.clip(np.ceil(0.15 * depth1), 1, None))
+        (gmin, gmax) = get_statistical_information_dataset(input_, skip=skip,
+                                                           crop=crop)[0:2]
     else:
-        if isinstance(input_, str):
-            file_ext = os.path.splitext(input_)[-1]
-            if not (file_ext == '.hdf' or file_ext == '.h5'
-                    or file_ext == ".nxs"):
-                raise ValueError(
-                    "Can't open this type of file format {}".format(file_ext))
-            if key_path is None:
-                raise ValueError(
-                    "Please provide the key path to the dataset!!!")
-            input_ = losa.load_hdf(input_, key_path)
-        (depth, height, width) = input_.shape
-        if minmax is None:
-            if skip is None:
-                skip = int(np.ceil(0.15 * depth))
-            f_alias = get_statistical_information_dataset
-            (gmin, gmax) = f_alias(input_, skip=skip, key_path=key_path)[0:2]
-        else:
-            (gmin, gmax) = minmax
+        (gmin, gmax) = minmax
+    if nbit == 8:
+        data_type = "uint8"
+    else:
+        data_type = "uint16"
+    out_type = __check_output(output)
+    if out_type == "hdf":
+        data_res = losa.open_hdf_stream(output, (depth1, height1, width1),
+                                        key_path="entry/data",
+                                        data_type=data_type,
+                                        overwrite=False)
+    elif out_type is None:
         data_res = []
-        if output is not None:
-            file_base, file_ext = os.path.splitext(output)
-            if file_ext != "":
-                if not (file_ext == '.hdf' or file_ext == '.h5'
-                        or file_ext == ".nxs"):
-                    raise ValueError("File extension must be hdf, h5, or nxs")
-                output = file_base + file_ext
-                if nbit == 8:
-                    data_type = "uint8"
-                else:
-                    data_type = "uint16"
-                data_out = losa.open_hdf_stream(
-                    output, (depth, height, width), key_path="rescale/data",
-                    data_type=data_type, overwrite=False)
-        for i in range(0, depth):
-            mat = rescale(input_[i], nbit=nbit, minmax=(gmin, gmax))
-            if output is None:
-                data_res.append(mat)
-            else:
-                file_base, file_ext = os.path.splitext(output)
-                if file_ext != "":
-                    data_out[i] = mat
-                else:
-                    out_name = "0000" + str(i)
-                    losa.save_image(output + "/img_" + out_name[-5:] + ".tif",
-                                    mat)
-    if output is None:
-        return np.asarray(data_res)
+    else:
+        data_res = None
+    in_type = __check_input(input_)
+    if in_type == "tif":
+        data = losa.find_file(input_ + "/*.tif*")
+    elif in_type == "hdf":
+        data = losa.load_hdf(input_, key_path)
+    else:
+        data = input_
+    for i in range(d1, d2):
+        if in_type == "tif":
+            mat = rescale(losa.load_image(data[i])[h1:h2, w1:w2],
+                          nbit=nbit, minmax=(gmin, gmax))
+        else:
+            mat = rescale(data[i, h1:h2, w1:w2], nbit=nbit,
+                          minmax=(gmin, gmax))
+        if out_type is None:
+            data_res.append(mat)
+        elif out_type == "hdf":
+            data_res[i - d1] = mat
+        else:
+            out_name = "0000" + str(i)
+            losa.save_image(output + "/img_" + out_name[-5:] + ".tif", mat)
+    if out_type is None:
+        data_res = np.asarray(data_res)
+    return data_res
 
 
 def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):
