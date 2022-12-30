@@ -356,11 +356,14 @@ def remove_dead_stripe(sinogram, snr=3.0, size=51, residual=True,
     list_mask[-2:] = 0.0
     xlist = np.where(list_mask < 1.0)[0]
     ylist = np.arange(nrow)
-    mat = sinogram[:, xlist]
-    finter = interpolate.interp2d(xlist, ylist, mat, kind='linear')
+    finter = interpolate.RectBivariateSpline(ylist, xlist, sinogram[:, xlist],
+                                             kx=1, ky=1)
     xlist_miss = np.where(list_mask > 0.0)[0]
     if (ncol // 3) > len(xlist_miss) > 0:
-        sinogram[:, xlist_miss] = finter(xlist_miss, ylist)
+        x_mat_miss, y_mat = np.meshgrid(xlist_miss, ylist)
+        output = finter.ev(np.ndarray.flatten(y_mat),
+                           np.ndarray.flatten(x_mat_miss))
+        sinogram[:, xlist_miss] = output.reshape(x_mat_miss.shape)
     if residual is True:
         sinogram = remove_large_stripe(sinogram, snr, size)
     return sinogram
@@ -784,11 +787,24 @@ def remove_stripe_based_interpolation(sinogram, snr=3.0, size=51,
     list_mask[-2:] = 0.0
     xlist = np.where(list_mask < 1.0)[0]
     ylist = np.arange(nrow)
-    zmat = sinogram[:, xlist]
-    finter = interpolate.interp2d(xlist, ylist, zmat, kind=kind)
+    if kind == "cubic":
+        finter = interpolate.RectBivariateSpline(ylist, xlist,
+                                                 sinogram[:, xlist],
+                                                 kx=2, ky=2)
+    elif kind == "quintic":
+        finter = interpolate.RectBivariateSpline(ylist, xlist,
+                                                 sinogram[:, xlist],
+                                                 kx=2, ky=2)
+    else:
+        finter = interpolate.RectBivariateSpline(ylist, xlist,
+                                                 sinogram[:, xlist],
+                                                 kx=1, ky=1)
     xlist_miss = np.where(list_mask > 0.0)[0]
     if len(xlist_miss) > 0:
-        sinogram[:, xlist_miss] = finter(xlist_miss, ylist)
+        x_mat_miss, y_mat = np.meshgrid(xlist_miss, ylist)
+        output = finter.ev(np.ndarray.flatten(y_mat),
+                           np.ndarray.flatten(x_mat_miss))
+        sinogram[:, xlist_miss] = output.reshape(x_mat_miss.shape)
     return sinogram
 
 
@@ -942,14 +958,14 @@ def remove_blob_1d(sino_1d, mask_1d):
     [1] : https://doi.org/10.1364/OE.418448
     """
     sino_1d = np.copy(sino_1d)
-    listx = np.where(mask_1d < 1.0)[0]
-    listy = sino_1d[listx]
-    finter = interpolate.interp1d(listx, listy)
+    xlist = np.where(mask_1d < 1.0)[0]
+    ylist = sino_1d[xlist]
+    finter = interpolate.interp1d(xlist, ylist)
     mask_1d[:2] = 0.0
     mask_1d[-2:] = 0.0
-    listx_miss = np.where(mask_1d > 0.0)[0]
-    if len(listx_miss) > 0:
-        sino_1d[listx_miss] = finter(listx_miss)
+    xlist_miss = np.where(mask_1d > 0.0)[0]
+    if len(xlist_miss) > 0:
+        sino_1d[xlist_miss] = finter(xlist_miss)
     return sino_1d
 
 
@@ -977,11 +993,11 @@ def remove_blob(mat, mask):
         mask_1d = mask[i]
         mask_1d[:2] = 0.0
         mask_1d[-2:] = 0.0
-        listx = np.where(mask_1d < 1.0)[0]
-        listy = array_1d[listx]
-        finter = interpolate.interp1d(listx, listy)
-        listx_miss = np.where(mask_1d > 0.0)[0]
-        if len(listx_miss) > 0:
-            array_1d[listx_miss] = finter(listx_miss)
+        xlist = np.where(mask_1d < 1.0)[0]
+        ylist = array_1d[xlist]
+        finter = interpolate.interp1d(xlist, ylist)
+        xlist_miss = np.where(mask_1d > 0.0)[0]
+        if len(xlist_miss) > 0:
+            array_1d[xlist_miss] = finter(xlist_miss)
         mat[i] = array_1d
     return mat

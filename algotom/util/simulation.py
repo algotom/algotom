@@ -67,9 +67,9 @@ def make_elliptic_mask(size, center, length, angle):
     else:
         x_cen = y_cen = center
     angle = - angle * np.pi / 180.0
-    x_list = np.arange(size) - icenter - x_cen
-    y_list = - np.arange(size) + icenter - y_cen
-    x_mat, y_mat = np.meshgrid(x_list, y_list)
+    xlist = np.arange(size) - icenter - x_cen
+    ylist = - np.arange(size) + icenter - y_cen
+    x_mat, y_mat = np.meshgrid(xlist, ylist)
     x_mat1 = (x_mat * np.cos(angle) - y_mat * np.sin(angle)) / (0.5 * x_len)
     y_mat1 = (x_mat * np.sin(angle) + y_mat * np.cos(angle)) / (0.5 * y_len)
     r_mat = np.sqrt(x_mat1 ** 2 + y_mat1 ** 2)
@@ -109,9 +109,9 @@ def make_rectangular_mask(size, center, length, angle):
     else:
         x_cen = y_cen = center
     angle = - angle * np.pi / 180.0
-    x_list = np.arange(size) - icenter - x_cen
-    y_list = - np.arange(size) + icenter - y_cen
-    x_mat, y_mat = np.meshgrid(x_list, y_list)
+    xlist = np.arange(size) - icenter - x_cen
+    ylist = - np.arange(size) + icenter - y_cen
+    x_mat, y_mat = np.meshgrid(xlist, ylist)
     x_mat1 = np.abs(
         (x_mat * np.cos(angle) - y_mat * np.sin(angle)) / (0.5 * x_len))
     y_mat1 = np.abs(

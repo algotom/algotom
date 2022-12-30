@@ -356,9 +356,9 @@ def generate_mapping_coordinate(width_sino, height_sino, width_rec,
     xcenter = (width_rec - 1.0) * 0.5
     ycenter = (height_rec - 1.0) * 0.5
     r_max = np.floor(min(xcenter, ycenter))
-    x_list = (np.flipud(np.arange(width_rec)) - xcenter)
-    y_list = (np.arange(height_rec) - ycenter)
-    x_mat, y_mat = np.meshgrid(x_list, y_list)
+    xlist = (np.flipud(np.arange(width_rec)) - xcenter)
+    ylist = (np.arange(height_rec) - ycenter)
+    x_mat, y_mat = np.meshgrid(xlist, ylist)
     r_mat = np.float32(np.clip(np.sqrt(x_mat ** 2 + y_mat ** 2), 0, r_max))
     theta_mat = np.pi + np.arctan2(y_mat, x_mat)
     r_mat[theta_mat > np.pi] *= -1

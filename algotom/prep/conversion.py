@@ -198,13 +198,17 @@ def join_image(mat1, mat2, joint_width, side, norm=True, total_width=None):
         mat_comb[:, (ncol1 + joint_int):total_width0] += mat2
         list_mask = np.zeros(total_width0, dtype=np.float32)
         list_mask[ncol1 - 2:ncol1 + joint_int + 3] = 1.0
-        listx = np.where(list_mask < 1.0)[0]
-        listy = np.arange(nrow1)
-        mat = mat_comb[:, listx]
-        finter = interpolate.interp2d(listx, listy, mat, kind='linear')
-        listx_miss = np.where(list_mask > 0.0)[0]
-        if len(listx_miss) > 0:
-            mat_comb[:, listx_miss] = finter(listx_miss, listy)
+        xlist = np.where(list_mask < 1.0)[0]
+        ylist = np.arange(nrow1)
+        finter = interpolate.RectBivariateSpline(ylist, xlist,
+                                                 mat_comb[:, xlist],
+                                                 kx=1, ky=1)
+        xlist_miss = np.where(list_mask > 0.0)[0]
+        if len(xlist_miss) > 0:
+            x_mat_miss, y_mat = np.meshgrid(xlist_miss, ylist)
+            output = finter.ev(np.ndarray.flatten(y_mat),
+                               np.ndarray.flatten(x_mat_miss))
+            mat_comb[:, xlist_miss] = output.reshape(x_mat_miss.shape)
     else:
         if norm is True:
             factor2 = np.mean(mat2[:, -3:])
@@ -214,13 +218,17 @@ def join_image(mat1, mat2, joint_width, side, norm=True, total_width=None):
         mat_comb[:, (ncol2 + joint_int):total_width0] += mat1
         list_mask = np.zeros(total_width0, dtype=np.float32)
         list_mask[ncol2 - 2:ncol2 + joint_int + 3] = 1.0
-        listx = np.where(list_mask < 1.0)[0]
-        listy = np.arange(nrow1)
-        mat = mat_comb[:, listx]
-        finter = interpolate.interp2d(listx, listy, mat, kind='linear')
-        listx_miss = np.where(list_mask > 0.0)[0]
-        if len(listx_miss) > 0:
-            mat_comb[:, listx_miss] = finter(listx_miss, listy)
+        xlist = np.where(list_mask < 1.0)[0]
+        ylist = np.arange(nrow1)
+        finter = interpolate.RectBivariateSpline(ylist, xlist,
+                                                 mat_comb[:, xlist],
+                                                 kx=1, ky=1)
+        xlist_miss = np.where(list_mask > 0.0)[0]
+        if len(xlist_miss) > 0:
+            x_mat_miss, y_mat = np.meshgrid(xlist_miss, ylist)
+            output = finter.ev(np.ndarray.flatten(y_mat),
+                               np.ndarray.flatten(x_mat_miss))
+            mat_comb[:, xlist_miss] = output.reshape(x_mat_miss.shape)
     if total_width > total_width0:
         mat_comb = np.pad(
             mat_comb, ((0, 0), (0, total_width - total_width0)), mode='edge')

@@ -339,11 +339,11 @@ def detect_stripe(list_data, snr):
     """
     npoint = len(list_data)
     list_sort = np.sort(list_data)
-    x_list = np.arange(0, npoint, 1.0)
+    xlist = np.arange(0, npoint, 1.0)
     ndrop = np.int16(0.25 * npoint)
-    (slope, intercept) = np.polyfit(x_list[ndrop:-ndrop - 1],
+    (slope, intercept) = np.polyfit(xlist[ndrop:-ndrop - 1],
                                     list_sort[ndrop:-ndrop - 1], 1)[:2]
-    y_end = intercept + slope * x_list[-1]
+    y_end = intercept + slope * xlist[-1]
     noise_level = np.abs(y_end - intercept)
     if noise_level == 0.0:
         raise ValueError("The method doesn't work on noise-free data. If you "
@@ -420,8 +420,8 @@ def make_2d_butterworth_window(width, height, u, v, n):
     """
     xcenter = np.ceil(width / 2.0) - 1.0
     ycenter = np.int16(np.ceil(height / 2.0) - 1)
-    x_list = np.arange(width) - xcenter
-    window = 1.0 / (1.0 + np.power(x_list / u, 2 * n))
+    xlist = np.arange(width) - xcenter
+    window = 1.0 / (1.0 + np.power(xlist / u, 2 * n))
     row1 = ycenter - np.int16(v)
     row2 = ycenter + np.int16(v) + 1
     window_2d = np.ones((height, width), dtype=np.float32)
@@ -451,11 +451,11 @@ def make_2d_damping_window(width, height, size, window_name="gaussian"):
         2D array of the window.
     """
     xcenter = np.ceil(width / 2.0) - 1.0
-    x_list = np.arange(width) - xcenter
+    xlist = np.arange(width) - xcenter
     if window_name == "butter":
-        window = 1.0 - 1.0 / (1.0 + np.power(x_list / size, 2))
+        window = 1.0 - 1.0 / (1.0 + np.power(xlist / size, 2))
     else:
-        window = 1.0 - np.exp(-x_list ** 2 / (2 * (size ** 2)))
+        window = 1.0 - np.exp(-xlist ** 2 / (2 * (size ** 2)))
     return np.tile(window, (height, 1))
 
 
@@ -623,13 +623,23 @@ def interpolate_inside_stripe(mat, list_mask, kind="linear"):
     list_mask = np.copy(list_mask)
     list_mask[0:2] = 0.0
     list_mask[-2:] = 0.0
-    x_list = np.where(list_mask < 1.0)[0]
+    xlist = np.where(list_mask < 1.0)[0]
     ylist = np.arange(nrow)
-    zmat = mat[:, x_list]
-    finter = interpolate.interp2d(x_list, ylist, zmat, kind=kind)
+    if kind == "cubic":
+        finter = interpolate.RectBivariateSpline(ylist, xlist, mat[:, xlist],
+                                                 kx=2, ky=2)
+    elif kind == "quintic":
+        finter = interpolate.RectBivariateSpline(ylist, xlist, mat[:, xlist],
+                                                 kx=3, ky=3)
+    else:
+        finter = interpolate.RectBivariateSpline(ylist, xlist, mat[:, xlist],
+                                                 kx=1, ky=1)
     xlist_miss = np.where(list_mask > 0.0)[0]
     if len(xlist_miss) > 0:
-        mat[:, xlist_miss] = finter(xlist_miss, ylist)
+        x_mat_miss, y_mat = np.meshgrid(xlist_miss, ylist)
+        output = finter.ev(np.ndarray.flatten(y_mat),
+                           np.ndarray.flatten(x_mat_miss))
+        mat[:, xlist_miss] = output.reshape(x_mat_miss.shape)
     return mat
 
 
@@ -693,9 +703,9 @@ def polar_from_rectangular(width_pol, height_pol, width_reg, height_reg):
     xcenter = (width_reg - 1.0) * 0.5
     ycenter = (height_reg - 1.0) * 0.5
     r_max = np.floor(max(xcenter, ycenter))
-    x_list = (np.flipud(np.arange(width_reg)) - xcenter) * width_pol / r_max
-    y_list = (np.flipud(np.arange(height_reg)) - ycenter) * width_pol / r_max
-    x_mat, y_mat = np.meshgrid(x_list, y_list)
+    xlist = (np.flipud(np.arange(width_reg)) - xcenter) * width_pol / r_max
+    ylist = (np.flipud(np.arange(height_reg)) - ycenter) * width_pol / r_max
+    x_mat, y_mat = np.meshgrid(xlist, ylist)
     r_mat = np.float32(
         np.clip(np.sqrt(x_mat ** 2 + y_mat ** 2), 0, width_pol - 1))
     theta_mat = np.float32(np.clip(
@@ -834,9 +844,9 @@ def apply_gaussian_filter(mat, sigma_x, sigma_y, pad=None, mode=None):
     mat_pad = np.pad(mat_pad, ((pad, pad), (0, 0)), mode=mode2)
     (nrow, ncol) = mat_pad.shape
     window = make_2d_gaussian_window(nrow, ncol, sigma_x, sigma_y)
-    listx = np.arange(0, ncol)
-    listy = np.arange(0, nrow)
-    x, y = np.meshgrid(listx, listy)
+    xlist = np.arange(0, ncol)
+    ylist = np.arange(0, nrow)
+    x, y = np.meshgrid(xlist, ylist)
     mat_sign = np.power(-1.0, x + y)
     mat_filt = np.real(
         fft.ifft2(fft.fft2(mat_pad * mat_sign) * window) * mat_sign)
@@ -916,9 +926,9 @@ def transform_1d_window_to_2d(win_1d):
     else:
         width = width0
     center = width // 2
-    x_list = (1.0 * np.flipud(np.arange(width)) - center)
-    y_list = (1.0 * np.arange(width) - center)
-    x_mat, y_mat = np.meshgrid(x_list, y_list)
+    xlist = (1.0 * np.flipud(np.arange(width)) - center)
+    ylist = (1.0 * np.arange(width) - center)
+    x_mat, y_mat = np.meshgrid(xlist, ylist)
     r_mat = np.float32(np.clip(np.sqrt(x_mat ** 2 + y_mat ** 2), 0, center))
     theta_mat = np.arctan2(y_mat, x_mat)
     r_mat[theta_mat < 0] *= -1

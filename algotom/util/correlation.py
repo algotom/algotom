@@ -590,8 +590,8 @@ def _locate_2d_peak_subpixel(mat, method="diff"):
         size = min(height, width)
         if size > 9:
             warnings.warn("Large array can cause numerical error!!!")
-        x_list, y_list = np.arange(0.0, width), np.arange(0.0, height)
-        x_mat, y_mat = np.meshgrid(x_list, y_list)
+        xlist, ylist = np.arange(0.0, width), np.arange(0.0, height)
+        x_mat, y_mat = np.meshgrid(xlist, ylist)
         x, y = np.ndarray.flatten(x_mat), np.ndarray.flatten(y_mat)
         Amatrix = []
         for i in range(len(x)):

@@ -69,7 +69,7 @@ class UtilityMethods(unittest.TestCase):
 
     def test_get_statistical_information_dataset(self):
         mat = np.random.rand(32, 64, 64)
-        results =post.get_statistical_information_dataset(mat)
+        results = post.get_statistical_information_dataset(mat)
         num = np.abs(0.5 - results[5])
         self.assertTrue(len(results) == 7 and num < 0.1)
 
@@ -86,6 +86,9 @@ class UtilityMethods(unittest.TestCase):
         files = glob.glob("data/dsp/*tif*")
         self.assertTrue(len(files) == 8)
         post.downsample_dataset(mat, "data/dsp2/file.hdf", (2, 2, 2))
+        output = post.downsample_dataset(mat, None, (2, 2, 2),
+                                         crop=(4, 4, 0, 0, 16, 16))
+        self.assertTrue(output.shape == (4, 32, 16))
         self.assertTrue(os.path.isfile("data/dsp2/file.hdf"))
 
     def test_rescale(self):
@@ -97,9 +100,10 @@ class UtilityMethods(unittest.TestCase):
         mat = np.random.rand(16, 64, 64)
         mat_res = post.rescale_dataset(mat, None, nbit=8)
         self.assertTrue(256 > mat_res[0, 32, 32] >= 0)
-        post.rescale_dataset(mat, "data/rescale/", nbit=8)
+        post.rescale_dataset(mat, "data/rescale/", nbit=8,
+                             crop=(4, 4, 0, 0, 0, 0))
         files = glob.glob("data/rescale/*tif*")
-        self.assertTrue(len(files) == 16)
+        self.assertTrue(len(files) == 8)
         post.rescale_dataset(mat, "data/rescale2/file.hdf", nbit=8)
         self.assertTrue(os.path.isfile("data/rescale2/file.hdf"))
 
