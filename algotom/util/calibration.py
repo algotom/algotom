@@ -225,7 +225,7 @@ def get_dot_size(mat, size_opt="max"):
     mat = np.int16(mat)
     mat_label, num_dots = ndi.label(mat)
     list_index = np.arange(1, num_dots + 1)
-    list_sum = ndi.measurements.sum(mat, labels=mat_label, index=list_index)
+    list_sum = ndi.sum(mat, labels=mat_label, index=list_index)
     if size_opt == "median":
         dot_size = np.median(list_sum)
     elif size_opt == "mean":
