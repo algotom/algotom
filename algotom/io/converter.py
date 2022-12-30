@@ -78,7 +78,7 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
                                     **options)
     for i, fname in enumerate(list_file):
         data_out[i] = losa.load_image(fname)[cr_top:cr_height + cr_top,
-                      cr_left:cr_width + cr_left]
+                                             cr_left:cr_width + cr_left]
     return output_path
 
 

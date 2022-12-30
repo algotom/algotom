@@ -363,18 +363,18 @@ def downsample_dataset(input_, output, cell_size, method="mean",
             break
         else:
             if in_type == "tif":
-                mat = np.asarray([losa.load_image(data[j])[h1:h2, w1:w2] \
+                mat = np.asarray([losa.load_image(data[j])[h1:h2, w1:w2]
                                   for j in range(i, i + cell_size[0])])
                 mat = mat[:, :height_dsp * cell_size[1],
-                      :width_dsp * cell_size[2]]
+                          :width_dsp * cell_size[2]]
                 mat = mat.reshape(1, cell_size[0], height_dsp,
                                   cell_size[1], width_dsp, cell_size[2])
                 mat_dsp = dsp_method(
                     dsp_method(dsp_method(mat, axis=-1), axis=1), axis=2)
             else:
                 mat = data[i:i + cell_size[0],
-                      h1:h1 + height_dsp * cell_size[1],
-                      w1:w1 + width_dsp * cell_size[2]]
+                           h1:h1 + height_dsp * cell_size[1],
+                           w1:w1 + width_dsp * cell_size[2]]
                 mat = mat.reshape(1, cell_size[0], height_dsp,
                                   cell_size[1], width_dsp,
                                   cell_size[2])
