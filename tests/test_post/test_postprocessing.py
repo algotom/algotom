@@ -79,7 +79,7 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(mat_dsp.shape == (32, 32))
 
     def test_downsample_dataset(self):
-        mat = np.random.rand(16, 64, 64)
+        mat = np.float32(np.random.rand(16, 64, 64))
         mat_dsp = post.downsample_dataset(mat, None, (2, 2, 2))
         self.assertTrue(mat_dsp.shape == (8, 32, 32))
         post.downsample_dataset(mat, "data/dsp/", (2, 2, 2))
@@ -87,8 +87,10 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(len(files) == 8)
         post.downsample_dataset(mat, "data/dsp2/file.hdf", (2, 2, 2))
         output = post.downsample_dataset(mat, None, (2, 2, 2),
-                                         crop=(4, 4, 0, 0, 16, 16))
+                                         crop=(4, 4, 0, 0, 16, 16),
+                                         rescaling=True, nbit=16)
         self.assertTrue(output.shape == (4, 32, 16))
+        self.assertTrue(str(output.dtype) == "uint16")
         self.assertTrue(os.path.isfile("data/dsp2/file.hdf"))
 
     def test_rescale(self):
