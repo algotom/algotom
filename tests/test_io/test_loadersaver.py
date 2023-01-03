@@ -78,7 +78,7 @@ class LoaderSaverMethods(unittest.TestCase):
 
     def test_save_image(self):
         file_path = "data/img.tif"
-        losa.save_image(file_path, np.random.rand(64, 64))
+        losa.save_image(file_path, np.float32(np.random.rand(64, 64)))
         self.assertTrue(os.path.isfile(file_path))
 
     def test_open_hdf_stream(self):

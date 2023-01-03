@@ -12,3 +12,4 @@ dist/
 recipe/
 docs/build
 docs/_build
+tests/test_post/data/

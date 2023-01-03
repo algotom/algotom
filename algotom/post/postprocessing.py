@@ -31,6 +31,7 @@ Module of methods in the postprocessing stage:
 """
 
 import os
+import shutil
 import h5py
 import numpy as np
 from PIL import Image
@@ -358,7 +359,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
     method : {"mean", "median", "max", "min"}
         Downsampling method.
     key_path : str, optional
-        Key path to the dataset if the input is the hdf file.
+        Key path to the dataset if the input is a hdf file.
     rescaling : bool
         Rescale dataset if True.
     nbit : {8,16}
@@ -397,7 +398,6 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
     width_dsp = width1 // cell_size[2]
     if (depth_dsp == 0) or (height_dsp == 0) or (width_dsp == 0):
         raise ValueError("Incorrect cell size {}".format(cell_size))
-
     in_type = __get_input_type(input_)
     if in_type == "tif":
         data = losa.find_file(input_ + "/*.tif*")
@@ -408,7 +408,6 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
     else:
         data = input_
         data_type = data.dtype
-
     res_type = str(data_type)
     if rescaling is True:
         if nbit == 16:
@@ -428,10 +427,9 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
                 if minmax is None:
                     f_alias = get_statistical_information_dataset
                     minmax = f_alias(input_, percentile=(0, 100), skip=skip,
-                                     crop=crop)[0:2]
+                                     crop=crop, key_path=key_path)[0:2]
         else:
             rescaling = False
-
     out_type = __get_output_type(output)
     if out_type == "hdf":
         data_dsp = losa.open_hdf_stream(
@@ -492,15 +490,15 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         It can be a folder path to tif files, a hdf file, or 3D array.
     output : str, None
         It can be a folder path, a hdf file path, or None (memory consuming).
-    nbit : {8,16}
-        Rescaled data-type: 8-bit or 16-bit.
+    nbit : {8,16,32}
+        Select rescaled data-type: 8-bit/16-bit. 32 is for cropping data only.
     minmax : tuple of float, or None
         Minimum and maximum values used for rescaling. They are calculated if
         None is given.
     skip : int or None
         Skipping step of images used for getting statistical information.
     key_path : str, optional
-        Key path to the dataset if the input is the hdf file.
+        Key path to the dataset if the input is a hdf file.
     crop : tuple of int, optional
         Crop 3D data from the edges, i.e.
         crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
@@ -518,14 +516,15 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
     if minmax is None:
         if skip is None:
             skip = int(np.clip(np.ceil(0.15 * depth1), 1, None))
-        (gmin, gmax) = get_statistical_information_dataset(input_, skip=skip,
-                                                           crop=crop)[0:2]
-    else:
-        (gmin, gmax) = minmax
+        minmax = get_statistical_information_dataset(input_, skip=skip,
+                                                     crop=crop,
+                                                     key_path=key_path)[0:2]
     if nbit == 8:
         data_type = "uint8"
-    else:
+    elif nbit == 16:
         data_type = "uint16"
+    else:
+        data_type = "float32"
     out_type = __get_output_type(output)
     if out_type == "hdf":
         data_res = losa.open_hdf_stream(output, (depth1, height1, width1),
@@ -545,11 +544,13 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         data = input_
     for i in range(d1, d2):
         if in_type == "tif":
-            mat = rescale(losa.load_image(data[i])[h1:h2, w1:w2],
-                          nbit=nbit, minmax=(gmin, gmax))
+            mat = losa.load_image(data[i])[h1:h2, w1:w2]
+            if nbit != 32:
+                mat = rescale(mat, nbit=nbit, minmax=minmax)
         else:
-            mat = rescale(data[i, h1:h2, w1:w2], nbit=nbit,
-                          minmax=(gmin, gmax))
+            mat = data[i, h1:h2, w1:w2]
+            if nbit != 32:
+                mat = rescale(mat, nbit=nbit, minmax=minmax)
         if out_type is None:
             data_res.append(mat)
         elif out_type == "hdf":
@@ -560,6 +561,145 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
     if out_type is None:
         data_res = np.asarray(data_res)
     return data_res
+
+
+def __save_intermediate_data(input_, output, axis, crop, key_path=None):
+    in_type = __get_input_type(input_)
+    results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
+    (d1, d2, h1, h2, w1, w2) = results[0]
+    (depth1, height1, width1) = results[1]
+    folder_tmp = os.path.splitext(output)[0] + "/tmp/"
+    file_tmp = folder_tmp + "/file_tmp.hdf"
+    losa.make_folder(folder_tmp)
+    out_key = "entry/data"
+    ofile = h5py.File(file_tmp, 'w')
+    if in_type == "tif":
+        data = losa.find_file(input_ + "/*.tif*")
+        data_type = np.asarray(Image.open(data[0])).dtype
+        if axis == 2:
+            data_tmp = ofile.create_dataset(out_key, (depth1, width1, height1),
+                                            dtype=data_type)
+            for i in range(depth1):
+                data_tmp[i] = np.transpose(
+                    losa.load_image(data[i + d1])[h1:h2, w1:w2])
+        else:
+            data_tmp = ofile.create_dataset(out_key, (depth1, height1, width1),
+                                            dtype=data_type)
+            for i in range(depth1):
+                data_tmp[i] = losa.load_image(data[i + d1])[h1:h2, w1:w2]
+    else:
+        data = losa.load_hdf(input_, key_path)
+        data_type = data.dtype
+        if axis == 2:
+            data_tmp = ofile.create_dataset(out_key, (depth1, width1, height1),
+                                            dtype=data_type)
+            for i in range(depth1):
+                data_tmp[i] = np.transpose(data[i + d1, h1:h2, w1:w2])
+        else:
+            data_tmp = ofile.create_dataset(out_key, (depth1, height1, width1),
+                                            dtype=data_type)
+            for i in range(depth1):
+                data_tmp[i] = data[i + d1, h1:h2, w1:w2]
+    ofile.close()
+    return file_tmp, out_key, folder_tmp
+
+
+def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
+                    nbit=16, minmax=None, skip=None, crop=(0, 0, 0, 0, 0, 0)):
+    """
+    Reslice a 3d dataset. Input can be a folder of tif files or a hdf file.
+
+    Parameters
+    ----------
+    input_ : str, array_like
+        It can be a folder path to tif files or a hdf file.
+    output : str
+        It can be a folder path (for generated tif-files) or a hdf file-path.
+    axis : {1,2}
+        Slicing axis. This axis becomes the 0-axis of the output.
+    key_path : str, optional
+        Key path to the dataset if the input is a hdf file.
+    rescaling : bool
+        Rescale dataset if True.
+    nbit : {8,16}
+        If rescaling is True, select data-type: 8-bit or 16-bit.
+    minmax : tuple of float, or None
+        Minimum and maximum values used for rescaling if True.
+    skip : int or None
+        Skipping step of images used for getting statistical information if
+        rescaling is True and input is 32-bit data.
+    crop : tuple of int, optional
+        Crop 3D data from the edges, i.e.
+        crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
+        crop_width1, crop_width2). Cropping is done before reslicing.
+
+    Returns
+    -------
+    array_like or None
+        If output is None, returning a 3D array.
+    """
+    if output is None:
+        raise ValueError("Wrong output type !!!")
+    if axis != 1 and axis != 2:
+        raise ValueError("Only two options for axis: 1 or 2")
+    else:
+        axis = int(axis)
+    __check_output(output)
+    in_type = __get_input_type(input_)
+    if in_type != "tif" and in_type != "hdf":
+        raise ValueError("Wrong input type !!!")
+    results = __save_intermediate_data(input_, output, axis, crop, key_path)
+    file_tmp, key_tmp, folder_tmp = results
+    hdf_object = h5py.File(file_tmp, 'r')
+    data = hdf_object[key_tmp]
+    (depth1, height1, width1) = data.shape
+    data_type = data.dtype
+    res_type = str(data_type)
+    if rescaling is True:
+        if nbit == 16:
+            res_type = "uint16"
+        elif nbit == 8:
+            res_type = "uint8"
+        else:
+            raise ValueError("Only two options for nbit: 8 or 16 !!!")
+        if str(data_type) != res_type:
+            if data_type == np.uint8:
+                minmax = (0, 255)
+            elif data_type == np.uint16:
+                minmax = (0, 65535)
+            else:
+                if skip is None:
+                    skip = int(np.clip(np.ceil(0.15 * depth1), 1, depth1 - 1))
+                if minmax is None:
+                    f_alias = get_statistical_information_dataset
+                    minmax = f_alias(input_, percentile=(0, 100), skip=skip,
+                                     crop=crop, key_path=key_path)[0:2]
+        else:
+            rescaling = False
+    out_type = __get_output_type(output)
+    if out_type == "hdf":
+        key_path = "entry/data" if key_path is None else key_path
+        data_slice = losa.open_hdf_stream(output, (height1, depth1, width1),
+                                          data_type=res_type,
+                                          key_path=key_path, overwrite=True)
+        for i in range(height1):
+            mat = data[:, i, :]
+            if rescaling:
+                mat = rescale(mat, nbit, minmax)
+            data_slice[i, :, :] = mat
+    else:
+        for i in range(height1):
+            mat = data[:, i, :]
+            if rescaling:
+                mat = rescale(mat, nbit, minmax)
+            out_name = "0000" + str(i)
+            losa.save_image(output + "/img_" + out_name[-5:] + ".tif",
+                            mat.astype(res_type))
+    hdf_object.close()
+    if os.path.isdir(folder_tmp):
+        shutil.rmtree(folder_tmp)
+        if out_type == "hdf":
+            shutil.rmtree(os.path.splitext(output)[0])
 
 
 def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):
