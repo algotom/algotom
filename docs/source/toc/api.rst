@@ -41,8 +41,8 @@ Post-processing
 
     api/algotom.post.postprocessing
 
-Utility
--------
+Utilities
+---------
 
 .. toctree::
     :maxdepth: 1

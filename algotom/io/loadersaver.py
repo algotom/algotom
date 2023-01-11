@@ -259,7 +259,7 @@ def make_folder(file_path):
         try:
             os.makedirs(file_base)
         except OSError:
-            raise ValueError("Can't create the folder: {}".format(file_path))
+            raise ValueError("Can't create the folder: {}".format(file_base))
 
 
 def make_file_name(file_path):

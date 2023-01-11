@@ -12,6 +12,8 @@ Some featuring methods in Algotom are as follows:
 - Methods in a full data processing pipeline: reading-writing data,
   pre-processing, tomographic reconstruction, and post-processing.
 
+.. _processing_pipeline:
+
   .. figure:: section2/figs/fig_2_1.png
    :figwidth: 90%
    :name: fig_2_1

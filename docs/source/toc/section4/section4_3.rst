@@ -10,7 +10,7 @@ design their own removal methods.
 
 Note that ring artifacts in a reconstructed image are corresponding to stripe artifacts in
 the sinogram image or the polar-transformed image. Most of ring removal methods are actually
-strip removal methods under the surface.
+stripe removal methods under the surface.
 
     .. figure:: section4_3/figs/fig_4_3_1.jpg
         :name: fig_4_3_1

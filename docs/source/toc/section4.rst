@@ -6,6 +6,7 @@ Demonstrations
     section4/section4_1
     section4/section4_2
     section4/section4_3
+    section4/section4_4
 
 Examples of how to use the package are under the example folder of `Algotom <https://github.com/algotom/algotom/tree/master/examples>`_.
 They cover most of use-cases which users can adapt to process their own data. Examples
