@@ -293,7 +293,7 @@ speed-up of computing time if using GPU.
 
 .. figure:: section5_1/figs/fig_5_1_10.jpg
    :name: fig_5_1_10
-   :figwidth: 65 %
+   :figwidth: 75 %
    :align: center
    :figclass: align-center
 
