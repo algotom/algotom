@@ -247,7 +247,8 @@ at Diamond Light Source are used for demonstration. Details of how data were acq
     is an important advantage of beamline I12. The sample is a `picrite basaltic rock <https://doi.org/10.1016/j.epsl.2018.04.025>`__
     from Iceland.
 
--	20 speckle positions following a spiral path with the step of 30 times of the pixel size were used for scanning.
+-	20 speckle positions following `a spiral path <https://algotom.readthedocs.io/en/latest/toc/api/algotom.util.utility.html#algotom.util.utility.generate_spiral_positions>`__
+    with the step of 30 times of the pixel size were used for scanning.
 
 -   Speckle images without the sample were acquired at all positions first. Then for each speckle position a
     tomographic scan of the sample, 1801 projections, was acquired. This strategy ensures that projections at
