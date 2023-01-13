@@ -40,19 +40,17 @@ the mean value of pixel intensities, above 10% is good enough for use. For high-
 users can stack sandpapers together or using a box of material powder to improve the contrast of a
 speckle-image. Other practical considerations for setting up an experiment are as follows:
 
-    .. image:: section5_1/figs/img_5_1_1.png
-        :name: img_5_1_1
-        :width: 100 %
-        :align: center
+        .. image:: section5_1/figs/img_5_1_1.png
+            :name: img_5_1_1
+            :width: 100 %
+            :align: center
 
 -   The diffuser can be positioned before or after a sample depending on experiment conditions. For example,
     in a parallel-beam system with a highly spatial-coherent source the diffuser can be placed closer to
     the source than the sample to make use of the edge-enhancement effect which helps to improve
     the contrast of the speckle-image.
-
 -   The sample-detector distance should be chosen as a compromise between increasing the displacement
     effect and reducing the edge-enhancement effect caused by highly spatial-coherent sources.
-
 -   There are different ways of shifting a diffuser and acquiring a tomogram at each position. However, using
     a spiral path has been proven to be practical and efficient :cite:`Zdora:2017`.
     The distance between two speckle positions should be larger than the analysis window, e.g. 5-11 pixels,
@@ -60,7 +58,6 @@ speckle-image. Other practical considerations for setting up an experiment are a
     robustness of methods measuring pixel shifts. Using this acquisition scheme, 20 positions of a diffuser
     is enough to retrieve a high-quality phase-shift image. However, for tomography systems with fluctuating
     sources, higher number of positions, e.g. 30-50, is needed.
-
 -   Due to mechanical error, moving a sample in and out of the field-of-view repeatedly for each diffuser
     position can cause small shifts between the same projections of different tomograms. This problem has
     a significant impact to the quality of processed data and is difficult to correct. To avoid it, the best
@@ -89,13 +86,13 @@ using multicore-CPU and GPU for computing is crucially needed. An approximate ap
 computational cost is to perform 1D search :cite:`Wang:2021` using middle slices in vertical and horizontal
 direction of image stacks, to find shifts in x and y-direction separately.
 
-.. figure:: section5_1/figs/fig_5_1_1.jpg
-   :name: fig_5_1_1
-   :figwidth: 70 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_1.jpg
+       :name: fig_5_1_1
+       :figwidth: 70 %
+       :align: center
+       :figclass: align-center
 
-   Demonstration of how to find the shift of each speckle-pixel.
+       Demonstration of how to find the shift of each speckle-pixel.
 
 Surface reconstruction
 ++++++++++++++++++++++
@@ -108,23 +105,23 @@ cost which is critical for tomography. The disadvantage of these Fourier methods
 is undefined resulting in the fluctuations in background between phase-retrieved images. This effect, however,
 can be corrected (:numref:`fig_5_1_3`) by using the double-wedge filter as described in :cite:`Vo:21`
 
-.. figure:: section5_1/figs/fig_5_1_2.jpg
-   :name: fig_5_1_2
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_2.jpg
+       :name: fig_5_1_2
+       :figwidth: 100 %
+       :align: center
+       :figclass: align-center
 
-   Phase-shift image (c) is retrieved by normal integration using two gradient
-   images: (a) x-direction; (b) y-direction.
+       Phase-shift image (c) is retrieved by normal integration using two gradient
+       images: (a) x-direction; (b) y-direction.
 
-.. figure:: section5_1/figs/fig_5_1_3.jpg
-   :name: fig_5_1_3
-   :figwidth: 65 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_3.jpg
+       :name: fig_5_1_3
+       :figwidth: 90 %
+       :align: center
+       :figclass: align-center
 
-   (a) Fluctuation of grayscale values in a sinogram caused by the FT-based surface-reconstruction
-   method. (b) Corrected image after using the double-wedge filter.
+       (a) Fluctuation of grayscale values in a sinogram caused by the FT-based surface-reconstruction
+       method. (b) Corrected image after using the double-wedge filter.
 
 Extracting transmission and dark-field signals
 ++++++++++++++++++++++++++++++++++++++++++++++
@@ -136,14 +133,14 @@ There are `several ways <https://doi.org/10.3390/jimaging4050060>`__ to determin
 For the cost-based approach :cite:`Zdora:2017`, dark-signal image is easily to be obtained as a part of the model
 equation.
 
-.. figure:: section5_1/figs/fig_5_1_4.jpg
-   :name: fig_5_1_4
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_4.jpg
+       :name: fig_5_1_4
+       :figwidth: 100 %
+       :align: center
+       :figclass: align-center
 
-   All imaging signal retrieved by the speckle-based technique can be used for tomography. (a) Phase-shift image.
-   (b) Transmission image. (c) Dark-field image.
+       All imaging signal retrieved by the speckle-based technique can be used for tomography. (a) Phase-shift image.
+       (b) Transmission image. (c) Dark-field image.
 
 Tomographic reconstruction
 ++++++++++++++++++++++++++
@@ -151,13 +148,13 @@ Tomographic reconstruction
 Above processing steps are repeated for every projection then the results are used for tomographic
 reconstruction as shown in :numref:`fig_5_1_5`
 
-.. figure:: section5_1/figs/fig_5_1_5.jpg
-   :name: fig_5_1_5
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_5.jpg
+       :name: fig_5_1_5
+       :figwidth: 100 %
+       :align: center
+       :figclass: align-center
 
-   Demonstration of the speckle-based phase-contrast tomography
+       Demonstration of the speckle-based phase-contrast tomography
 
 Implementation
 --------------
@@ -219,24 +216,24 @@ It includes many options for processing at the lower-level blocks. The chunk-siz
 either small memory or large memory of RAM or GPU. Other top-layer methods listed in the previous section are
 straightforward to implement either directly or by making use of the methods in the *correlation* module.
 
-.. figure:: section5_1/figs/fig_5_1_6.png
-   :name: fig_5_1_6
-   :figwidth: 50 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_6.png
+       :name: fig_5_1_6
+       :figwidth: 60 %
+       :align: center
+       :figclass: align-center
 
-   Building blocks of the *correlation* module.
+       Building blocks of the *correlation* module.
 
 Demonstration
 -------------
 
-.. figure:: section5_1/figs/fig_5_1_7.jpg
-   :name: fig_5_1_7
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_7.jpg
+       :name: fig_5_1_7
+       :figwidth: 95 %
+       :align: center
+       :figclass: align-center
 
-   Speckle-based tomographic experiment at beamline I12.
+       Speckle-based tomographic experiment at beamline I12.
 
 Data collected at `beamline I12 <https://www.diamond.ac.uk/Instruments/Imaging-and-Microscopy/I12/Techniques-at-I12.html>`__
 at Diamond Light Source are used for demonstration. Details of how data were acquired are as follows:
@@ -246,10 +243,8 @@ at Diamond Light Source are used for demonstration. Details of how data were acq
     in height and width. The speckle-size is around 8 pixels. The intensity of the beam profile is very stable which
     is an important advantage of beamline I12. The sample is a `picrite basaltic rock <https://doi.org/10.1016/j.epsl.2018.04.025>`__
     from Iceland.
-
--	20 speckle positions following `a spiral path <https://algotom.readthedocs.io/en/latest/toc/api/algotom.util.utility.html#algotom.util.utility.generate_spiral_positions>`__
+-   20 speckle positions following `a spiral path <https://algotom.readthedocs.io/en/latest/toc/api/algotom.util.utility.html#algotom.util.utility.generate_spiral_positions>`__
     with the step of 30 times of the pixel size were used for scanning.
-
 -   Speckle images without the sample were acquired at all positions first. Then for each speckle position a
     tomographic scan of the sample, 1801 projections, was acquired. This strategy ensures that projections at
     the same angle are not shifted between speckle positions. Due to mechanical error, the diffuser positions
@@ -257,33 +252,31 @@ at Diamond Light Source are used for demonstration. Details of how data were acq
     This problem can be solved by `image alignment <https://algotom.readthedocs.io/en/latest/toc/api/algotom.prep.phase.html#algotom.prep.phase.find_shift_between_image_stacks>`__
     using free-space areas in each image (:numref:`fig_5_1_8`).
 
-.. figure:: section5_1/figs/fig_5_1_8.jpg
-   :name: fig_5_1_8
-   :figwidth: 65 %
-   :align: center
-   :figclass: align-center
+        .. figure:: section5_1/figs/fig_5_1_8.jpg
+           :name: fig_5_1_8
+           :figwidth: 75 %
+           :align: center
+           :figclass: align-center
 
-   Demonstration of the impact of image alignment. (a) Small area of an image which is the result of dividing
-   between speckle-image with sample and without sample. (b) Same as (a) but after image alignment.
+           Demonstration of the impact of image alignment. (a) Small area of an image which is the result of dividing
+           between speckle-image with sample and without sample. (b) Same as (a) but after image alignment.
 
 The following presents how the data were processed:
 
 -   Reference-images for each position are loaded, averaged, normalized (flat-field corrected), `aligned <https://algotom.readthedocs.io/en/latest/toc/api/algotom.prep.phase.html#algotom.prep.phase.align_image_stacks>`__,
     and stacked.
-
 -   For each angle of tomographic datasets, projections at different speckle-positions are loaded, normalized, and stacked.
-
 -   Phase-shift image is retrieved from two previous image-stacks (:numref:`fig_5_1_9`) using a single function.
     Full options for choosing back-end methods, surface reconstruction methods, and searching parameters are at
     the `API reference page <https://algotom.readthedocs.io/en/latest/toc/api/algotom.prep.phase.html#algotom.prep.phase.retrieve_phase_based_speckle_tracking>`__.
 
-.. figure:: section5_1/figs/fig_5_1_9.jpg
-   :name: fig_5_1_9
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_9.jpg
+       :name: fig_5_1_9
+       :figwidth: 90 %
+       :align: center
+       :figclass: align-center
 
-   Speckle-image stack (a). Sample-image stack (b). Phase-shift image (c) retrieved from (a) and (b).
+       Speckle-image stack (a). Sample-image stack (b). Phase-shift image (c) retrieved from (a) and (b).
 
 Algotom implements three approaches: the correlation-based method using 1D :cite:`Wang:2021` and 2D :cite:`Berujon:2016` search,
 and the cost-based approach :cite:`Zdora:2017`, known as the UMPA (Unified Modulated Pattern Analysis) method.
@@ -291,13 +284,13 @@ A summary of computing time for retrieving a single phase-shift image using diff
 in :numref:`fig_5_1_10` where the window size is 7 and the margin is 10. As can be seen, there is a huge
 speed-up of computing time if using GPU.
 
-.. figure:: section5_1/figs/fig_5_1_10.jpg
-   :name: fig_5_1_10
-   :figwidth: 75 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_10.jpg
+       :name: fig_5_1_10
+       :figwidth: 75 %
+       :align: center
+       :figclass: align-center
 
-   Comparison of computing time using different approaches.
+       Comparison of computing time using different approaches.
 
 For tomographic reconstruction, phase retrieval is applied to all projections then the sinograms are generated
 for reconstructing slice-by-slice. This step can be manually parallelized for multiple-CPUs or multiple-GPUs to
@@ -316,23 +309,23 @@ of the sample which are mineral olivine. Because the olivine is a crystal it can
 shown in :numref:`fig_5_1_12` (c,f). Making use of dark-signal images to gain deeper understanding of materials
 is a very promising application of the technique.
 
-.. figure:: section5_1/figs/fig_5_1_11.jpg
-   :name: fig_5_1_11
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_11.jpg
+       :name: fig_5_1_11
+       :figwidth: 100 %
+       :align: center
+       :figclass: align-center
 
-   Horizontal slice and vertical slice of reconstructed volumes from the 3 approaches: the 1D-search method (a,d);
-   the 2D-search method (b,e); and UMPA (c,f).
+       Horizontal slice and vertical slice of reconstructed volumes from the 3 approaches: the 1D-search method (a,d);
+       the 2D-search method (b,e); and UMPA (c,f).
 
-.. figure:: section5_1/figs/fig_5_1_12.jpg
-   :name: fig_5_1_12
-   :figwidth: 95 %
-   :align: center
-   :figclass: align-center
+    .. figure:: section5_1/figs/fig_5_1_12.jpg
+       :name: fig_5_1_12
+       :figwidth: 100 %
+       :align: center
+       :figclass: align-center
 
-   Horizontal slice and vertical slice of reconstructed volumes from 3 imaging modes: phase-shift image (a,d);
-   transmission image (b,e); and dark-signal image (c,f).
+       Horizontal slice and vertical slice of reconstructed volumes from 3 imaging modes: phase-shift image (a,d);
+       transmission image (b,e); and dark-signal image (c,f).
 
 Python codes used to process data for this report are at `here <https://github.com/algotom/algotom/tree/master/examples/speckle_based_tomography/i12_data>`__.
 Detailed references can be found in :cite:`Vo:2022`.
