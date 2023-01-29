@@ -47,7 +47,7 @@ Some featuring methods in Algotom are as follows:
   
   ![pipe_line](https://github.com/algotom/algotom/raw/master/figs/readme/double_wedge_filter.jpg)
   
-- Utility methods for [customizing ring/stripe artifact removal methods](https://sarepy.readthedocs.io/toc/section5.html) 
+- Utility methods for [customizing ring/stripe artifact removal methods](https://algotom.readthedocs.io/en/latest/toc/section4/section4_3.html) 
   and parallelizing computational work.
 - Calibration methods for determining pixel-size in helical scans.
 - Methods for generating simulation data: phantom creation, sinogram calculation
