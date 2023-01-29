@@ -1,6 +1,8 @@
 # Algotom
 ### Data processing (**ALGO**)rithms for (**TOM**)ography.
 
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/algotom/algotom/algotom_ga.yml) [![Downloads](https://static.pepy.tech/badge/algotom)](https://pepy.tech/project/algotom) [![Downloads](https://static.pepy.tech/badge/algotom/month)](https://pepy.tech/project/algotom) ![Conda](https://img.shields.io/conda/dn/algotom/algotom?label=conda-downloads) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/algotom/algotom) ![Conda](https://img.shields.io/conda/pn/algotom/algotom) ![GitHub issues](https://img.shields.io/github/issues-raw/algotom/algotom)
+
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
 
 **Algotom** is a Python package implementing data processing methods for 
@@ -8,9 +10,7 @@ tomography. It has methods in a full pipeline of data processing: reading-writin
 pre-processing, tomographic reconstruction, post-processing, and data simulation. 
 Many utility methods are provided to help users quickly develop prototype-methods 
 or build a pipeline for processing their own data. From version 1.1, methods for 
-speckle-based phase-contrast tomography were added to the package.
-
-The software was published for the paper: https://doi.org/10.1364/OE.418448.
+speckle-based phase-contrast tomography were added to the package. The software was published for the paper: https://doi.org/10.1364/OE.418448.
 
 Features
 --------
@@ -19,7 +19,8 @@ Algotom is a lightweight package. The software is built on top of a few core
 Python libraries to ensure its ease-of-installation. Methods distributed in 
 Algotom have been developed and tested at synchrotron beamlines where massive
 datasets are produced. This factor drives the methods developed to be easy-to-use, 
-robust, and practical. Some featuring methods in Algotom are as follows:
+robust, and practical. Algotom can be used on a normal computer to process large tomographic data. 
+Some featuring methods in Algotom are as follows:
 - Methods in a full data processing pipeline: reading-writing data, 
   pre-processing, tomographic reconstruction, and post-processing.
   
@@ -52,7 +53,8 @@ robust, and practical. Some featuring methods in Algotom are as follows:
   based on the Fourier slice theorem, and artifact generation.
   
   ![simulation](https://github.com/algotom/algotom/raw/master/figs/readme/simulation.png)
-- Methods for speckle-based phase-contrast tomography, image correlation, and image alignment.
+- Methods for phase-contrast imaging: phase unwrapping, speckle-based phase retrieval, image correlation, and image alignment.
+
   ![speckle](https://github.com/algotom/algotom/raw/master/figs/readme/speckle_based_tomography.png)
 
 Update notes
