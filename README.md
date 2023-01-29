@@ -1,7 +1,7 @@
 # Algotom
 ### Data processing (**ALGO**)rithms for (**TOM**)ography.
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/algotom/algotom/algotom_ga.yml) [![Downloads](https://static.pepy.tech/badge/algotom)](https://pepy.tech/project/algotom) [![Downloads](https://static.pepy.tech/badge/algotom/month)](https://pepy.tech/project/algotom) ![Conda](https://img.shields.io/conda/dn/algotom/algotom?label=conda-downloads) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/algotom/algotom) ![Conda](https://img.shields.io/conda/pn/algotom/algotom) ![GitHub issues](https://img.shields.io/github/issues-raw/algotom/algotom) ![Conda](https://img.shields.io/conda/dn/conda-forge/algotom?label=conda-forge%20downloads)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/algotom/algotom/algotom_ga.yml) [![Downloads](https://static.pepy.tech/personalized-badge/algotom?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Pypi-downloads)](https://pepy.tech/project/algotom) [![Downloads](https://static.pepy.tech/personalized-badge/algotom?period=month&units=international_system&left_color=grey&right_color=blue&left_text=Pypi-downloads/month)](https://pepy.tech/project/algotom) ![Conda](https://img.shields.io/conda/dn/algotom/algotom?label=conda-downloads) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/algotom/algotom) ![Conda](https://img.shields.io/conda/pn/algotom/algotom) ![GitHub issues](https://img.shields.io/github/issues-raw/algotom/algotom) ![Conda](https://img.shields.io/conda/dn/conda-forge/algotom?label=conda-forge%20downloads)
 
 
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
