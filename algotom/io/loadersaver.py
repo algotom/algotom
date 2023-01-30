@@ -65,13 +65,11 @@ def load_image(file_path):
         2D array.
     """
     if "\\" in file_path:
-        raise ValueError(
-            "Please use the forward slash in the file path")
+        raise ValueError("Please use the forward slash in the file path")
     try:
         mat = np.asarray(Image.open(file_path), dtype=np.float32)
     except IOError:
-        print("No such file or directory: {}".format(file_path))
-        raise
+        raise ValueError("No such file or directory: {}".format(file_path))
     if len(mat.shape) > 2:
         axis_m = np.argmin(mat.shape)
         mat = np.mean(mat, axis=axis_m)
@@ -289,7 +287,7 @@ def make_file_name(file_path):
     return file_path
 
 
-def make_folder_name(folder_path, name_prefix="Output"):
+def make_folder_name(folder_path, name_prefix="Output", zero_prefix=5):
     """
     Create a new folder name to avoid overwriting.
     E.g: Output_00001, Output_00002...
@@ -300,13 +298,13 @@ def make_folder_name(folder_path, name_prefix="Output"):
         Path to the parent folder.
     name_prefix : str
         Name prefix
-
+    zero_prefix : int
+        Number of zeros to be added to file names.
     Returns
     -------
     str
         Name of the folder.
     """
-    zero_prefix = 5
     scan_name_prefix = name_prefix + "_"
     num_folder_exist = len(
         glob.glob(folder_path + "/" + scan_name_prefix + "*"))

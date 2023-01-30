@@ -46,14 +46,22 @@ class LoaderSaverMethods(unittest.TestCase):
 
     def test_load_image(self):
         file_path = "data/img.tif"
-        losa.save_image(file_path, np.random.rand(64, 64))
+        losa.save_image(file_path, np.float32(np.random.rand(64, 64)))
         mat = losa.load_image(file_path)
         self.assertTrue(len(mat.shape) == 2)
+
+        file_path = "data/img.png"
+        losa.save_image(file_path, np.uint8(255*np.random.rand(64, 64, 3)))
+        mat = losa.load_image(file_path)
+        self.assertTrue(len(mat.shape) == 2)
+        self.assertRaises(Exception, losa.load_image, "data1/")
+        self.assertRaises(ValueError, losa.load_image, "data1\\")
 
     def test_get_hdf_information(self):
         file_path = "data/data.hdf"
         ifile = h5py.File(file_path, "w")
-        ifile.create_dataset("entry/data", data=np.random.rand(64, 64))
+        ifile.create_dataset("entry/data",
+                             data=np.float32(np.random.rand(64, 64)))
         ifile.create_dataset("entry/energy", data=25.0)
         ifile.close()
         results = losa.get_hdf_information(file_path)
@@ -185,7 +193,7 @@ class LoaderSaverMethods(unittest.TestCase):
             folder_path = "data/img_stk_tif_" + str(i) + "/"
             for j in range(num_img):
                 file_path = folder_path + "/img_" + str(j) + ".tif"
-                losa.save_image(file_path, np.ones((64, 64)))
+                losa.save_image(file_path, np.ones((64, 64), dtype=np.float32))
         list_path = losa.find_file("data/img_stk_tif*")
         img_stack = f_alias(0, list_path, data_key=None, average=False,
                             crop=(0, 0, 0, 0), flat_field=None,

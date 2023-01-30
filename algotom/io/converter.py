@@ -63,8 +63,6 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
     else:
         list_file = losa.find_file(input_path + "/*" + pattern + "*.tif*")
     depth = len(list_file)
-    if depth == 0:
-        raise ValueError("No tif files in the folder: {}".format(input_path))
     (height, width) = np.shape(losa.load_image(list_file[0]))
     file_base, file_ext = os.path.splitext(output_path)
     if not (file_ext == '.hdf' or file_ext == '.h5' or file_ext == ".nxs"):
@@ -73,6 +71,8 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
     cr_top, cr_bottom, cr_left, cr_right = crop
     cr_height = height - cr_top - cr_bottom
     cr_width = width - cr_left - cr_right
+    if cr_height < 1 or cr_width < 1:
+        raise ValueError("Can't crop images with the given parameters !!!")
     data_out = losa.open_hdf_stream(output_path, (depth, cr_height, cr_width),
                                     key_path=key_path, overwrite=True,
                                     **options)
@@ -118,24 +118,27 @@ def extract_tif_from_hdf(input_path, output_path, key_path, index=(0, -1, 1),
         start, stop, step = index, index + 1, 1
     cr_top, cr_bottom, cr_left, cr_right = crop
     if axis == 1:
-        if (stop == -1) or (stop > height):
+        if stop < 1 or stop > height:
             stop = height
+        start = np.clip(start, 0, stop - 1)
         for i in range(start, stop, step):
             mat = data[cr_top:depth - cr_bottom, i, cr_left:width - cr_right]
             out_name = "0000" + str(i)
             losa.save_image(
                 output_path + "/" + prefix + "_" + out_name[-5:] + ".tif", mat)
     elif axis == 2:
-        if (stop == -1) or (stop > width):
+        if stop < 1 or stop > width:
             stop = width
+        start = np.clip(start, 0, stop - 1)
         for i in range(start, stop, step):
             mat = data[cr_top:depth - cr_bottom, cr_left:height - cr_right, i]
             out_name = "0000" + str(i)
             losa.save_image(
                 output_path + "/" + prefix + "_" + out_name[-5:] + ".tif", mat)
     else:
-        if (stop == -1) or (stop > depth):
+        if stop < 1 or stop > depth:
             stop = depth
+        start = np.clip(start, 0, stop - 1)
         for i in range(start, stop, step):
             mat = data[i, cr_top:height - cr_bottom, cr_left:width - cr_right]
             out_name = "0000" + str(i)

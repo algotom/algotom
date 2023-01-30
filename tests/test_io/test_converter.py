@@ -45,18 +45,54 @@ class ConverterMethods(unittest.TestCase):
             shutil.rmtree("data")
 
     def test_convert_tif_to_hdf(self):
-        losa.save_image("data/tif/image_01.tif", np.random.rand(64, 64))
-        losa.save_image("data/tif/image_02.tif", np.random.rand(64, 64))
+        losa.save_image("data/tif/image_01.tif",
+                        np.float32(np.random.rand(64, 64)))
+        losa.save_image("data/tif/image_02.tif",
+                        np.float32(np.random.rand(64, 64)))
+
         file_path = "data/hdf/data.hdf"
         con.convert_tif_to_hdf("data/tif/", file_path)
         self.assertTrue(os.path.isfile(file_path))
 
+        file_path2 = "data/hdf/data2.hdf"
+        con.convert_tif_to_hdf("data/tif/", file_path2, pattern="im")
+        self.assertTrue(os.path.isfile(file_path2))
+
+        file_path3 = "data/hdf/data3"
+        con.convert_tif_to_hdf("data/tif/", file_path3)
+        self.assertTrue(os.path.isfile(file_path3 + ".hdf"))
+
+        file_path4 = "data/hdf/data4.hdf"
+        self.assertRaises(ValueError, con.convert_tif_to_hdf, "data/",
+                          file_path4)
+
+        file_path5 = "data/hdf/data5.hdf"
+        self.assertRaises(ValueError, con.convert_tif_to_hdf, "data/tif/",
+                          file_path5, crop=(0, 0, 33, 35))
+
     def test_extract_tif_from_hdf(self):
         file_path = "data/data.hdf"
-        out_base = "data/extract_tif/"
         ifile = h5py.File(file_path, "w")
-        ifile.create_dataset("entry/data", data=np.random.rand(2, 64, 64))
+        ifile.create_dataset("entry/data",
+                             data=np.float32(np.random.rand(2, 64, 64)))
         ifile.close()
+        out_base = "data/extract_tif/"
         con.extract_tif_from_hdf(file_path, out_base, "entry/data")
         list_file = losa.find_file(out_base + "/*.tif")
         self.assertTrue(len(list_file) == 2)
+
+        out_base = "data/extract_tif2/"
+        con.extract_tif_from_hdf(file_path, out_base, "entry/data", axis=1)
+        list_file = losa.find_file(out_base + "/*.tif")
+        self.assertTrue(len(list_file) == 64)
+
+        out_base = "data/extract_tif3/"
+        con.extract_tif_from_hdf(file_path, out_base, "entry/data", axis=2)
+        list_file = losa.find_file(out_base + "/*.tif")
+        self.assertTrue(len(list_file) == 64)
+
+        out_base = "data/extract_tif4/"
+        con.extract_tif_from_hdf(file_path, out_base, "entry/data", axis=1,
+                                 index=10)
+        list_file = losa.find_file(out_base + "/*.tif")
+        self.assertTrue(len(list_file) == 1)
