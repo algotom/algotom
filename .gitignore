@@ -12,3 +12,5 @@ dist/
 recipe/
 docs/build
 docs/_build
+.coverage
+htmlcov
