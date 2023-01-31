@@ -235,22 +235,23 @@ def load_hdf(file_path, key_path):
     try:
         hdf_object = h5py.File(file_path, 'r')
     except IOError:
-        print("Couldn't open file: {}".format(file_path))
-        raise
+        raise ValueError("Couldn't open file: {}".format(file_path))
     check = key_path in hdf_object
     if not check:
-        print("Couldn't open object with the key path: {}".format(key_path))
-        raise ValueError("!!! Wrong key !!!")
+        raise ValueError(
+            "Couldn't open object with the given key: {}".format(key_path))
     return hdf_object[key_path]
 
 
 def make_folder(file_path):
     """
-    Create a folder if not exist.
+    Create a folder for saving file if the folder does not exist. This is a
+    supplementary function for savers.
 
     Parameters
     ----------
     file_path : str
+        Path to a file.
     """
     file_base = os.path.dirname(file_path)
     if not os.path.exists(file_base):
@@ -359,9 +360,8 @@ def save_image(file_path, mat, overwrite=True):
         Updated file path.
     """
     if "\\" in file_path:
-        raise ValueError(
-            "Please use the forward slash in the file path")
-    _, file_ext = os.path.splitext(file_path)
+        raise ValueError("Please use the forward slash in the file path")
+    file_ext = os.path.splitext(file_path)[-1]
     if not ((file_ext == ".tif") or (file_ext == ".tiff")):
         mat = np.uint8(255 * (mat - np.min(mat)) / (np.max(mat) - np.min(mat)))
     else:
@@ -377,8 +377,7 @@ def save_image(file_path, mat, overwrite=True):
     try:
         image.save(file_path)
     except IOError:
-        print("Couldn't write to file {}".format(file_path))
-        raise
+        raise ValueError("Couldn't write to file {}".format(file_path))
     return file_path
 
 
@@ -417,14 +416,13 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
     try:
         ofile = h5py.File(file_path, 'w')
     except IOError:
-        print("Couldn't write to file: {}".format(file_path))
-        raise
+        raise ValueError("Couldn't write to file: {}".format(file_path))
     if len(options) != 0:
         for opt_name in options:
             opts = options[opt_name]
             for key in opts:
                 if key_path in key:
-                    msg = "!!!Selected key path, '{0}', can not be a child " \
+                    msg = "!!!Selected key-path, '{0}', can not be a child " \
                           "key-path of '{1}'!!!\n!!!Change to make sure " \
                           "they are at the same level!!!".format(key, key_path)
                     raise ValueError(msg)
@@ -435,7 +433,13 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
 
 def load_distortion_coefficient(file_path):
     """
-    Load distortion coefficients from a text file.
+    Load distortion coefficients from a text file. The file must use the
+    following format:
+    x_center : float
+    y_center : float
+    factor0 : float
+    factor1 : float
+    ...
 
     Parameters
     ----------
@@ -448,8 +452,7 @@ def load_distortion_coefficient(file_path):
         Tuple of (xcenter, ycenter, list_fact).
     """
     if "\\" in file_path:
-        raise ValueError(
-            "Please use the forward slash in the file path")
+        raise ValueError("Please use the forward slash in the file path")
     with open(file_path, 'r') as f:
         x = f.read().splitlines()
         list_data = []

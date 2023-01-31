@@ -30,6 +30,7 @@ import shutil
 import h5py
 import numpy as np
 import algotom.io.loadersaver as losa
+import time
 
 
 class LoaderSaverMethods(unittest.TestCase):
@@ -51,7 +52,7 @@ class LoaderSaverMethods(unittest.TestCase):
         self.assertTrue(len(mat.shape) == 2)
 
         file_path = "data/img.png"
-        losa.save_image(file_path, np.uint8(255*np.random.rand(64, 64, 3)))
+        losa.save_image(file_path, np.uint8(255 * np.random.rand(64, 64, 3)))
         mat = losa.load_image(file_path)
         self.assertTrue(len(mat.shape) == 2)
         self.assertRaises(Exception, losa.load_image, "data1/")
@@ -83,26 +84,70 @@ class LoaderSaverMethods(unittest.TestCase):
         ifile.close()
         data = losa.load_hdf(file_path, "entry/data")[:]
         self.assertTrue(isinstance(data, np.ndarray))
+        self.assertRaises(Exception, losa.load_hdf, "data/data2.hdf",
+                          "entry/data")
+        self.assertRaises(ValueError, losa.load_hdf, "data/data.hdf",
+                          "entry/data2")
+
+    def test_make_folder_name(self):
+        folder = "data/new_folder/"
+        folder_name = losa.make_folder_name(folder, name_prefix="Check",
+                                            zero_prefix=5)
+        self.assertTrue(folder_name == "Check_00001")
+        losa.make_folder(folder + "/" + folder_name + "/")
+        folder_name = losa.make_folder_name(folder, name_prefix="Check",
+                                            zero_prefix=5)
+        self.assertTrue(folder_name == "Check_00002")
 
     def test_save_image(self):
-        file_path = "data/img.tif"
+        file_path = "data/test_overwrite/img.tif"
         losa.save_image(file_path, np.float32(np.random.rand(64, 64)))
         self.assertTrue(os.path.isfile(file_path))
+
+        file_path = "data/test_overwrite/img.tif"
+        losa.save_image(file_path, np.float32(np.random.rand(64, 64)),
+                        overwrite=False)
+        num_file = len(losa.find_file("data/test_overwrite/*tif"))
+        self.assertTrue(num_file == 2)
+
+        file_path = "data\\img.tif"
+        self.assertRaises(ValueError, losa.save_image, file_path, np.float32(
+            np.random.rand(64, 64)))
+
+        file_path = "data/img.tif"
+        self.assertRaises(ValueError, losa.save_image, file_path, np.float64(
+            np.random.rand(64, 64)))
 
     def test_open_hdf_stream(self):
         data_out = losa.open_hdf_stream("data/data.hdf", (64, 64))
         self.assertTrue(isinstance(data_out, object))
 
+        data_out2 = losa.open_hdf_stream("data/data2", (64, 64))
+        self.assertTrue(isinstance(data_out2, object))
+
+        data_out3 = losa.open_hdf_stream("data/data3.hdf", (64, 64),
+                                         options={"entry/energy": 25.0})
+        self.assertTrue(isinstance(data_out3, object))
+
+        self.assertRaises(ValueError, losa.open_hdf_stream, "data/data4.hdf",
+                          (64, 64), options={"energy/entry/data": 25.0})
+
     def test_save_distortion_coefficient(self):
         file_path = "data/coef.txt"
         losa.save_distortion_coefficient(file_path, 32, 32, (1.0, 0.0, 0.0))
         self.assertTrue(os.path.isfile(file_path))
+        file_path = "data/coef2"
+        losa.save_distortion_coefficient(file_path, 32, 32, (1.0, 0.0, 0.0),
+                                         overwrite=False)
+        self.assertTrue(os.path.isfile(file_path + ".txt"))
 
     def test_load_distortion_coefficient(self):
         file_path = "data/coef.txt"
         losa.save_distortion_coefficient(file_path, 31.0, 32.0, [1.0, 0.0])
         (x, y, facts) = losa.load_distortion_coefficient(file_path)
         self.assertTrue(((x == 31.0) and (y == 32.0)) and facts == [1.0, 0.0])
+        self.assertRaises(ValueError, losa.load_distortion_coefficient,
+                          "data\\coef.text")
 
     def test_get_hdf_tree(self):
         file_path = "data/data.hdf"
