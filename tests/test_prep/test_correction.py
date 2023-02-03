@@ -29,6 +29,9 @@ import unittest
 import numpy as np
 import scipy.ndimage as ndi
 import algotom.prep.correction as corr
+import warnings
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 class CorrectionMethods(unittest.TestCase):
@@ -43,8 +46,8 @@ class CorrectionMethods(unittest.TestCase):
         self.ffacts = [1.0, 0.03, 1.0 * 10 ** (-4)]
         pad = 20
         mat_pad = np.pad(self.mat, pad, mode='edge')
-        mat_for = corr.unwarp_projection(mat_pad, self.x + pad,
-                                         self.y + pad, self.ffacts)
+        mat_for = corr.unwarp_projection(mat_pad, self.x + pad, self.y + pad,
+                                         self.ffacts)
         self.mat_for = mat_for[pad:pad + self.size, pad:pad + self.size]
         self.bfacts = [9.34082475e-01, -1.39192784e-02, 1.18758023e-04]
         mat_tilt = ndi.rotate(mat_pad, 5.0, reshape=False)
@@ -55,8 +58,8 @@ class CorrectionMethods(unittest.TestCase):
         flat = 0.5 * np.ones((self.size, self.size), dtype=np.float32)
         dark = np.zeros((self.size, self.size), dtype=np.float32)
         m1 = corr.flat_field_correction(proj[:, 0:5, :], flat[0:5], dark[0:5])
-        m2 = corr.flat_field_correction(proj[0], flat, dark)
-        m3 = corr.flat_field_correction(proj[0:5], flat, dark)
+        m2 = corr.flat_field_correction(proj[0], flat, dark, use_dark=False)
+        m3 = corr.flat_field_correction(proj[0:5], flat, dark, ratio=0.8)
         opt1 = {"method": "remove_zinger", "para1": 0.1, "para2": 1}
         m4 = corr.flat_field_correction(proj[:, 0, :], flat[0], dark[0],
                                         option=opt1)
@@ -68,9 +71,27 @@ class CorrectionMethods(unittest.TestCase):
                         m3.shape == (5, self.size, self.size)
                         and num1 > self.eps and num2 > self.eps)
 
+        flat[5, 5] = np.float32(0.0)
+        dark = np.zeros_like(flat)
+        m6 = corr.flat_field_correction(proj[0], flat, dark)
+        self.assertTrue(np.abs(2 * np.mean(proj[0]) - np.mean(m6)) < 0.001)
+
+        flat[5, 5] = np.float32(0.0)
+        dark = np.zeros_like(flat)
+        m6 = corr.flat_field_correction(proj[0], flat, dark, use_dark=False)
+        self.assertTrue(np.abs(2 * np.mean(proj[0]) - np.mean(m6)) < 0.001)
+
+        opt2 = {"method": "fresnel_filter", "para1": 0.5, "para2": 1}
+        m7 = corr.flat_field_correction(proj[:, 0, :], flat[0], dark[0],
+                                        option=opt2)
+        self.assertTrue(np.abs(np.mean(m4) - np.mean(m7)) < 0.05)
+
+        m8 = corr.flat_field_correction(proj, flat, dark, option=opt2)
+        self.assertTrue(m8.shape == proj.shape)
+
     def test_unwarp_projection(self):
-        mat_corr = corr.unwarp_projection(self.mat_for, self.x,
-                                          self.y, self.bfacts)
+        mat_corr = corr.unwarp_projection(self.mat_for, self.x, self.y,
+                                          self.bfacts)
         mat_corr = np.round(mat_corr)
         num = np.sum(np.abs(mat_corr - self.mat))
         self.assertTrue(num < self.eps)
@@ -78,21 +99,31 @@ class CorrectionMethods(unittest.TestCase):
     def test_unwarp_sinogram(self):
         proj = np.random.rand(32, self.size, self.size)
         proj[:] = self.mat_for
-        sino_corr = corr.unwarp_sinogram(proj, self.size // 3,
-                                         self.x, self.y, self.bfacts)
+        sino_corr = corr.unwarp_sinogram(proj, self.size // 3, self.x, self.y,
+                                         self.bfacts)
         sino_corr = np.round(sino_corr)
         num = np.abs(np.mean(sino_corr) - 1.0)
         self.assertTrue(num < self.eps)
+
+        sino_corr = corr.unwarp_sinogram(proj, self.size // 3, self.x, self.y,
+                                         self.bfacts, option=(0, 12, 2))
+        self.assertTrue(sino_corr.shape[0] == 6)
 
     def test_unwarp_sinogram_chunk(self):
         proj = np.random.rand(32, self.size, self.size)
         proj[:] = self.mat_for
         sino_corr = corr.unwarp_sinogram_chunk(proj, self.size // 3,
-                                         self.size // 3 + 3, self.x, self.y,
-                                         self.bfacts)
+                                               self.size // 3 + 3, self.x,
+                                               self.y, self.bfacts)
         sino_corr = np.round(sino_corr)
         num = np.abs(np.mean(sino_corr) - 1.0)
         self.assertTrue(num < self.eps)
+
+        sino_corr = corr.unwarp_sinogram_chunk(proj, self.size // 3,
+                                               self.size // 3 + 3, self.x,
+                                               self.y, self.bfacts,
+                                               option=(0, 12, 2))
+        self.assertTrue(sino_corr.shape[0] == 6)
 
     def test_mtf_deconvolution(self):
         proj = np.random.rand(self.size, self.size)
@@ -100,7 +131,7 @@ class CorrectionMethods(unittest.TestCase):
         window[self.size // 2, self.size // 2] = 1.0
         proj_corr = corr.mtf_deconvolution(proj, window, 10)
         num = np.sum(np.abs(proj - proj_corr))
-        self.assertTrue(num > self.eps and isinstance(proj_corr[0,0], float))
+        self.assertTrue(num > self.eps and isinstance(proj_corr[0, 0], float))
 
     def test_generate_tilted_sinogram(self):
         proj = np.random.rand(32, self.size, self.size)
@@ -109,6 +140,10 @@ class CorrectionMethods(unittest.TestCase):
         sino_corr = np.round(sino_corr)
         num = np.abs(np.mean(sino_corr) - 1.0)
         self.assertTrue(num < self.eps)
+
+        sino_corr = corr.generate_tilted_sinogram(proj, self.size // 3, -5.0,
+                                                  option=(0, 12, 2))
+        self.assertTrue(sino_corr.shape[0] == 6)
 
     def test_generate_tilted_sinogram_chunk(self):
         proj = np.random.rand(32, self.size, self.size)
@@ -119,6 +154,11 @@ class CorrectionMethods(unittest.TestCase):
         sino_corr = np.round(sino_corr)
         num = np.abs(np.mean(sino_corr) - 1.0)
         self.assertTrue(num < self.eps)
+        sino_corr = corr.generate_tilted_sinogram_chunk(proj, self.size // 3,
+                                                        self.size // 3 + 2,
+                                                        -5.0,
+                                                        option=(0, 12, 2))
+        self.assertTrue(sino_corr.shape[0] == 6)
 
     def test_generate_tilted_profile_line(self):
         line = corr.generate_tilted_profile_line(self.mat_tilt, self.size // 3,
@@ -128,8 +168,9 @@ class CorrectionMethods(unittest.TestCase):
         self.assertTrue(num < self.eps)
 
     def test_generate_tilted_profile_chunk(self):
-        line = corr.generate_tilted_profile_chunk(self.mat_tilt, self.size // 3,
-                                                 self.size // 3 + 2, -5.0)
+        line = corr.generate_tilted_profile_chunk(self.mat_tilt,
+                                                  self.size // 3,
+                                                  self.size // 3 + 2, -5.0)
         line = np.round(line)
         num = np.abs(np.mean(line) - 1.0)
         self.assertTrue(num < self.eps)
@@ -141,4 +182,4 @@ class CorrectionMethods(unittest.TestCase):
         num1 = np.sum(mat_corr1[0] - mat[0])
         mat_corr1 = corr.beam_hardening_correction(mat, 0.01, 3, opt=True)
         num2 = np.sum(mat_corr1[0] - mat[0])
-        self.assertTrue(num1 > self.eps and num2 < self.eps)
+        self.assertTrue((num1 > self.eps) and (num2 < self.eps))

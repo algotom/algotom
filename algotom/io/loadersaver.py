@@ -65,13 +65,11 @@ def load_image(file_path):
         2D array.
     """
     if "\\" in file_path:
-        raise ValueError(
-            "Please use the forward slash in the file path")
+        raise ValueError("Please use the forward slash in the file path")
     try:
         mat = np.asarray(Image.open(file_path), dtype=np.float32)
     except IOError:
-        print("No such file or directory: {}".format(file_path))
-        raise
+        raise ValueError("No such file or directory: {}".format(file_path))
     if len(mat.shape) > 2:
         axis_m = np.argmin(mat.shape)
         mat = np.mean(mat, axis=axis_m)
@@ -118,22 +116,16 @@ def get_hdf_information(file_path, display=False):
             list_key.append(key)
             pass
     for i, key in enumerate(list_key):
+        shape, dtype = None, None
         try:
             data = hdf_object[list_key[i]]
             if isinstance(data, h5py.Dataset):
                 shape, dtype = data.shape, data.dtype
-            else:
-                shape, dtype = None, None
-            if isinstance(data, list):
-                if len(data) == 1:
-                    if not isinstance(data, np.ndarray):
-                        dtype = str(list(data)[0])
-                        dtype.replace("b'", "'")
             list_shape.append(shape)
             list_type.append(dtype)
         except KeyError:
-            list_shape.append(None)
-            list_type.append(None)
+            list_shape.append(shape)
+            list_type.append(dtype)
             pass
     hdf_object.close()
     if display:
@@ -189,22 +181,16 @@ def find_hdf_key(file_path, pattern, display=False):
     for _, key in enumerate(list_key):
         if pattern in key:
             list_dkey.append(key)
+            shape, dtype = None, None
             try:
                 data = hdf_object[key]
                 if isinstance(data, h5py.Dataset):
                     shape, dtype = data.shape, data.dtype
-                else:
-                    shape, dtype = None, None
-                if isinstance(data, list):
-                    if len(data) == 1:
-                        if not isinstance(data, np.ndarray):
-                            dtype = str(list(data)[0])
-                            dtype.replace("b'", "'")
                 list_dtype.append(dtype)
                 list_dshape.append(shape)
             except KeyError:
-                list_dtype.append(None)
-                list_dshape.append(None)
+                list_dtype.append(dtype)
+                list_dshape.append(shape)
                 pass
     hdf_object.close()
     if display:
@@ -237,22 +223,23 @@ def load_hdf(file_path, key_path):
     try:
         hdf_object = h5py.File(file_path, 'r')
     except IOError:
-        print("Couldn't open file: {}".format(file_path))
-        raise
+        raise ValueError("Couldn't open file: {}".format(file_path))
     check = key_path in hdf_object
     if not check:
-        print("Couldn't open object with the key path: {}".format(key_path))
-        raise ValueError("!!! Wrong key !!!")
+        raise ValueError(
+            "Couldn't open object with the given key: {}".format(key_path))
     return hdf_object[key_path]
 
 
 def make_folder(file_path):
     """
-    Create a folder if not exist.
+    Create a folder for saving file if the folder does not exist. This is a
+    supplementary function for savers.
 
     Parameters
     ----------
     file_path : str
+        Path to a file.
     """
     file_base = os.path.dirname(file_path)
     if not os.path.exists(file_base):
@@ -289,7 +276,7 @@ def make_file_name(file_path):
     return file_path
 
 
-def make_folder_name(folder_path, name_prefix="Output"):
+def make_folder_name(folder_path, name_prefix="Output", zero_prefix=5):
     """
     Create a new folder name to avoid overwriting.
     E.g: Output_00001, Output_00002...
@@ -300,13 +287,13 @@ def make_folder_name(folder_path, name_prefix="Output"):
         Path to the parent folder.
     name_prefix : str
         Name prefix
-
+    zero_prefix : int
+        Number of zeros to be added to file names.
     Returns
     -------
     str
         Name of the folder.
     """
-    zero_prefix = 5
     scan_name_prefix = name_prefix + "_"
     num_folder_exist = len(
         glob.glob(folder_path + "/" + scan_name_prefix + "*"))
@@ -361,11 +348,16 @@ def save_image(file_path, mat, overwrite=True):
         Updated file path.
     """
     if "\\" in file_path:
-        raise ValueError(
-            "Please use the forward slash in the file path")
-    _, file_ext = os.path.splitext(file_path)
+        raise ValueError("Please use the forward slash in the file path")
+    file_ext = os.path.splitext(file_path)[-1]
     if not ((file_ext == ".tif") or (file_ext == ".tiff")):
         mat = np.uint8(255 * (mat - np.min(mat)) / (np.max(mat) - np.min(mat)))
+    else:
+        data_type = str(mat.dtype)
+        if not (data_type == "uint8" or data_type == "uint16"
+                or data_type == "float32"):
+            raise ValueError("Can't save to tiff with this "
+                             "format: {}".format(data_type))
     make_folder(file_path)
     if not overwrite:
         file_path = make_file_name(file_path)
@@ -373,8 +365,7 @@ def save_image(file_path, mat, overwrite=True):
     try:
         image.save(file_path)
     except IOError:
-        print("Couldn't write to file {}".format(file_path))
-        raise
+        raise ValueError("Couldn't write to file {}".format(file_path))
     return file_path
 
 
@@ -413,14 +404,13 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
     try:
         ofile = h5py.File(file_path, 'w')
     except IOError:
-        print("Couldn't write to file: {}".format(file_path))
-        raise
+        raise ValueError("Couldn't write to file: {}".format(file_path))
     if len(options) != 0:
         for opt_name in options:
             opts = options[opt_name]
             for key in opts:
                 if key_path in key:
-                    msg = "!!!Selected key path, '{0}', can not be a child " \
+                    msg = "!!!Selected key-path, '{0}', can not be a child " \
                           "key-path of '{1}'!!!\n!!!Change to make sure " \
                           "they are at the same level!!!".format(key, key_path)
                     raise ValueError(msg)
@@ -431,7 +421,13 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
 
 def load_distortion_coefficient(file_path):
     """
-    Load distortion coefficients from a text file.
+    Load distortion coefficients from a text file. The file must use the
+    following format:
+    x_center : float
+    y_center : float
+    factor0 : float
+    factor1 : float
+    ...
 
     Parameters
     ----------
@@ -444,8 +440,7 @@ def load_distortion_coefficient(file_path):
         Tuple of (xcenter, ycenter, list_fact).
     """
     if "\\" in file_path:
-        raise ValueError(
-            "Please use the forward slash in the file path")
+        raise ValueError("Please use the forward slash in the file path")
     with open(file_path, 'r') as f:
         x = f.read().splitlines()
         list_data = []

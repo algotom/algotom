@@ -72,24 +72,24 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     flat = ratio * flat
     if use_dark:
         flat_dark = flat - dark
-        try:
-            proj_corr = (np.float32(proj) - dark) / flat_dark
-        except ZeroDivisionError:
+        if 0.0 in flat_dark:
             nmean = np.mean(flat_dark)
             if nmean != 0.0:
                 flat_dark[flat_dark == 0.0] = nmean
             else:
                 flat_dark[flat_dark == 0.0] = 1
             proj_corr = (np.float32(proj) - dark) / flat_dark
+        else:
+            proj_corr = (np.float32(proj) - dark) / flat_dark
     else:
-        try:
-            proj_corr = np.float32(proj) / flat
-        except ZeroDivisionError:
+        if 0.0 in flat:
             nmean = np.mean(flat)
             if nmean != 0.0:
                 flat[flat == 0.0] = nmean
             else:
                 flat[flat == 0.0] = 1
+            proj_corr = np.float32(proj) / flat
+        else:
             proj_corr = np.float32(proj) / flat
     if len(options) != 0:
         for opt_name in options:

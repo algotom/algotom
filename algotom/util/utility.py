@@ -232,8 +232,7 @@ def sort_backward(mat, mat_index, axis=0):
     return mat_sort
 
 
-def separate_frequency_component(mat, axis=0,
-                                 window={"name": "gaussian", "sigma": 5}):
+def separate_frequency_component(mat, axis=0, window=None):
     """
     Separate low and high frequency components of an image along an axis.
     e.g. axis=0 is to apply the separation to each column.
@@ -246,7 +245,8 @@ def separate_frequency_component(mat, axis=0,
         Axis along which to apply the filter.
     window : array_like or dict
         1D array or a dictionary which given the name of a window in
-        the scipy.window list and its parameters (without window-length).
+        the scipy_window list and its parameters (without window-length).
+        E.g window={"name": "gaussian", "sigma": 5}
 
     Returns
     -------
@@ -259,6 +259,8 @@ def separate_frequency_component(mat, axis=0,
         mat = np.transpose(mat)
     (nrow, ncol) = mat.shape
     pad = min(150, int(0.1 * ncol))
+    if window is None:
+        window = {"name": "gaussian", "sigma": 5}
     if not isinstance(window, dict):
         if len(window) != ncol:
             raise ValueError("Window-length is not the same as the"
@@ -345,7 +347,7 @@ def detect_stripe(list_data, snr):
                                     list_sort[ndrop:-ndrop - 1], 1)[:2]
     y_end = intercept + slope * xlist[-1]
     noise_level = np.abs(y_end - intercept)
-    if noise_level == 0.0:
+    if noise_level < 1.0e-5:
         raise ValueError("The method doesn't work on noise-free data. If you "
                          "apply the method on simulated data, please add"
                          " noise!")
@@ -530,12 +532,7 @@ def check_level(level, n_level):
             else:
                 raise ValueError(
                     "Level is out of range: [1:{}]!".format(n_level))
-        elif isinstance(level, list):
-            level = [(i if (0 < i <= n_level) else 0) for i in level]
-            if 0 in level:
-                raise ValueError(
-                    "Level is out of range: [1:{}]!".format(n_level))
-        elif isinstance(level, tuple):
+        elif isinstance(level, list) or isinstance(level, tuple):
             level = [(i if (0 < i <= n_level) else 0) for i in level]
             if 0 in level:
                 raise ValueError(
@@ -545,9 +542,8 @@ def check_level(level, n_level):
     return level
 
 
-def apply_filter_to_wavelet_component(data, level=None, order=1,
-                                      method="gaussian_filter",
-                                      para=[(1, 11)]):
+def apply_filter_to_wavelet_component(data, level=None, order=1, method=None,
+                                      para=None):
     """
     Apply a filter to a component of the wavelet decomposition of an image.
 
@@ -563,9 +559,9 @@ def apply_filter_to_wavelet_component(data, level=None, order=1,
         Specify which component in a tuple,
         (cH_level_n, cV_level_n, cD_level_n), to be filtered.
     method : str
-        Name of the filter in the namespace.
+        Name of the filter in the namespace. E.g. method="gaussian_filter"
     para : list or tuple
-        Parameters of the filter.
+        Parameters of the filter. E.g para=[(1,11)]
 
     Returns
     -------
@@ -578,15 +574,20 @@ def apply_filter_to_wavelet_component(data, level=None, order=1,
     level = check_level(level, n_level)
     order = np.clip(order, 0, 2)
     data = [list(i_data) for i_data in data]
+    if method is None:
+        method = "gaussian_filter"
+    if para is None:
+        para = [(1, 11)]
     if not isinstance(para, list):
         para = tuple(list([para]))
     else:
         para = tuple(para)
+    funcs = [f_name for (f_name, item) in globals().items() if callable(item)]
     for i in level:
         if method in dir(ndi):
             data[i][order] = getattr(ndi, method)(data[i][order], *para)
         else:
-            if method in dir():
+            if method in funcs:
                 obj = sys.modules[__name__]
                 data[i][order] = getattr(obj, method)(data[i][order], *para)
             else:
@@ -988,10 +989,17 @@ def detect_sample(sinogram, sino_type="180"):
     return check
 
 
-def fix_non_sample_areas(overlap_metadata):
+def fix_non_sample_areas(overlap_metadata, direction="horizontal"):
     """
     Used to fix overlap values of grid-cells without sample by copying from
-    its neighbours
+    its neighbours. Input is a 3d-array of overlapping values for each grid
+    cell. For example, to a 5 x 3 (n_row x n_column) grid scans, the shape for
+    overlapping values in the horizontal direction is:
+    5 x 2 (n_column - 1) x 2 (overlap, side).
+    The shape for overlapping values in the vertical direction is:
+    4 (n_row - 1) x 3 x 2 (overlap, side).
+    The order of calculating overlapping values in a grid is left-to-right,
+    top-to-bottom.
 
     Parameters
     ---------
@@ -999,70 +1007,140 @@ def fix_non_sample_areas(overlap_metadata):
         A matrix of overlap values of each grid-cell where each element is a
         list of [overlap, side].
 
+    direction : {"horizontal", "vertical"}
+        Direction of overlapping calculation.
+
     Returns
     -------
     metadata : array_like
     """
     g_nrow, g_ncol = overlap_metadata.shape[:2]
     metadata = np.copy(overlap_metadata)
-    for i in np.arange(g_nrow):
-        i1 = i - 1
-        i2 = i + 1
+    if direction == "vertical":
+        for i in np.arange(g_nrow):
+            i1 = i - 1
+            i2 = i + 1
+            for j in np.arange(g_ncol):
+                (area, _) = overlap_metadata[i, j]
+                j1 = j - 1
+                j2 = j + 1
+                if area == 0:
+                    area1 = 0
+                    if 0 <= j1 < g_ncol:
+                        (area1, side1) = overlap_metadata[i, j1]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if 0 <= j2 < g_ncol:
+                        (area1, side1) = overlap_metadata[i, j2]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if area1 == 0:
+                        if 0 <= i1 < g_nrow:
+                            (area1, side1) = overlap_metadata[i1, j]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+                        if 0 <= i2 < g_nrow:
+                            (area1, side1) = overlap_metadata[i2, j]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+        # Run the same above routine but in reverse order.
+        for i in np.arange(g_nrow - 1, -1, -1):
+            i1 = i - 1
+            i2 = i + 1
+            for j in np.arange(g_ncol - 1, -1, -1):
+                (area, _) = metadata[i, j]
+                j1 = j - 1
+                j2 = j + 1
+                if area == 0:
+                    area1 = 0
+                    if 0 <= j1 < g_ncol:
+                        (area1, side1) = metadata[i, j1]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if 0 <= j2 < g_ncol:
+                        (area1, side1) = metadata[i, j2]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if area1 == 0:
+                        if 0 <= i1 < g_nrow:
+                            (area1, side1) = metadata[i1, j]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+                        if 0 <= i2 < g_nrow:
+                            (area1, side1) = metadata[i2, j]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+    else:
         for j in np.arange(g_ncol):
-            (area, _) = overlap_metadata[i, j]
             j1 = j - 1
             j2 = j + 1
-            if area == 0:
-                if 0 <= i1 < g_nrow:
-                    (area1, side1) = overlap_metadata[i1, j]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-                if 0 <= i2 < g_nrow:
-                    (area1, side1) = overlap_metadata[i2, j]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-                if 0 <= j1 < g_ncol:
-                    (area1, side1) = overlap_metadata[i, j1]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-                if 0 <= j2 < g_ncol:
-                    (area1, side1) = overlap_metadata[i, j2]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-    # Run the same above routine but in reverse order.
-    for i in np.arange(g_nrow - 1, -1, -1):
-        i1 = i - 1
-        i2 = i + 1
+            for i in np.arange(g_nrow):
+                (area, _) = overlap_metadata[i, j]
+                i1 = i - 1
+                i2 = i + 1
+                if area == 0:
+                    area1 = 0
+                    if 0 <= i1 < g_nrow:
+                        (area1, side1) = overlap_metadata[i1, j]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if 0 <= i2 < g_nrow:
+                        (area1, side1) = overlap_metadata[i2, j]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if area1 == 0:
+                        if 0 <= j1 < g_ncol:
+                            (area1, side1) = overlap_metadata[i, j1]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+                        if 0 <= j2 < g_ncol:
+                            (area1, side1) = overlap_metadata[i, j2]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+        # Run the same above routine but in reverse order.
         for j in np.arange(g_ncol - 1, -1, -1):
-            (area, _) = metadata[i, j]
             j1 = j - 1
             j2 = j + 1
-            if area == 0:
-                if 0 <= i1 < g_nrow:
-                    (area1, side1) = metadata[i1, j]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-                if 0 <= i2 < g_nrow:
-                    (area1, side1) = metadata[i2, j]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-                if 0 <= j1 < g_ncol:
-                    (area1, side1) = metadata[i, j1]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-                if 0 <= j2 < g_ncol:
-                    (area1, side1) = metadata[i, j2]
-                    if area1 != 0:
-                        metadata[i, j] = np.asarray([area1, side1])
-                        continue
-        return metadata
+            for i in np.arange(g_nrow - 1, -1, -1):
+                (area, _) = metadata[i, j]
+                i1 = i - 1
+                i2 = i + 1
+                if area == 0:
+                    area1 = 0
+                    if 0 <= i1 < g_nrow:
+                        (area1, side1) = metadata[i1, j]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if 0 <= i2 < g_nrow:
+                        (area1, side1) = metadata[i2, j]
+                        if area1 != 0:
+                            metadata[i, j] = np.asarray([area1, side1])
+                            continue
+                    if area1 == 0:
+                        if 0 <= j1 < g_ncol:
+                            (area1, side1) = metadata[i, j1]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+                        if 0 <= j2 < g_ncol:
+                            (area1, side1) = metadata[i, j2]
+                            if area1 != 0:
+                                metadata[i, j] = np.asarray([area1, side1])
+                                continue
+    return metadata
 
 
 def locate_slice(slice_idx, height, overlap_metadata):

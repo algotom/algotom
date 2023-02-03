@@ -48,33 +48,58 @@ class ReconstructionMethods(unittest.TestCase):
         self.sino_180 = self.sino_360[:37]
         self.center = self.size // 2
 
+    def test_make_smoothing_window(self):
+        win1 = reco.make_smoothing_window(None, self.size)
+        win2 = reco.make_smoothing_window("hann", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+        win2 = reco.make_smoothing_window("bartlett", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+        win2 = reco.make_smoothing_window("blackman", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+        win2 = reco.make_smoothing_window("hamming", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+        win2 = reco.make_smoothing_window("nuttall", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+        win2 = reco.make_smoothing_window("parzen", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+        win2 = reco.make_smoothing_window("triang", self.size)
+        self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
+
     def test_fbp_reconstruction(self):
-        mat_rec1 = reco.fbp_reconstruction(self.sino_180, self.center,
-                                          apply_log=False, gpu=False)
+        f_alias = reco.fbp_reconstruction
+        mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
+                           gpu=True, ratio=0.0)
         num1 = np.max(np.abs(self.mat - mat_rec1))
-        mat_rec2 = reco.fbp_reconstruction(self.sino_360, self.center,
-                                          angles=np.deg2rad(self.angles),
-                                          apply_log=False, gpu=False)
+        mat_rec2 = f_alias(self.sino_360, self.center,
+                           angles=np.deg2rad(self.angles), apply_log=False,
+                           gpu=False, ratio=None)
         num2 = np.max(np.abs(self.mat - mat_rec2))
         check = True
         if cuda.is_available() is True:
-            mat_rec1 = reco.fbp_reconstruction(self.sino_180, self.center,
-                                               apply_log=False, gpu=True)
+            mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
+                               gpu=True)
             num3 = np.max(np.abs(self.mat - mat_rec1))
-            mat_rec2 = reco.fbp_reconstruction(self.sino_360, self.center,
-                                               angles=np.deg2rad(self.angles),
-                                               apply_log=False, gpu=True)
+            mat_rec2 = f_alias(self.sino_360, self.center,
+                               angles=np.deg2rad(self.angles), apply_log=False,
+                               gpu=True)
             num4 = np.max(np.abs(self.mat - mat_rec2))
             if num3 > 0.1 or num4 > 0.1:
                 check = False
         self.assertTrue(num1 <= 0.1 and num2 <= 0.1 and check)
 
+        self.assertRaises(ValueError, f_alias, self.sino_180, self.center,
+                          np.deg2rad(self.angles), apply_log=False)
+
     def test_dfi_reconstruction(self):
-        mat_rec1 = reco.dfi_reconstruction(self.sino_180, self.center,
-                                          apply_log=False)
+        f_alias = reco.dfi_reconstruction
+        mat_rec1 = f_alias(self.sino_180, self.center, ratio=0.0,
+                           apply_log=False)
         num1 = np.max(np.abs(self.mat - mat_rec1))
-        mat_rec2 = reco.dfi_reconstruction(self.sino_360, self.center,
-                                          angles=np.deg2rad(self.angles),
-                                          apply_log=False)
+        mat_rec2 = f_alias(self.sino_360, self.center,
+                           angles=np.deg2rad(self.angles),
+                           apply_log=False, ratio=None)
         num2 = np.max(np.abs(self.mat - mat_rec2))
         self.assertTrue(num1 <= 0.1 and num2 <= 0.1)
+
+        self.assertRaises(ValueError, f_alias, self.sino_180, self.center,
+                          np.deg2rad(self.angles), apply_log=False)

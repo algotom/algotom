@@ -42,28 +42,131 @@ class RemovalMethods(unittest.TestCase):
         self.idx2 = self.size // 2 + 2
 
     def test_remove_stripe_based_sorting(self):
-        mat_corr = remo.remove_stripe_based_sorting(self.mat, 3, dim=1)
+        f_alias = remo.remove_stripe_based_sorting
+        mat_corr = f_alias(self.mat, 3, dim=1)
         num = np.mean(mat_corr[:, self.b:self.e])
         self.assertTrue(num > self.eps)
 
-    def test_remove_stripe_based_filtering(self):
-        mat_corr = remo.remove_stripe_based_filtering(self.mat, 3, 3, dim=1)
+        mat_corr = f_alias(self.mat, 3, dim=2)
         num = np.mean(mat_corr[:, self.b:self.e])
         self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 3, dim=1,
+                           options={"method": "gaussian_filter",
+                                    "para1": (1, 21)})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 3, dim=1,
+                           options={"method": "apply_gaussian_filter",
+                                    "para1": 5, "para2": 20})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, self.mat, 3, dim=1, options=3)
+        self.assertRaises(ValueError, f_alias, self.mat, 3, dim=1,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, self.mat, 3, dim=1,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, self.mat, 3, dim=1,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
+
+    def test_remove_stripe_based_filtering(self):
+        f_alias = remo.remove_stripe_based_filtering
+        mat_corr = f_alias(self.mat, 3, 3, dim=1)
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 3, 3, dim=2)
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 3, 3,
+                           options={"method": "gaussian_filter",
+                                    "para1": (1, 21)})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 3, 3,
+                           options={"method": "apply_gaussian_filter",
+                                    "para1": 5, "para2": 20})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, self.mat, 3, 3, options=3)
+        self.assertRaises(ValueError, f_alias, self.mat, 3, 3,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, self.mat, 3, 3,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, self.mat, 3, 3,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
 
     def test_remove_stripe_based_fitting(self):
         mat = np.random.rand(self.size, self.size)
         mat[:, self.b:self.e] = 1.0
-        mat_corr = remo.remove_stripe_based_fitting(mat, 1, 5, 20)
+        f_alias = remo.remove_stripe_based_fitting
+        mat_corr = f_alias(mat, 1, 5, sort=True)
         num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
         self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(mat, 1, 5, options={"method": "gaussian_filter",
+                                               "para1": (1, 21)})
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(mat, 1, 5,
+                           options={"method": "apply_gaussian_filter",
+                                    "para1": 5, "para2": 20})
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, self.mat, 1, 5, options=3)
+        self.assertRaises(ValueError, f_alias, self.mat, 1, 5,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, self.mat, 1, 5,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, self.mat, 1, 5,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
 
     def test_remove_large_stripe(self):
         mat = np.random.rand(self.size, self.size)
         mat[:, self.b:self.e] = 6.0
-        mat_corr = remo.remove_large_stripe(mat, 1.5, 5, norm=False)
+        f_alias = remo.remove_large_stripe
+        mat_corr = f_alias(mat, 1.5, 5, norm=False)
         num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 6.0)
         self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(mat, 1.5, 5, norm=False,
+                           options={"method": "gaussian_filter",
+                                    "para1": (1, 21)})
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 6.0)
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(mat, 1.5, 5, norm=False,
+                           options={"method": "apply_gaussian_filter",
+                                    "para1": 5, "para2": 20})
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 6.0)
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, mat, 1.5, 5, options=3)
+        self.assertRaises(ValueError, f_alias, mat, 1.5, 5,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, mat, 1.5, 5,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, mat, 1.5, 5,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
 
     def test_remove_dead_stripe(self):
         mat = np.random.rand(self.size, self.size)
@@ -86,15 +189,44 @@ class RemovalMethods(unittest.TestCase):
         self.assertTrue(num > self.eps)
 
     def test_remove_stripe_based_normalization(self):
-        mat_corr = remo.remove_stripe_based_normalization(self.mat, 5, 1)
+        f_alias = remo.remove_stripe_based_normalization
+        mat_corr = f_alias(self.mat, 5, 1)
         num = np.mean(mat_corr[:, self.b:self.e])
         self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 5, 1,
+                           options={"method": "median_filter",
+                                    "para1": 3})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, self.mat, 5, 1, options=3)
+        self.assertRaises(ValueError, f_alias, self.mat, 5, 1,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, self.mat, 5, 1,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, self.mat, 5, 1,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
 
     def test_remove_stripe_based_regularization(self):
         mat = np.random.rand(self.size, self.size)
         mat[:, self.b:self.e] = 1.0
         mat_corr = remo.remove_stripe_based_regularization(mat, 0.01, 1,
                                                            apply_log=False)
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
+        self.assertTrue(num > self.eps)
+
+        mat_corr = remo.remove_stripe_based_regularization(mat, 0.01, 1,
+                                                           apply_log=True)
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
+        self.assertTrue(num > self.eps)
+
+        mat[0, 0] = 0.0
+        mat_corr = remo.remove_stripe_based_regularization(mat, 0.01, 1,
+                                                           apply_log=True)
         num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
         self.assertTrue(num > self.eps)
 
@@ -105,18 +237,70 @@ class RemovalMethods(unittest.TestCase):
         num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
         self.assertTrue(num > self.eps)
 
-    def test_remove_stripe_based_wavelet_fft(self):
-        mat = np.random.rand(self.size, self.size)
-        mat[:, self.b:self.e] = 1.0
-        mat_corr = remo.remove_stripe_based_wavelet_fft(mat, 5, 1)
+        mat_corr = remo.remove_stripe_based_fft(mat, 5, 4, 1, sort=True)
         num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
         self.assertTrue(num > self.eps)
 
+    def test_remove_stripe_based_wavelet_fft(self):
+        mat = np.random.rand(self.size, self.size)
+        mat[:, self.b:self.e] = 1.0
+        f_alias = remo.remove_stripe_based_wavelet_fft
+        mat_corr = f_alias(mat, 5, 1)
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(mat, 5, 1, options={"method": "gaussian_filter",
+                                               "para1": (1, 7)}, sort=True)
+        num = np.abs(np.mean(mat_corr[:, self.b:self.e]) - 1.0)
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, mat, 5, 1, options=3)
+        self.assertRaises(ValueError, f_alias, mat, 5, 1,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, mat, 5, 1,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, mat, 5, 1,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
+
     def test_remove_stripe_based_interpolation(self):
-        mat_corr = remo.remove_stripe_based_interpolation(self.mat, 1.5, 5,
-                                                          norm=False)
+        f_alias = remo.remove_stripe_based_interpolation
+        mat_corr = f_alias(self.mat, 1.5, 5, norm=False)
         num = np.mean(mat_corr[:, self.b:self.e])
         self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 1.5, 5, kind="cubic")
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 1.5, 5, kind="quintic")
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 1.5, 5, norm=True,
+                           options={"method": "gaussian_filter",
+                                    "para1": (1, 7)})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        mat_corr = f_alias(self.mat, 1.5, 5, norm=True,
+                           options={"method": "apply_gaussian_filter",
+                                    "para1": 5, "para2": 10})
+        num = np.mean(mat_corr[:, self.b:self.e])
+        self.assertTrue(num > self.eps)
+
+        self.assertRaises(ValueError, f_alias, self.mat, 1.5, 5, options=3)
+        self.assertRaises(ValueError, f_alias, self.mat, 1.5, 5,
+                          options={"method": "gaussian_filter",
+                                   "para1": (1, 2, 1)})
+        self.assertRaises(ValueError, f_alias, self.mat, 1.5, 5,
+                          options={"method": "test_filter",
+                                   "para1": (1, 2)})
+        self.assertRaises(ValueError, f_alias, self.mat, 1.5, 5,
+                          options={"method": "apply_gaussian_filter",
+                                   "para1": (2, 6)})
 
     def test_remove_zinger(self):
         mat = 0.5 * np.ones((self.size, self.size))
@@ -154,3 +338,4 @@ class RemovalMethods(unittest.TestCase):
         nmean = np.mean(mat_corr[:, self.idx1:self.idx2])
         num = np.abs(nmean - 0.5)
         self.assertTrue(num < self.eps)
+        self.assertRaises(ValueError, remo.remove_blob, mat, mask[1:])

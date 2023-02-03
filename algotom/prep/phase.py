@@ -52,7 +52,7 @@ def _wrap_to_pi(mat):
 
 def _make_window(height, width, direction="forward"):
     """
-    Make a window for a FFT-based filter.
+    Make a window for an FFT-based filter.
 
     Parameters
     ----------
@@ -430,7 +430,7 @@ def reconstruct_surface_from_gradient_SCS_method(grad_x, grad_y,
     pad : int
         Padding width.
     pad_mode : str
-        Padding method. Full list can be found at numpy.pad documentation.
+        Padding method. Full list can be found at numpy_pad documentation.
 
     Returns
     -------
@@ -686,7 +686,8 @@ def align_image_stacks(ref_stack, sam_stack, sr_shifts, sam_shifts=None,
 
 
 @jit(nopython=True, parallel=False, cache=True)
-def _calculate_transmission_dark_field_values(ref_stack, sam_stack):
+def _calculate_transmission_dark_field_values(ref_stack,
+                                              sam_stack):  # pragma: no cover
     """
     Supplementary method for determining transmission-signal image and
     dark-signal image.
@@ -706,7 +707,8 @@ def _calculate_transmission_dark_field_values(ref_stack, sam_stack):
 
 @jit(nopython=True, parallel=False, cache=True)
 def _get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
-                                        y_shifts, win_size, margin):
+                                        y_shifts, win_size,
+                                        margin):  # pragma: no cover
     """
     Supplementary method for determining transmission-signal image and
     dark-signal image.
@@ -899,7 +901,7 @@ def retrieve_phase_based_speckle_tracking(ref_stack, sam_stack,
         Padding-width used for the "SCS" method.
     pad_mode : str
         Padding-method used for the "SCS" method. Full list can be found at
-        numpy.pad documentation.
+        numpy_pad documentation.
     return_shift : bool, optional
         Return a list of 3 arrays: x-shifts, y-shifts, and phase image if True.
         The shifts can be used to determine transmission-signal and dark-signal

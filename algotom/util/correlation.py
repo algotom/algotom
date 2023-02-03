@@ -67,7 +67,7 @@ def normalize_image(mat):
 
 
 @jit(nopython=True, parallel=False, cache=True)
-def _generate_correlation_map_2d_input_cpu(ref_mat, mat):
+def _generate_correlation_map_2d_input_cpu(ref_mat, mat):  # pragma: no cover
     """
     CPU-function to generate a correlation map (Pearson coefficients) by
     shifting the second image around the first image.
@@ -105,7 +105,7 @@ def _generate_correlation_map_2d_input_cpu(ref_mat, mat):
 
 
 @jit(nopython=True, parallel=False, cache=True)
-def _generate_correlation_map_3d_input_cpu(ref_mat, mat):
+def _generate_correlation_map_3d_input_cpu(ref_mat, mat):  # pragma: no cover
     """
     CPU-function to generate a correlation map (Pearson coefficients) by
     shifting the second 3d-image around the first 3d-image along the axes of
@@ -144,7 +144,7 @@ def _generate_correlation_map_3d_input_cpu(ref_mat, mat):
 
 
 @cuda.jit(device=True)
-def __mean_2d(mat):
+def __mean_2d(mat):  # pragma: no cover
     """
     GPU-kernel function to calculate mean of a 2d-array.
     """
@@ -157,7 +157,7 @@ def __mean_2d(mat):
 
 
 @cuda.jit(device=True)
-def __mean_3d(mat):
+def __mean_3d(mat):  # pragma: no cover
     """
     GPU-kernel function to calculate mean of a 3d-array.
     """
@@ -171,7 +171,7 @@ def __mean_3d(mat):
 
 
 @cuda.jit(device=True)
-def __sum_square_2d(mat, mean):
+def __sum_square_2d(mat, mean):  # pragma: no cover
     """
     GPU-kernel function to calculate the sum of squares of a normed 2d-array.
 
@@ -196,7 +196,7 @@ def __sum_square_2d(mat, mean):
 
 
 @cuda.jit(device=True)
-def __sum_square_3d(mat, mean):
+def __sum_square_3d(mat, mean):  # pragma: no cover
     """
     GPU-kernel function to calculate the sum of squares of a normed 3d-array.
 
@@ -222,7 +222,7 @@ def __sum_square_3d(mat, mean):
 
 
 @cuda.jit(device=True)
-def __sum_multiply_2d(ref_mat, mat, ref_mean, mat_mean):
+def __sum_multiply_2d(ref_mat, mat, ref_mean, mat_mean):  # pragma: no cover
     """
     GPU-kernel function to calculate the sum of multiplies of two normed
     2d-arrays.
@@ -231,11 +231,11 @@ def __sum_multiply_2d(ref_mat, mat, ref_mean, mat_mean):
     ----------
     ref_mat : array_like
         2D array. The first image.
-    ref_mean : float
-        Mean of the first image.
     mat : array_like
         2D array. The second image.
-    mean : float
+    ref_mean : float
+        Mean of the first image.
+    mat_mean : float
         Mean of the second image.
 
     Returns
@@ -252,7 +252,7 @@ def __sum_multiply_2d(ref_mat, mat, ref_mean, mat_mean):
 
 
 @cuda.jit(device=True)
-def __sum_multiply_3d(ref_mat, mat, ref_mean, mat_mean):
+def __sum_multiply_3d(ref_mat, mat, ref_mean, mat_mean):  # pragma: no cover
     """
     GPU-kernel function to calculate the sum of multiplies of two normed
     2d-arrays.
@@ -261,11 +261,11 @@ def __sum_multiply_3d(ref_mat, mat, ref_mean, mat_mean):
     ----------
     ref_mat : array_like
         2D array. The first image.
-    ref_mean : float
-        Mean of the first image.
     mat : array_like
         2D array. The second image.
-    mean : float
+    ref_mean : float
+        Mean of the first image.
+    mat_mean : float
         Mean of the second image.
 
     Returns
@@ -283,10 +283,10 @@ def __sum_multiply_3d(ref_mat, mat, ref_mean, mat_mean):
 
 
 @cuda.jit(device=True)
-def __pearson_coefficient_2d(ref_mat, mat):
+def __pearson_coefficient_2d(ref_mat, mat):  # pragma: no cover
     """
-    GPU-kernel function to calculate the Pearson correlation coefficient
-    between two images.
+    Supplementary method. GPU-kernel function to calculate the Pearson
+    correlation coefficient between two images.
 
     Parameters
     ----------
@@ -306,16 +306,17 @@ def __pearson_coefficient_2d(ref_mat, mat):
     ref_sqr = __sum_square_2d(ref_mat, ref_mean)
     sum_mul = __sum_multiply_2d(ref_mat, mat, ref_mean, mat_mean)
     num = math.sqrt(ref_sqr * mat_sqr)
+    coef_mat = 0.0
     if num != 0.0:
         coef_mat = sum_mul / num
     return coef_mat
 
 
 @cuda.jit(device=True)
-def __pearson_coefficient_3d(ref_mat, mat):
+def __pearson_coefficient_3d(ref_mat, mat):  # pragma: no cover
     """
-    GPU-kernel function to calculate the Pearson correlation coefficient
-    between two 3d-images.
+    Supplementary method. GPU-kernel function to calculate the Pearson
+    correlation coefficient between two 3d-images.
 
     Parameters
     ----------
@@ -335,6 +336,7 @@ def __pearson_coefficient_3d(ref_mat, mat):
     ref_sqr = __sum_square_3d(ref_mat, ref_mean)
     sum_mul = __sum_multiply_3d(ref_mat, mat, ref_mean, mat_mean)
     num = math.sqrt(ref_sqr * mat_sqr)
+    coef_mat = 0.0
     if num != 0.0:
         coef_mat = sum_mul / num
     return coef_mat
@@ -342,7 +344,8 @@ def __pearson_coefficient_3d(ref_mat, mat):
 
 @cuda.jit
 def _generate_correlation_map_2d_input_gpu(coef_mat, ref_mat, mat, sum_sqr,
-                                           height1, width1, height2, width2):
+                                           height1, width1, height2,
+                                           width2):  # pragma: no cover
     """
     GPU-CPU function to generate correlation map between two 2d-images.
 
@@ -392,7 +395,7 @@ def _generate_correlation_map_2d_input_gpu(coef_mat, ref_mat, mat, sum_sqr,
 @cuda.jit
 def _generate_correlation_map_3d_input_gpu(coef_mat, ref_mat, mat, sum_sqr,
                                            depth, height1, width1, height2,
-                                           width2):
+                                           width2):  # pragma: no cover
     """
     GPU-CPU function to generate correlation map between two 3d-images.
 
@@ -1362,7 +1365,7 @@ def _get_2d_shift_full_image_3d_input_cpu(ref_mat, mat, chunk_size=None,
 
 
 @cuda.jit(device=True)
-def __gen_1d_corr_map_kernel(ref_mat, mat, list_coef):
+def __gen_1d_corr_map_kernel(ref_mat, mat, list_coef):  # pragma: no cover
     """
     GPU-kernel function to generate a list of local correlation-coefficients
     between two images having the same height.
@@ -1399,7 +1402,7 @@ def __gen_1d_corr_map_kernel(ref_mat, mat, list_coef):
 
 
 @cuda.jit(device=True)
-def __locate_1d_peak_kernel(list_data):
+def __locate_1d_peak_kernel(list_data):  # pragma: no cover
     """
     GPU-kernel function to locate the position of the maximum value of a
     1d-array with sub-pixel accuracy.
@@ -1436,7 +1439,7 @@ def __locate_1d_peak_kernel(list_data):
 @cuda.jit
 def _get_1d_shift_multi_rows_3d_input_kernel(shift_mat, ref_mat, mat,
                                              list_coef, height, width, radi,
-                                             margin):
+                                             margin):  # pragma: no cover
     """
     GPU-CPU function to find local 1d-shifts of the second 3d-image against
     the reference 3d-image where their shapes are the same.
@@ -1642,7 +1645,7 @@ def _get_1d_shift_full_image_3d_input_gpu(ref_mat, mat, direction="x",
 
 
 @cuda.jit(device=True)
-def __gen_2d_corr_map_2d_input(ref_mat, mat, coef_mat):
+def __gen_2d_corr_map_2d_input(ref_mat, mat, coef_mat):  # pragma: no cover
     """
     GPU-kernel function to generate a correlation map between two images where
     the second image is smaller than the first image.
@@ -1682,7 +1685,7 @@ def __gen_2d_corr_map_2d_input(ref_mat, mat, coef_mat):
 
 
 @cuda.jit(device=True)
-def __gen_2d_corr_map_3d_input(ref_mat, mat, coef_mat):
+def __gen_2d_corr_map_3d_input(ref_mat, mat, coef_mat):  # pragma: no cover
     """
     GPU-kernel function to generate a correlation map between two stacks of
     images where the number of images are the same but the image size of the
@@ -1723,7 +1726,7 @@ def __gen_2d_corr_map_3d_input(ref_mat, mat, coef_mat):
 
 
 @cuda.jit(device=True)
-def __locate_max_value(mat):
+def __locate_max_value(mat):  # pragma: no cover
     """
     GPU-kernel function to find the indices of the maximum value of a 2D array.
 
@@ -1752,7 +1755,7 @@ def __locate_max_value(mat):
 
 
 @cuda.jit(device=True)
-def __get_max_value(mat):
+def __get_max_value(mat):  # pragma: no cover
     """
     GPU-kernel function to find the maximum value of a 2D array.
 
@@ -1777,7 +1780,7 @@ def __get_max_value(mat):
 
 
 @cuda.jit(device=True)
-def __inverse_values(mat, val_max):
+def __inverse_values(mat, val_max):  # pragma: no cover
     """
     GPU-kernel function to inverse values of a 2D array.
 
@@ -1800,7 +1803,7 @@ def __inverse_values(mat, val_max):
 
 
 @cuda.jit(device=True)
-def __locate_2d_peak_kernel(mat, x0, y0):
+def __locate_2d_peak_kernel(mat, x0, y0):  # pragma: no cover
     """
     GPU-kernel function to locate the position of the maximum value of a
     2d-array with sub-pixel accuracy (Ref. [1]).
@@ -1855,7 +1858,8 @@ def __locate_2d_peak_kernel(mat, x0, y0):
 
 @cuda.jit
 def _get_2d_shift_multi_rows_2d_input_kernel(shifts, ref_mat, mat, coef_4d,
-                                             height, width, radi, margin):
+                                             height, width, radi,
+                                             margin):  # pragma: no cover
     """
     GPU-CPU function to find local (y,x)-shifts of the second image against
     the reference image.
@@ -2044,7 +2048,8 @@ def _get_2d_shift_full_image_2d_input_gpu(ref_mat, mat, chunk_size=None,
 
 @cuda.jit
 def _get_2d_shift_multi_rows_3d_input_kernel(shifts, ref_mat, mat, coef_4d,
-                                             height, width, radi, margin):
+                                             height, width, radi,
+                                             margin):  # pragma: no cover
     """
     GPU-CPU function to find local (y,x)-shifts of the second 3d-image against
     the reference 3d-image.
@@ -2239,7 +2244,8 @@ def _get_2d_shift_full_image_3d_input_gpu(ref_mat, mat, chunk_size=None,
 
 @cuda.jit
 def _generate_4d_correlation_map_3d_input_kernel(coef_4d, ref_mat, mat, height,
-                                                 width, radi, margin):
+                                                 width, radi,
+                                                 margin):  # pragma: no cover
     """
     GPU-CPU function to calculate 2D correlation maps for each pixel location
     in height and width -> 4D array.
@@ -2772,7 +2778,8 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
 
 @cuda.jit
 def _get_local_shifts_gpu_kernel(shifts, ref_mat, mat, list_i, list_j,
-                                 list_2d_coef, radi, margin, num_point):
+                                 list_2d_coef, radi, margin,
+                                 num_point):  # pragma: no cover
     """
     GPU-CPU function to find local (y,x)-shifts of the second image against
     the reference image.
@@ -3084,7 +3091,7 @@ def __get_2d_shift_multi_rows_3d_input_umpa_cpu(ref_mat, mat, win_size, margin,
 
 
 @cuda.jit(device=True)
-def __sum_multiply_no_norm_2d(ref_mat, mat, window):
+def __sum_multiply_no_norm_2d(ref_mat, mat, window):  # pragma: no cover
     """
     GPU-kernel function to calculate the sum of multiplies of 2d-arrays.
 
@@ -3111,7 +3118,7 @@ def __sum_multiply_no_norm_2d(ref_mat, mat, window):
 
 
 @cuda.jit(device=True)
-def __accu_correlate(ref_mat, mat, window, coef_mat):
+def __accu_correlate(ref_mat, mat, window, coef_mat):  # pragma: no cover
     """
     GPU-kernel function to calculate cross-correlation between two images.
 
@@ -3147,7 +3154,8 @@ def __accu_correlate(ref_mat, mat, window, coef_mat):
 @cuda.jit
 def __calc_shift_umpa_gpu_kernel(shifts, trans, dark, ref_mat, mat, coef_4d,
                                  depth, height, width, radi, margin, window,
-                                 L1, L3, L2, L4, L6, A0, V0, D0, get_dark):
+                                 L1, L3, L2, L4, L6, A0, V0, D0,
+                                 get_dark):  # pragma: no cover
     """
     Supplementary GPU-CPU function for finding local shifts using the UMPA
     approach.

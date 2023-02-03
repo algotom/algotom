@@ -51,7 +51,7 @@ def remove_stripe_based_sorting(sinogram, size=21, dim=1, **options):
         Dimension of the window.
     options : dict, optional
         Use another smoothing filter rather than the median filter.
-        E.g. options={"method": "gaussian_filter", "para1": (1,21))}
+        E.g. options={"method": "gaussian_filter", "para1": (1,21)}
 
     Returns
     -------
@@ -71,22 +71,22 @@ def remove_stripe_based_sorting(sinogram, size=21, dim=1, **options):
         else:
             sino_sort = ndi.median_filter(sino_sort, (1, size))
     else:
-        if not isinstance(options, dict):
-            raise ValueError(msg)
         for opt_name in options:
             opt = options[opt_name]
+            if not isinstance(opt, dict):
+                raise ValueError(msg)
             method = tuple(opt.values())[0]
             para = tuple(opt.values())[1:]
             if method in dir(ndi):
                 try:
                     sino_sort = getattr(ndi, method)(sino_sort, *para)
-                except AttributeError:
+                except Exception:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_sort = getattr(util, method)(sino_sort, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -131,6 +131,7 @@ def remove_stripe_based_filtering(sinogram, sigma=3, size=21, dim=1, sort=True,
     window = {"name": "gaussian", "sigma": sigma}
     sino_smooth, sino_sharp = util.separate_frequency_component(
         np.float32(sinogram), axis=0, window=window)
+    sino_index = None
     if sort is True:
         sino_smooth, sino_index = util.sort_forward(sino_smooth, axis=0)
     if len(options) == 0:
@@ -139,22 +140,22 @@ def remove_stripe_based_filtering(sinogram, sigma=3, size=21, dim=1, sort=True,
         else:
             sino_smooth = ndi.median_filter(sino_smooth, (1, size))
     else:
-        if not isinstance(options, dict):
-            raise ValueError(msg)
         for opt_name in options:
             opt = options[opt_name]
+            if not isinstance(opt, dict):
+                raise ValueError(msg)
             method = tuple(opt.values())[0]
+            para = tuple(opt.values())[1:]
             if method in dir(ndi):
-                para = tuple(opt.values())[1:]
                 try:
                     sino_smooth = getattr(ndi, method)(sino_smooth, *para)
-                except AttributeError:
+                except Exception:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_smooth = getattr(util, method)(sino_smooth, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -199,7 +200,8 @@ def remove_stripe_based_fitting(sinogram, order=2, sigma=10, sort=False,
           " 'filter_name', 'para1': parameter_1, 'para2': parameter_2}"
     (nrow, ncol) = sinogram.shape
     pad = min(150, int(0.1 * nrow))
-    sigmay = np.clip(min(60, int(0.1 * ncol)), 10, None)
+    sigmay = int(np.clip(min(60, int(0.1 * ncol)), 10, None))
+    sino_index = None
     if sort is True:
         sinogram, sino_index = util.sort_forward(sinogram, axis=0)
     sino_fit = util.generate_fitted_image(sinogram, order, axis=0,
@@ -207,23 +209,23 @@ def remove_stripe_based_fitting(sinogram, order=2, sigma=10, sort=False,
     if len(options) == 0:
         sino_filt = util.apply_gaussian_filter(sino_fit, sigma, sigmay, pad)
     else:
-        if not isinstance(options, dict):
-            raise ValueError(msg)
         sino_filt = np.copy(sino_fit)
         for opt_name in options:
             opt = options[opt_name]
+            if not isinstance(opt, dict):
+                raise ValueError(msg)
             method = tuple(opt.values())[0]
+            para = tuple(opt.values())[1:]
             if method in dir(ndi):
-                para = tuple(opt.values())[1:]
                 try:
                     sino_filt = getattr(ndi, method)(sino_filt, *para)
-                except AttributeError:
+                except Exception:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_filt = getattr(util, method)(sino_filt, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -278,23 +280,23 @@ def remove_large_stripe(sinogram, snr=3.0, size=51, drop_ratio=0.1, norm=True,
     if len(options) == 0:
         sino_smooth = ndi.median_filter(sino_sort, (1, size))
     else:
-        if not isinstance(options, dict):
-            raise ValueError(msg)
         sino_smooth = np.copy(sino_sort)
         for opt_name in options:
             opt = options[opt_name]
+            if not isinstance(opt, dict):
+                raise ValueError(msg)
             method = tuple(opt.values())[0]
+            para = tuple(opt.values())[1:]
             if method in dir(ndi):
-                para = tuple(opt.values())[1:]
                 try:
                     sino_smooth = getattr(ndi, method)(sino_smooth, *para)
-                except AttributeError:
+                except Exception:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_smooth = getattr(util, method)(sino_smooth, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -386,8 +388,8 @@ def remove_all_stripe(sinogram, snr=3.0, la_size=51, sm_size=21,
     sm_size : int
         Window size of the median filter to remove small-to-medium stripes.
     drop_ratio : float, optional
-        Ratio of pixels to be dropped, which is used to to reduce
-        the possibility of the false detection of stripes.
+        Ratio of pixels to be dropped, which is used to reduce the possibility
+        of the false detection of stripes.
     dim : {1, 2}, optional
         Dimension of the window.
     options : dict, optional
@@ -481,6 +483,7 @@ def remove_stripe_based_normalization(sinogram, sigma=15, num_chunk=1,
           "\n Note that the filter must be a 1D-filter."
     (nrow, _) = sinogram.shape
     sinogram = np.copy(sinogram)
+    sino_index = None
     if sort is True:
         sinogram, sino_index = util.sort_forward(sinogram, axis=0)
     list_index = np.array_split(np.arange(nrow), num_chunk)
@@ -491,23 +494,23 @@ def remove_stripe_based_normalization(sinogram, sigma=15, num_chunk=1,
         if len(options) == 0:
             list_filt = ndi.gaussian_filter(list_mean, sigma)
         else:
-            if not isinstance(options, dict):
-                raise ValueError(msg)
             list_filt = np.copy(list_mean)
             for opt_name in options:
                 opt = options[opt_name]
+                if not isinstance(opt, dict):
+                    raise ValueError(msg)
                 method = tuple(opt.values())[0]
+                para = tuple(opt.values())[1:]
                 if method in dir(ndi):
-                    para = tuple(opt.values())[1:]
                     try:
                         list_filt = getattr(ndi, method)(list_filt, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     if method in dir(util):
                         try:
                             list_filt = getattr(util, method)(list_filt, *para)
-                        except AttributeError:
+                        except Exception:
                             raise ValueError(msg)
                     else:
                         raise ValueError("Can't find the method: '{}' in the"
@@ -552,6 +555,7 @@ def remove_stripe_based_regularization(sinogram, alpha=0.0005, num_chunk=1,
     """
     (nrow, ncol) = sinogram.shape
     sinogram = np.copy(sinogram)
+    sino_index = None
     if sort is True:
         sinogram, sino_index = util.sort_forward(sinogram, axis=0)
     if apply_log is True:
@@ -612,6 +616,7 @@ def remove_stripe_based_fft(sinogram, u=20, n=8, v=1, sort=False):
 
     [2] : https://doi.org/10.1364/OE.26.028396
     """
+    sino_index = None
     if sort is True:
         sinogram, sino_index = util.sort_forward(sinogram, axis=0)
     pad = min(150, int(0.1 * np.min(sinogram.shape)))
@@ -648,6 +653,9 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
         High-pass window. Two options: "gaussian" or "butter".
     sort : bool, optional
         Apply sorting (Ref. [2]) if True.
+    options : dict, optional
+        Use another smoothing filter rather than the fft-gaussian-filter.
+        E.g. options={"method": "gaussian_filter", "para1": (1,11))}
 
     Returns
     -------
@@ -662,6 +670,7 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
     """
     msg = "\n Please use the dictionary format: options={'method':" \
           " 'filter_name', 'para1': parameter_1, 'para2': parameter_2}"
+    sino_index = None
     if sort is True:
         sinogram, sino_index = util.sort_forward(sinogram, axis=0)
     (nrow, ncol) = sinogram.shape
@@ -680,22 +689,22 @@ def remove_stripe_based_wavelet_fft(sinogram, level=5, size=1,
             output_data[i][1] = np.real(np.fft.ifft2(np.fft.ifftshift(
                 np.fft.fftshift(np.fft.fft2(output_data[i][1])) * window)))
         else:
-            if not isinstance(options, dict):
-                raise ValueError(msg)
             mat_smooth = np.copy(output_data[i][1])
             for opt_name in options:
                 opt = options[opt_name]
+                if not isinstance(opt, dict):
+                    raise ValueError(msg)
                 method = tuple(opt.values())[0]
                 para = tuple(opt.values())[1:]
                 if method in dir(ndi):
                     try:
                         mat_smooth = getattr(ndi, method)(mat_smooth, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 elif method in dir(util):
                     try:
                         mat_smooth = getattr(util, method)(mat_smooth, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
@@ -724,8 +733,8 @@ def remove_stripe_based_interpolation(sinogram, snr=3.0, size=51,
     size : int
         Window size of the median filter used to detect stripes.
     drop_ratio : float, optional
-        Ratio of pixels to be dropped, which is used to to reduce
-        the possibility of the false detection of stripes.
+        Ratio of pixels to be dropped, which is used to reduce the possibility
+        of the false detection of stripes.
     norm : bool, optional
         Apply normalization if True.
     kind : {'linear', 'cubic', 'quintic'}, optional
@@ -753,29 +762,30 @@ def remove_stripe_based_interpolation(sinogram, snr=3.0, size=51,
     if len(options) == 0:
         sino_smooth = ndi.median_filter(sino_sort, (1, size))
     else:
-        if not isinstance(options, dict):
-            raise ValueError(msg)
         sino_smooth = np.copy(sino_sort)
         for opt_name in options:
             opt = options[opt_name]
+            if not isinstance(opt, dict):
+                raise ValueError(msg)
             method = tuple(opt.values())[0]
             para = tuple(opt.values())[1:]
             if method in dir(ndi):
                 try:
                     sino_smooth = getattr(ndi, method)(sino_smooth, *para)
-                except AttributeError:
+                except Exception:
                     raise ValueError(msg)
             else:
                 if method in dir(util):
                     try:
                         sino_smooth = getattr(util, method)(sino_smooth, *para)
-                    except AttributeError:
+                    except Exception:
                         raise ValueError(msg)
                 else:
                     raise ValueError("Can't find the method: '{}' in the"
                                      " namespace".format(method))
     list1 = np.mean(sino_sort[ndrop:nrow - ndrop], axis=0)
     list2 = np.mean(sino_smooth[ndrop:nrow - ndrop], axis=0)
+    list1[list1 == 0.0] = np.float32(1.0)
     list_fact = np.divide(list1, list2,
                           out=np.ones_like(list1), where=list2 != 0)
     list_mask = util.detect_stripe(list_fact, snr)

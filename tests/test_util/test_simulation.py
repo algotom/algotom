@@ -52,6 +52,11 @@ class SimulationMethods(unittest.TestCase):
         list1 = mask[self.size // 2]
         self.assertTrue(np.sum(list1) > 3)
 
+        size2 = 2 * self.size
+        mask = 1.0 - sim.make_line_target(size2)
+        list2 = mask[size2 // 2]
+        self.assertTrue(np.sum(list2) > size2 / 4)
+
     def test_make_face_phantom(self):
         mat = sim.make_face_phantom(self.size)
         list1 = np.mean(mat, axis=1)
@@ -72,10 +77,37 @@ class SimulationMethods(unittest.TestCase):
         self.assertTrue(num1 < 0.05)
 
     def test_add_stripe_artifact(self):
-        size = 2
-        sinogram1 = sim.add_stripe_artifact(self.sinogram, size, self.size // 4,
-                                            strength_ratio=0.5,
+        size = 3
+        sinogram1 = sim.add_stripe_artifact(self.sinogram, size,
+                                            self.size // 4, strength_ratio=0.5,
                                             stripe_type="full")
+        mat1 = np.abs(sinogram1 - self.sinogram)
+        mat1[mat1 > self.eps] = 1.0
+        list1 = np.mean(mat1, axis=0)
+        num1 = np.sum(list1)
+        self.assertTrue(int(num1) == size)
+
+        sinogram1 = sim.add_stripe_artifact(self.sinogram, size,
+                                            self.size // 4, strength_ratio=0.5,
+                                            stripe_type="partial")
+        mat1 = np.abs(sinogram1 - self.sinogram)
+        mat1[mat1 > self.eps] = 1.0
+        list1 = np.mean(mat1, axis=0)
+        num1 = np.sum(list1)
+        self.assertTrue(size > num1 > 0)
+
+        sinogram1 = sim.add_stripe_artifact(self.sinogram, size,
+                                            self.size // 4, strength_ratio=0.5,
+                                            stripe_type="dead")
+        mat1 = np.abs(sinogram1 - self.sinogram)
+        mat1[mat1 > self.eps] = 1.0
+        list1 = np.mean(mat1, axis=0)
+        num1 = np.sum(list1)
+        self.assertTrue(int(num1) == size)
+
+        sinogram1 = sim.add_stripe_artifact(self.sinogram, size,
+                                            self.size // 4, strength_ratio=0.5,
+                                            stripe_type="fluctuating")
         mat1 = np.abs(sinogram1 - self.sinogram)
         mat1[mat1 > self.eps] = 1.0
         list1 = np.mean(mat1, axis=0)

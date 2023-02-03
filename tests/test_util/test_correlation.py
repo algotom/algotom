@@ -55,12 +55,11 @@ class UtilityMethods(unittest.TestCase):
         mat1 = corl.normalize_image(mat)
         num1 = np.mean(mat1)
         num2 = np.abs(np.std(mat1) - 1.0)
-        check1 = True if (num1 < self.eps and num2 < self.eps) else False
+        self.assertTrue(num1 < self.eps and num2 < self.eps)
         mat = np.random.normal(0.5, 0.6, (6, 64, 64))
         mat1 = corl.normalize_image(mat)
         num1 = np.min(mat1)
-        check2 = True if num1 >= 0.0 else False
-        self.assertTrue(check1 and check2)
+        self.assertTrue(num1 >= 0.0)
 
     def test_generate_correlation_map(self):
         f_alias = corl.generate_correlation_map
@@ -70,15 +69,33 @@ class UtilityMethods(unittest.TestCase):
                            self.sam_stack[0][drop:-drop, drop:-drop],
                            gpu=False)
         num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
-        check1 = True if coef_mat.shape == (size, size) \
-                         and num1 < 0.5 else False
+        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+
         coef_mat = f_alias(self.ref_stack,
                            self.sam_stack[:, drop:-drop, drop:-drop],
                            gpu=False)
         num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
-        check2 = True if coef_mat.shape == (size, size) \
-                         and num1 < 0.5 else False
-        self.assertTrue(check1 and check2)
+        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+
+        coef_mat = f_alias(self.ref_stack,
+                           self.sam_stack[:, drop:-drop, drop:-drop],
+                           gpu=True)
+        num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
+        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+
+        coef_mat = f_alias(self.ref_stack[0],
+                           self.sam_stack[0, drop:-drop, drop:-drop],
+                           gpu=True)
+        num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
+        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+
+        self.assertRaises(ValueError, f_alias, self.ref_stack[0, 1],
+                          self.sam_stack[0, 1], gpu=False)
+        self.assertRaises(ValueError, f_alias,
+                          self.ref_stack[0, drop:-drop, drop:-drop],
+                          self.sam_stack[0], gpu=False)
+        self.assertRaises(ValueError, f_alias, self.ref_stack[0:1],
+                          self.sam_stack[:, drop:-drop, drop:-drop], gpu=False)
 
     def test_locate_peak(self):
         f_alias = corl.generate_correlation_map
@@ -90,39 +107,37 @@ class UtilityMethods(unittest.TestCase):
                                         dim=2, size=3, max_peak=True)
         x_sh, y_sh = x_pos - drop, y_pos - drop
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check1 = True if num1 < 0.05 and num2 < 0.05 else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
         x_pos, y_pos = corl.locate_peak(mat, sub_pixel=True, method="diff",
                                         dim=1, size=3, max_peak=True)
         x_sh, y_sh = x_pos - drop, y_pos - drop
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check2 = True if num1 < 0.05 and num2 < 0.05 else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
         x_pos, y_pos = corl.locate_peak(mat, sub_pixel=True, method="poly_fit",
                                         dim=2, size=3, max_peak=True)
         x_sh, y_sh = x_pos - drop, y_pos - drop
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check3 = True if num1 < 0.05 and num2 < 0.05 else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
         x_pos, y_pos = corl.locate_peak(mat, sub_pixel=True, method="poly_fit",
                                         dim=1, size=3, max_peak=True)
         x_sh, y_sh = x_pos - drop, y_pos - drop
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check4 = True if num1 < 0.05 and num2 < 0.05 else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
         x_pos, y_pos = corl.locate_peak(mat, sub_pixel=True, method="poly_fit",
                                         dim=2, size=5, max_peak=True)
         x_sh, y_sh = x_pos - drop, y_pos - drop
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check5 = True if num1 < 0.05 and num2 < 0.05 else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
         x_pos, y_pos = corl.locate_peak(mat, sub_pixel=True, method="poly_fit",
                                         dim=1, size=5, max_peak=True)
         x_sh, y_sh = x_pos - drop, y_pos - drop
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check6 = True if num1 < 0.05 and num2 < 0.05 else False
-        self.assertTrue(
-            check1 and check2 and check3 and check4 and check5 and check6)
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
     def test_find_shift_based_correlation_map(self):
         f_alias = corl.find_shift_based_correlation_map
@@ -130,13 +145,42 @@ class UtilityMethods(unittest.TestCase):
                              axis=None, sub_pixel=True, method="diff", dim=2,
                              size=3, gpu=False)
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check1 = True if num1 < 0.05 and num2 < 0.05 else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
         x_sh, y_sh = f_alias(self.ref_stack, self.sam_stack, margin=10,
                              axis=None, sub_pixel=True, method="diff", dim=2,
                              size=3, gpu=False)
         num1, num2 = np.abs(x_sh + self.shift), np.abs(y_sh + self.shift)
-        check2 = True if num1 < 0.05 and num2 < 0.05 else False
-        self.assertTrue(check1 and check2)
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
+        x_sh, y_sh = f_alias(self.ref_stack, self.sam_stack, margin=10,
+                             axis=1, sub_pixel=True, method="poly_fit", dim=2,
+                             size=3, gpu=False)
+        num1 = np.abs(x_sh + self.shift)
+        self.assertTrue(num1 < 0.1)
+
+        x_sh, y_sh = f_alias(self.ref_stack, self.sam_stack, margin=10,
+                             axis=0, sub_pixel=True, method="poly_fit", dim=2,
+                             size=3, gpu=False)
+        num1 = np.abs(y_sh + self.shift)
+        self.assertTrue(num1 < 0.1)
+
+        x_sh, y_sh = f_alias(self.ref_stack[0], self.sam_stack[0], margin=10,
+                             axis=1, sub_pixel=True, method="poly_fit", dim=2,
+                             size=3, gpu=False)
+        num1 = np.abs(x_sh + self.shift)
+        self.assertTrue(num1 < 0.1)
+
+        x_sh, y_sh = f_alias(self.ref_stack[0], self.sam_stack[0], margin=10,
+                             axis=0, sub_pixel=True, method="poly_fit", dim=2,
+                             size=3, gpu=False)
+        num1 = np.abs(y_sh + self.shift)
+        self.assertTrue(num1 < 0.1)
+
+        self.assertRaises(ValueError, f_alias, self.ref_stack[0],
+                          self.sam_stack[0, 16:-16], margin=20, axis=None,
+                          sub_pixel=True, method="poly_fit", dim=2, size=5,
+                          gpu=False)
 
     def test_find_local_shifts(self):
         f_alias = corl.find_local_shifts
@@ -149,7 +193,7 @@ class UtilityMethods(unittest.TestCase):
                                      norm_global=True, chunk_size=None)
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
-        check1 = True if (num1 < 0.1 and num2 < 0.1) else False
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
 
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
                                      dim=1, win_size=5, margin=margin,
@@ -158,7 +202,16 @@ class UtilityMethods(unittest.TestCase):
                                      norm_global=True, chunk_size=20)
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
-        check2 = True if (num1 < 0.1 and num2 < 0.1) else False
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
+
+        x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
+                                     dim=1, win_size=5, margin=margin,
+                                     method="poly_fit", size=3, gpu=False,
+                                     block=(16, 16), ncore=None, norm=True,
+                                     norm_global=False, chunk_size=20)
+        num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+        num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
 
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
                                      dim=2, win_size=5, margin=margin,
@@ -167,7 +220,7 @@ class UtilityMethods(unittest.TestCase):
                                      norm_global=True, chunk_size=None)
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
-        check3 = True if (num1 < 0.1 and num2 < 0.1) else False
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
 
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
                                      dim=2, win_size=5, margin=margin,
@@ -176,7 +229,7 @@ class UtilityMethods(unittest.TestCase):
                                      norm_global=True, chunk_size=20)
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
-        check4 = True if (num1 < 0.1 and num2 < 0.1) else False
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
 
         x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
                                      dim=2, win_size=5, margin=margin,
@@ -185,7 +238,7 @@ class UtilityMethods(unittest.TestCase):
                                      norm_global=True, chunk_size=None)
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
-        check5 = True if (num1 < 0.1 and num2 < 0.1) else False
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
 
         x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
                                      dim=2, win_size=5, margin=margin,
@@ -194,9 +247,52 @@ class UtilityMethods(unittest.TestCase):
                                      norm_global=True, chunk_size=20)
         num1 = np.abs(np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
         num2 = np.abs(np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
-        check6 = True if (num1 < 0.1 and num2 < 0.1) else False
-        self.assertTrue(check1 and check2 and check3
-                        and check4 and check5 and check6)
+        self.assertTrue(num1 < 0.1 and num2 < 0.1)
+
+        if cuda.is_available():
+            x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0],
+                                         dim=1, win_size=5, margin=margin,
+                                         method="diff", size=3, gpu=True,
+                                         block=(16, 16), ncore=1, norm=True,
+                                         norm_global=True, chunk_size=None)
+            num1 = np.abs(
+                np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+            num2 = np.abs(
+                np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+            self.assertTrue(num1 < 0.1 and num2 < 0.1)
+
+            x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                         dim=1, win_size=5, margin=margin,
+                                         method="diff", size=3, gpu=True,
+                                         block=(16, 16), ncore=1, norm=False,
+                                         norm_global=False, chunk_size=10)
+            num1 = np.abs(
+                np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+            num2 = np.abs(
+                np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+            self.assertTrue(num1 < 1.0 and num2 < 1.0)
+
+            x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                         dim=2, win_size=5, margin=margin,
+                                         method="diff", size=3, gpu=True,
+                                         block=(16, 16), ncore=1, norm=True,
+                                         norm_global=False, chunk_size=None)
+            num1 = np.abs(
+                np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+            num2 = np.abs(
+                np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+            self.assertTrue(num1 < 0.1 and num2 < 0.1)
+
+            x_shifts, y_shifts = f_alias(self.ref_stack, self.sam_stack,
+                                         dim=2, win_size=5, margin=margin,
+                                         method="diff", size=3, gpu="hybrid",
+                                         block=(16, 16), ncore=1, norm=True,
+                                         norm_global=True, chunk_size=None)
+            num1 = np.abs(
+                np.mean(x_shifts[edge:-edge, edge:-edge]) + self.shift)
+            num2 = np.abs(
+                np.mean(y_shifts[edge:-edge, edge:-edge]) + self.shift)
+            self.assertTrue(num1 < 0.1 and num2 < 0.1)
 
     def test_find_global_shift_based_local_shifts(self):
         f_alias = corl.find_global_shift_based_local_shifts
@@ -209,7 +305,8 @@ class UtilityMethods(unittest.TestCase):
                                    return_list=False)
         num1 = np.abs(x_shift + self.shift)
         num2 = np.abs(y_shift + self.shift)
-        check1 = True if (num1 < 0.05 and num2 < 0.05) else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
         x_shift, y_shift = f_alias(self.ref_stack[0], self.sam_stack[0], 17,
                                    5, list_ij=list_ij, num_point=None,
                                    global_value="mean", gpu=False,
@@ -218,7 +315,8 @@ class UtilityMethods(unittest.TestCase):
                                    return_list=False)
         num1 = np.abs(x_shift + self.shift)
         num2 = np.abs(y_shift + self.shift)
-        check2 = True if (num1 < 0.05 and num2 < 0.05) else False
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
         x_shifts, y_shifts = f_alias(self.ref_stack[0], self.sam_stack[0], 17,
                                      5, list_ij=list_ij, num_point=None,
                                      global_value="mixed", gpu=False,
@@ -227,9 +325,48 @@ class UtilityMethods(unittest.TestCase):
                                      return_list=True)
         num1 = np.abs(np.mean(x_shifts) + self.shift)
         num2 = np.abs(np.mean(x_shifts) + self.shift)
-        check3 = True if (num1 < 0.05 and num2 < 0.05 \
-                          and len(x_shifts) == 3) else False
-        self.assertTrue(check1 and check2 and check3)
+        self.assertTrue(num1 < 0.05 and num2 < 0.05 and len(x_shifts) == 3)
+
+        x_shift, y_shift = f_alias(self.ref_stack[0], self.sam_stack[0], 17,
+                                   5, list_ij=None, num_point=10,
+                                   global_value="mixed", gpu=False,
+                                   block=32, sub_pixel=True, method="diff",
+                                   size=3, ncore=None, norm=False,
+                                   return_list=False)
+        num1 = np.abs(x_shift + self.shift)
+        num2 = np.abs(y_shift + self.shift)
+        self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
+        if cuda.is_available():
+            x_shift, y_shift = f_alias(self.ref_stack[0], self.sam_stack[0],
+                                       17, 5, list_ij=list_ij, num_point=None,
+                                       global_value="median", gpu=True,
+                                       block=32, sub_pixel=True, method="diff",
+                                       size=3, ncore=None, norm=True,
+                                       return_list=False)
+            num1 = np.abs(x_shift + self.shift)
+            num2 = np.abs(y_shift + self.shift)
+            self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
+            x_shift, y_shift = f_alias(self.ref_stack[0], self.sam_stack[0],
+                                       17, 5, list_ij=list_ij, num_point=None,
+                                       global_value="mean", gpu=True,
+                                       block=32, sub_pixel=True,
+                                       method="poly_fit", size=3, ncore=None,
+                                       norm=True, return_list=False)
+            num1 = np.abs(x_shift + self.shift)
+            num2 = np.abs(y_shift + self.shift)
+            self.assertTrue(num1 < 0.05 and num2 < 0.05)
+
+            x_shift, y_shift = f_alias(self.ref_stack[0], self.sam_stack[0],
+                                       17, 5, list_ij=None,
+                                       num_point=None, global_value="mixed",
+                                       gpu=True, block=32, sub_pixel=True,
+                                       method="diff", size=3, ncore=None,
+                                       norm=True, return_list=False)
+            num1 = np.abs(x_shift + self.shift)
+            num2 = np.abs(y_shift + self.shift)
+            self.assertTrue(num1 < 0.05 and num2 < 0.05)
 
     def test_find_local_shifts_umpa(self):
         f_alias = corl.find_local_shifts_umpa

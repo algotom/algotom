@@ -53,11 +53,9 @@ def normalize_background(mat, size=51):
     """
     mat_bck = ndi.median_filter(mat, size, mode="reflect")
     mean_val = np.mean(mat_bck)
-    try:
-        mat_cor = mean_val * mat / mat_bck
-    except ZeroDivisionError:
+    if 0.0 in mat_bck:
         mat_bck[mat_bck == 0.0] = mean_val
-        mat_cor = mean_val * mat / mat_bck
+    mat_cor = mean_val * mat / mat_bck
     return mat_cor
 
 
@@ -96,11 +94,9 @@ def normalize_background_based_fft(mat, sigma=5, pad=None, mode="reflect"):
     mat_bck = util.apply_gaussian_filter(mat, sigma_x, sigma_y,
                                          pad=pad, mode=mode)
     mean_val = np.mean(mat_bck)
-    try:
-        mat_cor = mean_val * mat / mat_bck
-    except ZeroDivisionError:
+    if 0.0 in mat_bck:
         mat_bck[mat_bck == 0.0] = mean_val
-        mat_cor = mean_val * mat / mat_bck
+    mat_cor = mean_val * mat / mat_bck
     return mat_cor
 
 
