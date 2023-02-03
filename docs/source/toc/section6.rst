@@ -28,3 +28,7 @@ Update notes
 - 24/10/2022:
 
     + Release version 1.2.
+
+- 03/02/2023:
+
+    + Add reslicing 3D-data method. Increase code coverage.

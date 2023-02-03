@@ -34,23 +34,6 @@ If users don't want to install Anaconda which is quite heavy due to the base
 environment shipped with it, `Miniconda <https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html>`__
 is enough to customize Python environment.
 
-From source
------------
-
-Clone `Algotom <https://github.com/algotom/algotom>`__ from Github repository::
-
-    git clone https://github.com/algotom/algotom.git algotom
-
-Download and install `Miniconda  <https://docs.conda.io/en/latest/miniconda.html>`__ software, then:
-
-Open Linux terminal or Miniconda/Anaconda Powershell prompt and run the following commands::
-
-    conda create -n algotom python>=3.7
-    conda activate algotom
-    cd algotom
-    python setup.py install
-
-
 Using conda
 -----------
 
@@ -62,15 +45,15 @@ If install to an existing environment::
 
     conda install -c algotom algotom
 
+or from the conda-forge channel::
+
+	conda install -c conda-forge algotom
+
 If install to a new environment::
 
     conda create -n algotom python>=3.7
     conda activate algotom
     conda install -c algotom algotom
-
-Algotom is also installable using the conda-forge channel::
-
-	conda install -c conda-forge algotom
 
 Using pip
 ---------
@@ -88,6 +71,22 @@ If install to a new environment::
     conda create -n algotom python>=3.7
     conda activate algotom
     pip install algotom
+
+From source
+-----------
+
+Clone `Algotom <https://github.com/algotom/algotom>`__ from Github repository::
+
+    git clone https://github.com/algotom/algotom.git algotom
+
+Download and install `Miniconda  <https://docs.conda.io/en/latest/miniconda.html>`__ software, then:
+
+Open Linux terminal or Miniconda/Anaconda Powershell prompt and run the following commands::
+
+    conda create -n algotom python>=3.7
+    conda activate algotom
+    cd algotom
+    python setup.py install
 
 Notes
 -----
