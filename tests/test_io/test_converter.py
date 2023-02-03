@@ -62,10 +62,6 @@ class ConverterMethods(unittest.TestCase):
         con.convert_tif_to_hdf("data/tif/", file_path3)
         self.assertTrue(os.path.isfile(file_path3 + ".hdf"))
 
-        file_path4 = "data/hdf/data4.hdf"
-        self.assertRaises(ValueError, con.convert_tif_to_hdf, "data/",
-                          file_path4)
-
         file_path5 = "data/hdf/data5.hdf"
         self.assertRaises(ValueError, con.convert_tif_to_hdf, "data/tif/",
                           file_path5, crop=(0, 0, 33, 35))

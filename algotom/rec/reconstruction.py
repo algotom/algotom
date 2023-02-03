@@ -126,7 +126,7 @@ def apply_ramp_filter(sinogram, ramp_win=None, filter_name=None, pad=None,
         To apply padding before the FFT. The value is set to 10% of the image
         width if None is given.
     pad_mode : str
-        Padding method. Full list can be found at numpy.pad documentation.
+        Padding method. Full list can be found at numpy_pad documentation.
 
     Returns
     -------
@@ -147,7 +147,7 @@ def apply_ramp_filter(sinogram, ramp_win=None, filter_name=None, pad=None,
 
 @cuda.jit
 def back_projection_gpu(recon, sinogram, angles, xlist, center, sino_height,
-                        sino_width):
+                        sino_width):  # pragma: no cover
     """
     Implement the back-projection algorithm using GPU.
 
@@ -201,7 +201,7 @@ def back_projection_gpu(recon, sinogram, angles, xlist, center, sino_height,
 
 
 @jit(nopython=True, parallel=True, cache=True)
-def back_projection_cpu(sinogram, angles, xlist, center):
+def back_projection_cpu(sinogram, angles, xlist, center):  # pragma: no cover
     """
     Implement the back-projection algorithm using CPU.
 
@@ -276,7 +276,7 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
         To apply padding before the FFT. The value is set to 10% of the image
         width if None is given.
     pad_mode : str, optional
-        Padding method. Full list can be found at numpy.pad documentation.
+        Padding method. Full list can be found at numpy_pad documentation.
     apply_log : bool, optional
         Apply the logarithm function to the sinogram before reconstruction.
     gpu : bool, optional
@@ -393,7 +393,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
         To apply padding before the FFT. The padding width equals to
         (pad_rate * image_width).
     pad_mode : str
-        Padding method. Full list can be found at numpy.pad documentation.
+        Padding method. Full list can be found at numpy_pad documentation.
     apply_log : bool
         Apply the logarithm function to the sinogram before reconstruction.
 
@@ -417,6 +417,11 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
     xshift = (ncol1 - 1) / 2.0 - center
     sinogram = shift(sinogram, (0, xshift), mode='nearest')
     if angles is not None:
+        num_pro = len(angles)
+        if num_pro != nrow:
+            msg = "!!!Number of angles is not the same as the row number of " \
+                  "the sinogram!!!"
+            raise ValueError(msg)
         t_ang = np.sum(np.abs(np.diff(angles * 180.0 / np.pi)))
         if abs(t_ang - 360) < 10:
             nrow = nrow // 2 + 1
@@ -455,7 +460,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
 
 def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
                            filter_name="shepp", apply_log=True, pad=True,
-                           ncore=1):
+                           ncore=1):  # pragma: no cover
     """
     Wrapper of the gridrec method implemented in the tomopy package:
     https://tomopy.readthedocs.io/en/latest/api/tomopy.recon.algorithm.html
@@ -524,7 +529,7 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
 
 def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
                          method="FBP_CUDA", num_iter=1, filter_name="hann",
-                         pad=None, apply_log=True):
+                         pad=None, apply_log=True):  # pragma: no cover
     """
     Wrapper of reconstruction methods implemented in the astra toolbox package.
     https://www.astra-toolbox.com/docs/algs/index.html
@@ -578,6 +583,7 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
     sinogram = shift(sinogram, (0, cen_col - (center + pad)), mode='nearest')
     sino_id = astra.data2d.create('-sino', proj_geom, sinogram)
     rec_id = astra.data2d.create('-vol', vol_geom)
+    proj_id = None
     if "CUDA" not in method:
         proj_id = astra.create_projector('line', proj_geom, vol_geom)
     cfg = astra.astra_dict(method)

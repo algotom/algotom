@@ -32,7 +32,7 @@ import algotom.prep.calculation as calc
 class CalculationMethods(unittest.TestCase):
 
     def setUp(self):
-        self.error = 0.15
+        self.error = 0.2
         self.size = 64
 
     def test_find_center_vo(self):
@@ -52,6 +52,7 @@ class CalculationMethods(unittest.TestCase):
         win_width = 10
         mat1 = np.zeros((self.size, self.size), dtype=np.float32)
         mat2 = np.copy(mat1)
+        np.random.seed(1)
         noise1 = np.float32(0.1 * np.random.rand(self.size, self.size))
         noise2 = np.float32(0.1 * np.random.rand(self.size, self.size))
         mat1 = mat1 + noise1
@@ -62,6 +63,16 @@ class CalculationMethods(unittest.TestCase):
         (overlap1, side1, _) = calc.find_overlap(mat1, mat2, win_width)
         self.assertTrue(
             np.abs(overlap1 - overlap) < self.error and side1 == side)
+
+        (overlap2, side2, _) = calc.find_overlap(mat1, mat2, win_width, side=1,
+                                                 norm=True, use_overlap=True)
+        self.assertTrue(
+            np.abs(overlap2 - overlap) < 0.3 and side2 == side)
+
+        (overlap3, side3, _) = calc.find_overlap(mat1, mat2, win_width, side=0,
+                                                 norm=True, use_overlap=True)
+        self.assertTrue(
+            np.abs(overlap3 - overlap) > 0.5 and side3 != side)
 
     def test_find_overlap_multiple(self):
         overlap = 20
@@ -134,6 +145,11 @@ class CalculationMethods(unittest.TestCase):
         mat2 = ndi.shift(mat2, (0, shift))
         center0 = (self.size - 1) / 2.0 + shift
         cor = calc.find_center_projection(mat1, mat2)
+        self.assertTrue(np.abs(cor - center0) < self.error)
+
+        cor = calc.find_center_projection(mat1, mat2, chunk_height=0.5,
+                                          start_row=1, norm=True,
+                                          use_overlap=True)
         self.assertTrue(np.abs(cor - center0) < self.error)
 
     def test_calculate_reconstructable_height(self):

@@ -116,22 +116,16 @@ def get_hdf_information(file_path, display=False):
             list_key.append(key)
             pass
     for i, key in enumerate(list_key):
+        shape, dtype = None, None
         try:
             data = hdf_object[list_key[i]]
             if isinstance(data, h5py.Dataset):
                 shape, dtype = data.shape, data.dtype
-            else:
-                shape, dtype = None, None
-            if isinstance(data, list):
-                if len(data) == 1:
-                    if not isinstance(data, np.ndarray):
-                        dtype = str(list(data)[0])
-                        dtype.replace("b'", "'")
             list_shape.append(shape)
             list_type.append(dtype)
         except KeyError:
-            list_shape.append(None)
-            list_type.append(None)
+            list_shape.append(shape)
+            list_type.append(dtype)
             pass
     hdf_object.close()
     if display:
@@ -187,22 +181,16 @@ def find_hdf_key(file_path, pattern, display=False):
     for _, key in enumerate(list_key):
         if pattern in key:
             list_dkey.append(key)
+            shape, dtype = None, None
             try:
                 data = hdf_object[key]
                 if isinstance(data, h5py.Dataset):
                     shape, dtype = data.shape, data.dtype
-                else:
-                    shape, dtype = None, None
-                if isinstance(data, list):
-                    if len(data) == 1:
-                        if not isinstance(data, np.ndarray):
-                            dtype = str(list(data)[0])
-                            dtype.replace("b'", "'")
                 list_dtype.append(dtype)
                 list_dshape.append(shape)
             except KeyError:
-                list_dtype.append(None)
-                list_dshape.append(None)
+                list_dtype.append(dtype)
+                list_dshape.append(shape)
                 pass
     hdf_object.close()
     if display:

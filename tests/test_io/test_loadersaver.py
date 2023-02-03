@@ -30,7 +30,6 @@ import shutil
 import h5py
 import numpy as np
 import algotom.io.loadersaver as losa
-import time
 
 
 class LoaderSaverMethods(unittest.TestCase):
@@ -179,11 +178,41 @@ class LoaderSaverMethods(unittest.TestCase):
                                        image_key=None, crop=(0, 0, 0, 0),
                                        flat_field=None, dark_field=None,
                                        num_use=None, fix_zero_div=False)
-        check1 = True if (ref_stack.shape[0] == num_stack) \
-                         and (sam_stack.shape[0] == num_stack) else False
-        check2 = True if (np.mean(ref_stack) == 1.0) \
-                         and (np.mean(sam_stack) == 2.0) else False
+        check1 = True if (ref_stack.shape[0] == num_stack and
+                          sam_stack.shape[0] == num_stack) else False
+        check2 = True if (np.mean(ref_stack) == 1.0 and
+                          np.mean(sam_stack) == 2.0) else False
         self.assertTrue(check1 and check2)
+
+        flat_field = np.ones((64, 64))
+        dark_field = np.zeros_like(flat_field)
+        ref_stack, sam_stack = f_alias(0, list_path, data_key=None,
+                                       image_key=None, crop=(0, 0, 0, 0),
+                                       flat_field=flat_field,
+                                       dark_field=dark_field,
+                                       num_use=4, fix_zero_div=True)
+        check1 = True if (ref_stack.shape[0] == num_stack and
+                          sam_stack.shape[0] == num_stack) else False
+        check2 = True if (np.mean(ref_stack) == 1.0 and
+                          np.mean(sam_stack) == 2.0) else False
+        self.assertTrue(check1 and check2)
+
+        self.assertRaises(ValueError, f_alias, 0, list_path, data_key=None,
+                          image_key=1.0, crop=(0, 0, 0, 0),
+                          flat_field=flat_field,
+                          dark_field=dark_field,
+                          num_use=1, fix_zero_div=True)
+
+        self.assertRaises(ValueError, f_alias, 0, list_path, data_key=None,
+                          image_key=[0.0, 1.0], crop=(0, 0, 0, 0),
+                          flat_field=flat_field,
+                          dark_field=dark_field,
+                          num_use=None, fix_zero_div=False)
+
+        self.assertRaises(ValueError, f_alias, 4, list_path, data_key=None,
+                          image_key=None, crop=(0, 0, 0, 0),
+                          flat_field=None, dark_field=None,
+                          num_use=None, fix_zero_div=False)
 
     def test_get_reference_sample_stacks(self):
         num_stack = 3
@@ -207,11 +236,29 @@ class LoaderSaverMethods(unittest.TestCase):
                                        crop=(0, 0, 0, 0), flat_field=None,
                                        dark_field=None, num_use=None,
                                        fix_zero_div=False)
-        check1 = True if (ref_stack.shape[0] == num_stack) \
-                         and (sam_stack.shape[0] == num_stack) else False
-        check2 = True if (np.mean(ref_stack) == 1.0) \
-                         and (np.mean(sam_stack) == 2.0) else False
+        check1 = True if (ref_stack.shape[0] == num_stack and
+                          sam_stack.shape[0] == num_stack) else False
+        check2 = True if (np.mean(ref_stack) == 1.0 and
+                          np.mean(sam_stack) == 2.0) else False
         self.assertTrue(check1 and check2)
+
+        flat_field = np.ones((64, 64))
+        dark_field = np.zeros_like(flat_field)
+        ref_stack, sam_stack = f_alias(0, ref_path, sam_path, ref_key, sam_key,
+                                       crop=(0, 0, 0, 0),
+                                       flat_field=flat_field,
+                                       dark_field=dark_field, num_use=None,
+                                       fix_zero_div=True)
+        check1 = True if (ref_stack.shape[0] == num_stack and
+                          sam_stack.shape[0] == num_stack) else False
+        check2 = True if (np.mean(ref_stack) == 1.0 and
+                          np.mean(sam_stack) == 2.0) else False
+        self.assertTrue(check1 and check2)
+
+        self.assertRaises(ValueError, f_alias, 0, ref_path, sam_path, ref_key,
+                          sam_key, crop=(32, 35, 0, 0), flat_field=flat_field,
+                          dark_field=dark_field, num_use=None,
+                          fix_zero_div=True)
 
     def test_get_image_stack(self):
         num_stack = 3
@@ -223,16 +270,19 @@ class LoaderSaverMethods(unittest.TestCase):
             ifile.close()
         list_path = losa.find_file("data/img_stk*")
         f_alias = losa.get_image_stack
+
         img_stack = f_alias(0, list_path, data_key="entry/data", average=False,
                             crop=(0, 0, 0, 0), flat_field=None,
                             dark_field=None, num_use=None, fix_zero_div=False)
-        check1 = True if (img_stack.shape[0] == num_stack) \
-                         and (np.mean(img_stack) == 1.0) else False
+        check1 = True if (img_stack.shape[0] == num_stack and
+                          np.mean(img_stack) == 1.0) else False
+
         img_stack = f_alias(4, list_path, data_key="entry/data", average=True,
                             crop=(0, 0, 0, 0), flat_field=None,
                             dark_field=None, num_use=None, fix_zero_div=False)
-        check2 = True if (img_stack.shape[0] == num_stack) \
-                         and (np.mean(img_stack) == 1.0) else False
+        check2 = True if (img_stack.shape[0] == num_stack and
+                          np.mean(img_stack) == 1.0) else False
+
         num_img = 4
         for i in range(num_stack):
             folder_path = "data/img_stk_tif_" + str(i) + "/"
@@ -240,19 +290,41 @@ class LoaderSaverMethods(unittest.TestCase):
                 file_path = folder_path + "/img_" + str(j) + ".tif"
                 losa.save_image(file_path, np.ones((64, 64), dtype=np.float32))
         list_path = losa.find_file("data/img_stk_tif*")
+
         img_stack = f_alias(0, list_path, data_key=None, average=False,
                             crop=(0, 0, 0, 0), flat_field=None,
                             dark_field=None, num_use=None, fix_zero_div=False)
-        check3 = True if (img_stack.shape[0] == num_stack) \
-                         and (np.mean(img_stack) == 1.0) else False
+        check3 = True if (img_stack.shape[0] == num_stack and
+                          np.mean(img_stack) == 1.0) else False
+
         img_stack = f_alias(4, list_path, data_key=None, average=True,
                             crop=(0, 0, 0, 0), flat_field=None,
                             dark_field=None, num_use=None, fix_zero_div=False)
-        check4 = True if (img_stack.shape[0] == num_stack) \
-                         and (np.mean(img_stack) == 1.0) else False
+        check4 = True if (img_stack.shape[0] == num_stack and
+                          np.mean(img_stack) == 1.0) else False
+
+        flat_field = np.ones((64, 64))
+        dark_field = np.zeros_like(flat_field)
         img_stack = f_alias(None, list_path[0], data_key=None, average=False,
+                            crop=(0, 0, 0, 0), flat_field=flat_field,
+                            dark_field=dark_field, num_use=None,
+                            fix_zero_div=True)
+        check5 = True if (img_stack.shape[0] == num_img and
+                          np.mean(img_stack) == 1.0) else False
+
+        flat_field = np.ones((64, 64))
+        dark_field = np.zeros_like(flat_field)
+        img_stack = f_alias(None, list_path[0], data_key=None, average=False,
+                            crop=(0, 0, 0, 0), flat_field=flat_field,
+                            dark_field=dark_field, num_use=None,
+                            fix_zero_div=True)
+        check6 = True if (img_stack.shape[0] == num_img) else False
+
+        img_stack = f_alias(0, list_path[0], data_key=None, average=False,
                             crop=(0, 0, 0, 0), flat_field=None,
-                            dark_field=None, num_use=None, fix_zero_div=False)
-        check5 = True if (img_stack.shape[0] == num_img) \
-                         and (np.mean(img_stack) == 1.0) else False
-        self.assertTrue(check1 and check2 and check3 and check4 and check5)
+                            dark_field=None, num_use=4,
+                            fix_zero_div=False)
+        check7 = True if (img_stack.shape[0] == 1) else False
+
+        self.assertTrue((check1 and check2 and check3 and check4) and (
+                check5 and check6 and check7))

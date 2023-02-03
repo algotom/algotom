@@ -80,13 +80,16 @@ class UtilityMethods(unittest.TestCase):
         results = post.get_statistical_information(mat)
         num = np.abs(0.5 - results[5])
         self.assertTrue(len(results) == 7 and num < 0.1)
+        results = post.get_statistical_information(mat, denoise=True)
+        num = np.abs(0.5 - results[5])
+        self.assertTrue(num < 0.1)
 
     def test_get_statistical_information_dataset(self):
         f_alias = post.get_statistical_information_dataset
         results1 = f_alias(self.mat3d)
         num1 = np.abs(0.5 - results1[5])
         self.assertTrue(len(results1) == 7 and num1 < 0.1)
-        results2 = f_alias(self.tif_folder)
+        results2 = f_alias(self.tif_folder, denoise=True)
         num2 = np.abs(0.5 - results2[5])
         self.assertTrue(num2 < 0.1)
         results3 = f_alias(self.hdf_file, key_path=self.key_path)
@@ -95,8 +98,21 @@ class UtilityMethods(unittest.TestCase):
 
     def test_downsample(self):
         mat = np.random.rand(64, 64)
-        mat_dsp = post.downsample(mat, (2, 2))
-        self.assertTrue(mat_dsp.shape == (32, 32))
+        mat_dsp1 = post.downsample(mat, (2, 2))
+        self.assertTrue(mat_dsp1.shape == (32, 32))
+
+        mat_dsp2a = post.downsample(mat, (3, 3))
+        mat_dsp2b = post.downsample(mat, (3, 3), method="median")
+        num2ab = np.max(np.abs(mat_dsp2a - mat_dsp2b))
+        self.assertTrue(num2ab != 0.0)
+
+        mat_dsp3 = post.downsample(mat, (2, 2), method="max")
+        num13 = np.mean(np.abs(mat_dsp3 - mat_dsp1))
+        self.assertTrue(num13 != 0.0)
+
+        mat_dsp4 = post.downsample(mat, (2, 2), method="min")
+        num14 = np.mean(np.abs(mat_dsp4 - mat_dsp1))
+        self.assertTrue(num14 != 0.0)
 
     def test_downsample_dataset(self):
         mat = np.float32(np.random.rand(self.dep, self.hei, self.wid))

@@ -50,8 +50,28 @@ class CalibrationMethods(unittest.TestCase):
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
+        bck_zero = np.copy(self.bck)
+        bck_zero[6, 5:15] = 0.0
+        mat_nor = cali.normalize_background(bck_zero, 3)
+        std_val = np.std(mat_nor)
+        self.assertTrue(std_val <= self.var)
+
     def test_normalize_background_based_fft(self):
-        mat_nor = cali.normalize_background_based_fft(self.bck, sigma=5, pad=10)
+        mat_nor = cali.normalize_background_based_fft(self.bck, sigma=5,
+                                                      pad=10)
+        std_val = np.std(mat_nor)
+        self.assertTrue(std_val <= self.var)
+
+        bck_zero = np.copy(self.bck)
+        bck_zero[6, 5:15] = 0.0
+        mat_nor = cali.normalize_background_based_fft(bck_zero, sigma=5,
+                                                      pad=10)
+        std_val = np.std(mat_nor)
+        self.assertTrue(std_val <= self.var)
+
+        bck_zero = np.pad(bck_zero, ((2, 2), (0, 0)), mode="edge")
+        mat_nor = cali.normalize_background_based_fft(bck_zero, sigma=5,
+                                                      pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
@@ -61,6 +81,19 @@ class CalibrationMethods(unittest.TestCase):
                                       denoise=False)
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
+
+        mat_bin = cali.binarize_image(1.5 - self.mat_dots + bck, bgr="bright",
+                                      denoise=True, norm=True)
+        num_dots = ndi.label(mat_bin)[-1]
+        self.assertTrue(self.num_dots == num_dots)
+
+        mat_bin = cali.binarize_image(self.mat_dots + bck, threshold=0.85,
+                                      bgr="dark")
+        num_dots = ndi.label(mat_bin)[-1]
+        self.assertTrue(self.num_dots == num_dots)
+
+        self.assertRaises(ValueError, cali.binarize_image, self.mat_dots + bck,
+                          threshold=1.5, denoise=True, bgr="bright")
 
     def test_calculate_distance(self):
         mat1 = np.zeros((self.hei, self.wid), dtype=np.float32)
@@ -72,4 +105,16 @@ class CalibrationMethods(unittest.TestCase):
         mat2 = np.float32(ndi.binary_dilation(mat2, iterations=3))
         dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
                                       denoise=False)
+        self.assertTrue(np.abs(dis - 10.0) <= self.eps)
+
+        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+                                      size_opt="median", denoise=False)
+        self.assertTrue(np.abs(dis - 10.0) <= self.eps)
+
+        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+                                      size_opt="mean", denoise=False)
+        self.assertTrue(np.abs(dis - 10.0) <= self.eps)
+
+        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+                                      size_opt="min", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)

@@ -341,7 +341,7 @@ def make_sinogram(mat, angles, pad_rate=0.5, pad_mode="edge"):
         To apply padding before the FFT. The padding width equals to
         (pad_rate * image_width).
     pad_mode : str
-        Padding method. Full list can be found at numpy.pad documentation.
+        Padding method. Full list can be found at numpy_pad documentation.
 
     References
     ----------
