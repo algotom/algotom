@@ -31,8 +31,6 @@ import scipy.ndimage as ndi
 import algotom.prep.phase as ps
 import algotom.util.simulation as sim
 
-import matplotlib.pyplot as plt
-
 
 class PhaseMethods(unittest.TestCase):
 

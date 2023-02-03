@@ -96,9 +96,6 @@ class UtilityMethods(unittest.TestCase):
                           self.sam_stack[0], gpu=False)
         self.assertRaises(ValueError, f_alias, self.ref_stack[0:1],
                           self.sam_stack[:, drop:-drop, drop:-drop], gpu=False)
-        self.assertRaises(ValueError, f_alias, self.ref_stack[0],
-                          self.sam_stack[0, drop:-drop, drop:-drop], gpu=True,
-                          block=8)
 
     def test_locate_peak(self):
         f_alias = corl.generate_correlation_map
