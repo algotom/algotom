@@ -36,6 +36,7 @@ import numpy.fft as fft
 from scipy.ndimage import map_coordinates
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
+import algotom.prep.phase as ps
 import algotom.util.utility as util
 
 
@@ -69,6 +70,8 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     array_like
         3D or 2D array. Corrected projections or corrected sinograms.
     """
+    msg = "\n Please use the dictionary format: options={'method':" \
+          " 'filter_name', 'para1': parameter_1, 'para2': parameter_2}"
     flat = ratio * flat
     if use_dark:
         flat_dark = flat - dark
@@ -94,34 +97,36 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     if len(options) != 0:
         for opt_name in options:
             opt = options[opt_name]
-            if opt is not None:
-                if 'method' in opt.keys():
-                    method = opt['method']
-                    list_para = tuple(opt.values())[1:]
-                    if proj_corr.ndim == 2:
-                        if method in dir(remo):
-                            proj_corr = getattr(remo, method)(proj_corr,
-                                                              *list_para)
-                        elif method in dir(filt):
-                            proj_corr = getattr(filt, method)(proj_corr,
-                                                              *list_para)
-                        else:
-                            raise ValueError("Can't find the method: '{}' in"
-                                             " the namespace".format(method))
+            if isinstance(opt, dict):
+                method = tuple(opt.values())[0]
+                para = tuple(opt.values())[1:]
+                if proj_corr.ndim == 2:
+                    if method in dir(remo):
+                        proj_corr = getattr(remo, method)(proj_corr, *para)
+                    elif method in dir(filt):
+                        proj_corr = getattr(filt, method)(proj_corr, *para)
+                    elif method in dir(ps):
+                        proj_corr = getattr(ps, method)(proj_corr, *para)
                     else:
-                        for i in np.arange(proj_corr.shape[1]):
-                            if method in dir(remo):
-                                proj_corr[:, i, :] = getattr(remo, method)(
-                                    proj_corr[:, i, :], *list_para)
-                            elif method in dir(filt):
-                                proj_corr[:, i, :] = getattr(filt, method)(
-                                    proj_corr[:, i, :], *list_para)
-                            else:
-                                raise ValueError("Can't find the method: '{}'"
-                                                 " in the namespace"
-                                                 "".format(method))
+                        raise ValueError("Can't find the method: '{}' in"
+                                         " the namespace".format(method))
                 else:
-                    raise ValueError("Incorrect option: {}".format(opt))
+                    for i in np.arange(proj_corr.shape[1]):
+                        if method in dir(remo):
+                            proj_corr[:, i, :] = getattr(remo, method)(
+                                proj_corr[:, i, :], *para)
+                        elif method in dir(filt):
+                            proj_corr[:, i, :] = getattr(filt, method)(
+                                proj_corr[:, i, :], *para)
+                        elif method in dir(ps):
+                            proj_corr[:, i, :] = getattr(ps, method)(
+                                proj_corr[:, i, :], *para)
+                        else:
+                            raise ValueError("Can't find the method: '{}' in "
+                                             "the namespace".format(method))
+            else:
+                if opt is not None:
+                    raise ValueError(msg)
     return proj_corr
 
 

@@ -70,7 +70,7 @@ class LoaderSaverMethods(unittest.TestCase):
     def test_find_hdf_key(self):
         file_path = "data/data.hdf"
         ifile = h5py.File(file_path, "w")
-        key = "/energy"
+        key = "/entry/data/energy"
         ifile.create_dataset(key, data=25.0)
         ifile.close()
         results = losa.find_hdf_key(file_path, key)
@@ -114,8 +114,8 @@ class LoaderSaverMethods(unittest.TestCase):
             np.random.rand(64, 64)))
 
         file_path = "data/img.tif"
-        self.assertRaises(ValueError, losa.save_image, file_path, np.float64(
-            np.random.rand(64, 64)))
+        self.assertRaises(ValueError, losa.save_image, file_path,
+                          1j * np.random.rand(64, 64))
 
     def test_open_hdf_stream(self):
         data_out = losa.open_hdf_stream("data/data.hdf", (64, 64))

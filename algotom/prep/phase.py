@@ -663,13 +663,14 @@ def align_image_stacks(ref_stack, sam_stack, sr_shifts, sam_shifts=None,
     msg = "Number of shifts and number of images must be the same !!!"
     if ref_stack.shape != sam_stack.shape:
         raise ValueError("Data shape must be the same !!!")
+    if len(ref_stack.shape) == 2:
+        ref_stack = np.expand_dims(ref_stack, axis=0)
+        sam_stack = np.expand_dims(sam_stack, axis=0)
     if len(ref_stack) != len(sr_shifts):
         raise ValueError(msg)
     if sam_shifts is not None:
         if len(ref_stack) != len(sam_shifts):
             raise ValueError(msg)
-    if len(ref_stack.shape) != 3:
-        raise ValueError("Data shape must be 3d!!!")
     num_image = len(ref_stack)
     ref_stack1 = np.zeros_like(ref_stack)
     sam_stack1 = np.zeros_like(sam_stack)

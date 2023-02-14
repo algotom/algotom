@@ -354,14 +354,13 @@ def save_image(file_path, mat, overwrite=True):
         mat = np.uint8(255 * (mat - np.min(mat)) / (np.max(mat) - np.min(mat)))
     else:
         data_type = str(mat.dtype)
-        if not (data_type == "uint8" or data_type == "uint16"
-                or data_type == "float32"):
-            raise ValueError("Can't save to tiff with this "
-                             "format: {}".format(data_type))
-    make_folder(file_path)
+        if "complex" in data_type:
+            raise ValueError("Can't save to tiff with this format: "
+                             "{}".format(data_type))
+    image = Image.fromarray(mat)
     if not overwrite:
         file_path = make_file_name(file_path)
-    image = Image.fromarray(mat)
+    make_folder(file_path)
     try:
         image.save(file_path)
     except IOError:

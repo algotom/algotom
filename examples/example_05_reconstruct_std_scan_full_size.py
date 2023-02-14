@@ -130,34 +130,33 @@ for i in range(num_iter):
     print("Done slice: {0} - {1} . Time {2}".format(start_sino, stop_sino,
                                                     t_stop - time_start))
 if num_rest != 0:
-    for i in range(num_rest):
-        start_sino = num_iter * slice_chunk + offset
-        stop_sino = start_sino + num_rest
-        sinograms = corr.flat_field_correction(
-            data[proj_idx[0]:proj_idx[-1], start_sino:stop_sino, :],
-            flat_field[start_sino:stop_sino, :],
-            dark_field[start_sino:stop_sino, :],
-            option1=opt1, option2=opt2, option3=opt3)
-        # Reconstruct a chunk of slices in parallel if using CPU-based method.
-        recon_img = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "dfi_reconstruction",
-                                                            [center])
-        # Save the results to tif images
-        for j in range(start_sino, stop_sino):
-            name = "0000" + str(j)
-            losa.save_image(output_base + "/rec_" + name[-5:] + ".tif",
-                            recon_img[:, j - start_sino, :])
+    start_sino = num_iter * slice_chunk + offset
+    stop_sino = start_sino + num_rest
+    sinograms = corr.flat_field_correction(
+        data[proj_idx[0]:proj_idx[-1], start_sino:stop_sino, :],
+        flat_field[start_sino:stop_sino, :],
+        dark_field[start_sino:stop_sino, :],
+        option1=opt1, option2=opt2, option3=opt3)
+    # Reconstruct a chunk of slices in parallel if using CPU-based method.
+    recon_img = util.apply_method_to_multiple_sinograms(sinograms,
+                                                        "dfi_reconstruction",
+                                                        [center])
+    # Save the results to tif images
+    for j in range(start_sino, stop_sino):
+        name = "0000" + str(j)
+        losa.save_image(output_base + "/rec_" + name[-5:] + ".tif",
+                        recon_img[:, j - start_sino, :])
 
-        # # Reconstruct the slices using a GPU-based method
-        # for j in range(start_sino, stop_sino):
-        #     recon_img = reco.fbp_reconstruction(sinograms[:, j - start_sino, :],
-        #                                         center, angles=thetas)
-        #     name = "0000" + str(j)
-        #     losa.save_image(output_base + "/rec_" + name[-5:] + ".tif",
-        #                     recon_img)
+    # # Reconstruct the slices using a GPU-based method
+    # for j in range(start_sino, stop_sino):
+    #     recon_img = reco.fbp_reconstruction(sinograms[:, j - start_sino, :],
+    #                                         center, angles=thetas)
+    #     name = "0000" + str(j)
+    #     losa.save_image(output_base + "/rec_" + name[-5:] + ".tif",
+    #                     recon_img)
 
-        t_stop = timeit.default_timer()
-        print("Done slice: {0} - {1} . Time {2}".format(start_sino, stop_sino,
-                                                        t_stop - time_start))
+    t_stop = timeit.default_timer()
+    print("Done slice: {0} - {1} . Time {2}".format(start_sino, stop_sino,
+                                                    t_stop - time_start))
 time_stop = timeit.default_timer()
 print("!!! All Done. Time cost {} !!!".format(time_stop - time_start))

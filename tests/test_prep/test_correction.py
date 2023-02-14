@@ -86,7 +86,9 @@ class CorrectionMethods(unittest.TestCase):
                                         option=opt2)
         self.assertTrue(np.abs(np.mean(m4) - np.mean(m7)) < 0.05)
 
-        m8 = corr.flat_field_correction(proj, flat, dark, option=opt2)
+        opt3 = {"method": "unwrap_phase_based_cosine_transform"}
+        m8 = corr.flat_field_correction(proj, flat, dark, option1=opt1,
+                                        option2=opt2, option3=opt3)
         self.assertTrue(m8.shape == proj.shape)
 
     def test_unwarp_projection(self):
