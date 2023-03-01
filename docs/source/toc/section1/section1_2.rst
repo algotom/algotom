@@ -185,6 +185,7 @@ removal methods before performing full reconstruction.
 
     import numpy as np
     import algotom.io.loadersaver as losa
+    import algotom.io.converter as conv
 
     proj_path = "E:/Tomo_data/68067/projections/"
     flat_path = "E:/Tomo_data/68067/flats/"
@@ -212,7 +213,7 @@ removal methods before performing full reconstruction.
     num_angle = len(losa.find_file(proj_path + "/*.tif*"))
     angles = np.linspace(0.0, 180.0, num_angle)
     # Save tiffs as a single hdf file.
-    losa.convert_tif_to_hdf(proj_path, output_file, key_path="entry/projection",
+    conv.convert_tif_to_hdf(proj_path, output_file, key_path="entry/projection",
                             option={"entry/flat": np.float32(flat),
                                     "entry/dark": np.float32(dark),
                                     "entry/rotation_angle": np.float32(angles)})
