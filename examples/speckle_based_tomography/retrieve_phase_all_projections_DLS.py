@@ -27,13 +27,19 @@ input_base = "/dls/beamline/data/2022/visit/rawdata/speckle_tomo_00009/"
 output_base = "/dls/beamline/data/2022/visit/spool/speckle_tomo_00009/processed_projections/"
 
 # Initial parameters
-get_trans_dark_signal = True
-num_use = 40  # Number of speckle positions used for phase retrieval.
+dark_signal = True
+num_use = None  # Number of speckle positions used for phase retrieval.
 gpu = True # Use GPU for computing
 chunk_size = 100 # Process 100 rows in one go. Adjust to suit CPU/GPU memory.
-dim = 2  # Use 1D/2D-searching for finding shifts
 win_size = 7  # Size of window around each pixel
 margin = 10  # Searching range for finding shifts
+align = True # Align if there're shifts between speckle-images and sample-images
+             # Note to select ROIs without samples to calculate the shifts
+ncore = None  # Number of cpu
+# find_shift = "umpa"
+find_shift = "correl"
+dim = 2  # Use 1D/2D-searching for finding shifts
+slice_idx = 1200 # Slice to reconstruct
 
 print("********************************")
 print("*************Start**************")
@@ -63,7 +69,7 @@ num_proj = np.min(np.asarray(num_proj))
 phase_hdf = losa.open_hdf_stream(output_base + "/phase.hdf",
                                  (num_proj, height1, width1),
                                  key_path="entry/data")
-if get_trans_dark_signal:
+if dark_signal:
     trans_hdf = losa.open_hdf_stream(output_base + "/transmission.hdf",
                                      (num_proj, height1, width1),
                                      key_path="entry/data")
@@ -76,22 +82,40 @@ f_alias2 = ps.retrieve_phase_based_speckle_tracking
 f_alias3 = ps.get_transmission_dark_field_signal
 t0 = timeit.default_timer()
 for i in range(num_proj):
-    ref_stack, sam_stack = f_alias1(i, list_file, data_key=data_key,
+    ref_stack, sam_stack = losa.get_reference_sample_stacks_dls(i, list_file, data_key=data_key,
                                     image_key=image_key, crop=crop,
                                     flat_field=None, dark_field=None,
                                     num_use=num_use, fix_zero_div=True)
-    x_shifts, y_shifts, phase = f_alias2(ref_stack, sam_stack, dim=dim,
-                                         win_size=win_size, margin=margin,
-                                         method="diff", size=3, gpu=gpu,
-                                         block=(16, 16), ncore=None, norm=True,
-                                         norm_global=True, chunk_size=chunk_size,
-                                         surf_method="SCS", return_shift=True)
+    if dark_signal:
+        phase, trans, dark = ps.retrieve_phase_based_speckle_tracking(
+            ref_stack, sam_stack,
+            find_shift=find_shift,
+            filter_name=None,
+            dark_signal=True, dim=dim, win_size=win_size,
+            margin=margin, method="diff", size=3,
+            gpu=gpu, block=(16, 16),
+            ncore=ncore, norm=True,
+            norm_global=False, chunk_size=chunk_size,
+            surf_method="SCS",
+            correct_negative=True, pad=100,
+            return_shift=False)
+    else:
+        phase = ps.retrieve_phase_based_speckle_tracking(
+            ref_stack, sam_stack,
+            find_shift=find_shift,
+            filter_name=None,
+            dark_signal=False, dim=dim, win_size=win_size,
+            margin=margin, method="diff", size=3,
+            gpu=gpu, block=(16, 16),
+            ncore=ncore, norm=True,
+            norm_global=False, chunk_size=chunk_size,
+            surf_method="SCS",
+            correct_negative=True, pad=100,
+            return_shift=False)
     phase_hdf[i] = phase
     name = ("0000" + str(i))[-5:]
     losa.save_image(output_base + "/phase/img_" + name + ".tif", phase)
-    if get_trans_dark_signal:
-        trans, dark = f_alias3(ref_stack, sam_stack, x_shifts, y_shifts,
-                               win_size, ncore=None)
+    if dark_signal:
         trans_hdf[i] = trans
         dark_hdf[i] = dark
         losa.save_image(output_base + "/transmission/img_" + name + ".tif",

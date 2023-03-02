@@ -28,36 +28,41 @@ sample_stack = losa.load_hdf("C:/user/data/sam_stack.hdf", "entry/data")
 
 output_base = "C:/user/output/"
 
-num_use = 40  # Use 40 speckle-positions for calculation
+num_use = 20  # Number of speckle positions used for phase retrieval.
+gpu = True # Use GPU for computing
+chunk_size = 100 # Process 100 rows in one go. Adjust to suit CPU/GPU memory.
+win_size = 7  # Size of window around each pixel
+margin = 10  # Searching range for finding shifts
+ncore = None  # Number of cpu
+# find_shift = "umpa"
+find_shift = "correl"
+dim = 2  # Use 1D/2D-searching for finding shifts
+
 speckle_stack = speckle_stack[:num_use, :, :]  # Data shape: 40 x 2560 x 2160
 sample_stack = sample_stack[:num_use, :, :]
-chunk_size = 100 # Process 100 rows in one go. Adjust to suit CPU/GPU memory.
 
 
 t0 = timeit.default_timer()
 # dim=2 is slow (>45 mins) if running on CPU.
-f_alias1 = ps.retrieve_phase_based_speckle_tracking  # For convenient use
-x_shifts, y_shifts, phase = f_alias1(speckle_stack, sample_stack, dim=1,
-                                     win_size=7, margin=10, method="diff",
-                                     size=3, gpu=True, block=(16, 16),
-                                     ncore=None, norm=False,
-                                     norm_global=True, chunk_size=chunk_size,
-                                     surf_method="SCS",
-                                     correct_negative=True,
-                                     return_shift=True)
+x_shifts, y_shifts, phase, trans, dark = ps.retrieve_phase_based_speckle_tracking(
+    speckle_stack, sample_stack,
+    find_shift=find_shift,
+    filter_name=None,
+    dark_signal=True, dim=dim, win_size=win_size,
+    margin=margin, method="diff", size=3,
+    gpu=gpu, block=(16, 16),
+    ncore=ncore, norm=True,
+    norm_global=False, chunk_size=chunk_size,
+    surf_method="SCS",
+    correct_negative=True, pad=100,
+    return_shift=True)
 
 t1 = timeit.default_timer()
 print("Time cost for retrieve phase image:  {}".format(t1 - t0))
 
-t0 = timeit.default_timer()
-f_alias2 = ps.get_transmission_dark_field_signal  # For convenient use
-trans, dark = f_alias2(speckle_stack, sample_stack,
-                       x_shifts, y_shifts, 7, ncore=None)
-t1 = timeit.default_timer()
-print("Time cost for getting transmission + dark-signal:  {}".format(t1 - t0))
 losa.save_image(output_base + "/x_shifts.tif", x_shifts)
 losa.save_image(output_base + "/y_shifts.tif", y_shifts)
 losa.save_image(output_base + "/phase.tif", phase)
 losa.save_image(output_base + "/trans.tif", trans)
-losa.save_image(output_base + "/dark.tif", -np.log(dark))
+losa.save_image(output_base + "/dark.tif", dark)
 print("Al done !!!")

@@ -56,7 +56,7 @@ for i in np.arange(start_slice, stop_slice + 1, step):
     sino_trans = trans_hdf[:, i, :]
     sino_dark = dark_hdf[:, i, :]
     if artifact_rem:
-        sino_phase = rem.remove_all_stripe(sino_phase, 2.0, 51, 17)
+        sino_phase = rem.remove_stripe_based_wavelet_fft(sino_phase, 5, 1.0)
         sino_trans = rem.remove_all_stripe(sino_trans, 2.0, 51, 17)
         sino_dark = rem.remove_all_stripe(sino_dark, 2.0, 51, 17)
     # Change to CPU methods (DFI or gridrec) if GPU not available
