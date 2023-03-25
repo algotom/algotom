@@ -1096,7 +1096,7 @@ def _find_center_based_slice_metric(sinogram, start, stop, step, method="dfi",
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
     ncore = np.clip(ncore, 1, num_center)
-    if ncore > 1:
+    if (ncore > 1) and (gpu is False) and (method != "fbp"):
         list_metric = Parallel(n_jobs=ncore, prefer="threads")(delayed(
             __get_slice_metric)(sinogram, center, method, angles, ratio,
                                 filter_name, apply_log, gpu, 1, window, nmin,
