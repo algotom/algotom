@@ -35,12 +35,10 @@ import math
 import warnings
 import multiprocessing as mp
 import numpy as np
-from numba import jit, cuda, NumbaWarning
+from numba import jit, cuda
 from joblib import Parallel, delayed
 from scipy.signal import correlate
 from algotom.rec.reconstruction import make_smoothing_window
-
-warnings.filterwarnings("ignore", category=NumbaWarning)
 
 
 def normalize_image(mat):
