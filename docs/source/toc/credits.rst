@@ -20,6 +20,5 @@ References
 ----------
 
 .. bibliography:: bibtex/ref.bib
-   :style: unsrt
+   :style: plain
    :labelprefix: R
-   :all:
