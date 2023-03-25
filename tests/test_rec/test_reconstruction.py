@@ -178,13 +178,6 @@ class ReconstructionMethods(unittest.TestCase):
                              sigma=1, metric_function=None)
         self.assertTrue(np.abs(center_cal - self.center) < 0.1)
 
-        center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
-                             step=0.25, radius=2, zoom=1.0, method="fbp",
-                             gpu=False, angles=None, ratio=1.0,
-                             filter_name="hann", apply_log=False, ncore=1,
-                             sigma=1, metric_function=None)
-        self.assertTrue(np.abs(center_cal - self.center) < 0.6)
-
         if cuda.is_available() is True:
             center_cal = f_alias(self.sino_180, self.center - 2,
                                  self.center + 2, step=0.25, radius=2,
@@ -195,8 +188,8 @@ class ReconstructionMethods(unittest.TestCase):
             self.assertTrue(np.abs(center_cal - self.center) < 0.1)
 
         center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
-                             step=0.25, radius=2, zoom=1.0, method="fbp",
+                             step=0.25, radius=2, zoom=1.0, method="dfi",
                              gpu=False, angles=None, ratio=1.0,
                              filter_name="hann", apply_log=False, ncore=None,
                              sigma=1, metric_function=self.get_negative, n=2)
-        self.assertTrue(np.abs(center_cal - self.center) < 0.6)
+        self.assertTrue(np.abs(center_cal - self.center) < 0.1)
