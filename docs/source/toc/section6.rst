@@ -32,3 +32,10 @@ Update notes
 - 03/02/2023:
 
     + Add reslicing 3D-data method. Increase code coverage.
+
+- 25/03/2023:
+
+    + Add upsampling sinogram method.
+    + Add method for finding the center of rotation (COR) using the entropy-based metric.
+    + Add utility methods for visually finding the COR using: converted 360-degree sinograms and reconstructed slices.
+    + Improve reconstruction methods to process multiple-sinograms.

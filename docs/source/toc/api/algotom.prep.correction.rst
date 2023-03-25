@@ -21,3 +21,4 @@
         generate_tilted_profile_chunk
         non_linear_function
         beam_hardening_correction
+        upsample_sinogram

@@ -40,3 +40,5 @@
         locate_slice
         locate_slice_chunk
         generate_spiral_positions
+        find_center_visual_sinograms
+        find_center_visual_slices

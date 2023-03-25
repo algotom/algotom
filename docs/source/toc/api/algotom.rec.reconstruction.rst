@@ -20,3 +20,4 @@
         dfi_reconstruction
         gridrec_reconstruction
         astra_reconstruction
+        find_center_based_slice_metric

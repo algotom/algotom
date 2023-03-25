@@ -4,7 +4,7 @@ Comparison of ring removal methods on challenging sinograms
 Ring artifact is the most pervasive type of artifacts in tomographic imaging. Numerous approaches for removing this
 artifact have been published over the years. In :cite:`Vo:2018`, the author proposed many algorithms and a combination
 of them (algorithm 6, 5, 4, and 3) to remove most types of ring artifacts. This combined method,
-called **algo-6543** for short, is easy-to-use and very effective. It have been implemented in Python, Matlab,
+called **algo-6543** for short, is easy-to-use and very effective. It has been implemented in Python, Matlab,
 and available in several tomographic Python packages. To know more about causes of ring artifacts, types of ring
 artifacts, and details of removal algorithms out of the original paper; users can check out the documentation page
 `here <https://sarepy.readthedocs.io/>`__. This section demonstrates the performance of the
