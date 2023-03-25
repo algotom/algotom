@@ -23,8 +23,7 @@
 """
 Module of calculation methods in the preprocessing stage:
 
-    -   Calculating the center-of-rotation (COR) in a 180-degree scan using a
-        sinogram.
+    -   Calculating the center-of-rotation (COR) using a 180-degree sinogram.
     -   Determining the overlap-side and overlap-area between images.
     -   Calculating the COR in a half-acquisition scan (360-degree scan with
         offset COR).
@@ -37,14 +36,15 @@ Module of calculation methods in the preprocessing stage:
 
 import warnings
 import numpy as np
+import numpy.fft as fft
 from scipy import stats
 import scipy.ndimage as ndi
 import multiprocessing as mp
 from joblib import Parallel, delayed
-import numpy.fft as fft
 
 
-def make_inverse_double_wedge_mask(height, width, radius):
+def make_inverse_double_wedge_mask(height, width, radius, hor_drop=None,
+                                   ver_drop=None):
     """
     Generate a double-wedge binary mask using Eq. (3) in Ref. [1].
     Values outside the double-wedge region correspond to 1.0.
@@ -57,6 +57,12 @@ def make_inverse_double_wedge_mask(height, width, radius):
         Image width.
     radius : int
         Radius of an object, in pixel unit.
+    hor_drop : int or None, optional
+        Number of rows (2 * hor_drop) around the middle of the mask with values
+        set to zeros.
+    ver_drop : int or None, optional
+        Number of columns (2 * ver_drop) around the middle of the mask with
+        values set to zeros.
 
     Returns
     -------
@@ -69,17 +75,24 @@ def make_inverse_double_wedge_mask(height, width, radius):
     """
     du = 1.0 / width
     dv = (height - 1.0) / (height * 2.0 * np.pi)
-    ndrop = min(20, np.int16(0.05 * height))
-    ycenter = np.int16(np.ceil((height - 1) / 2.0))
-    xcenter = np.int16(np.ceil((width - 1) / 2.0))
+    if hor_drop is None:
+        ndrop = min(20, int(0.05 * height))
+    else:
+        ndrop = np.clip(int(hor_drop), 1, height // 3)
+    if ver_drop is None:
+        ver_drop = 1
+    else:
+        ver_drop = np.clip(int(ver_drop), 1, width // 3)
+    ycenter = int(np.ceil((height - 1) / 2.0))
+    xcenter = int(np.ceil((width - 1) / 2.0))
     mask = np.zeros((height, width), dtype=np.float32)
     for i in range(height):
-        num = np.int16(np.ceil(((i - ycenter) * dv / radius) / du))
-        (p1, p2) = np.int16(np.clip(
-            np.sort((-num + xcenter, num + xcenter)), 0, width - 1))
+        num = int(np.ceil(((i - ycenter) * dv / radius) / du))
+        (p1, p2) = np.int32(
+            np.clip(np.sort((-num + xcenter, num + xcenter)), 0, width - 1))
         mask[i, p1:p2 + 1] = 1.0
     mask[ycenter - ndrop:ycenter + ndrop + 1, :] = 0.0
-    mask[:, xcenter - 1:xcenter + 2] = 0.0
+    mask[:, xcenter - ver_drop:xcenter + ver_drop + 1] = 0.0
     return mask
 
 
@@ -132,7 +145,7 @@ def calculate_center_metric(center, sino_180, sino_flip, sino_comp, mask):
 
 
 def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
-                      ncore=None):
+                      ncore=None, hor_drop=None, ver_drop=None):
     """
     Find the center-of-rotation (COR) using integer shifting.
 
@@ -150,6 +163,10 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
         Apply a smoothing filter.
     ncore: int or None
         Number of cpu-cores used for computing. Automatically selected if None.
+    hor_drop : int or None, optional
+        Refer the method of "make_inverse_double_wedge_mask"
+    ver_drop : int or None, optional
+        Refer the method of "make_inverse_double_wedge_mask"
 
     Returns
     -------
@@ -161,14 +178,15 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
     (nrow, ncol) = sino_180.shape
-    start_cor = np.int16(np.clip(start, 0, ncol - 1))
-    stop_cor = np.int16(np.clip(stop, 0, ncol - 1))
+    start_cor = int(np.clip(start, 0, ncol - 1))
+    stop_cor = int(np.clip(stop, 0, ncol - 1))
     sino_flip = np.fliplr(sino_180)
     sino_comp = np.flipud(sino_180)
     list_cor = np.arange(start_cor, stop_cor + 1)
     list_metric = np.zeros(len(list_cor), dtype=np.float32)
     num_metric = len(list_metric)
-    mask = make_inverse_double_wedge_mask(2 * nrow, ncol, 0.5 * ratio * ncol)
+    mask = make_inverse_double_wedge_mask(2 * nrow, ncol, 0.5 * ratio * ncol,
+                                          hor_drop, ver_drop)
     if ncore == 1:
         for i, cor in enumerate(list_cor):
             list_metric[i] = calculate_center_metric(
@@ -191,7 +209,7 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
 
 
 def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
-                    ncore=None):
+                    ncore=None, hor_drop=None, ver_drop=None):
     """
     Find the center-of-rotation (COR) using sub-pixel shifting.
 
@@ -211,6 +229,10 @@ def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
         Apply a smoothing filter.
     ncore: int or None
         Number of cpu-cores used for computing. Automatically selected if None.
+    hor_drop : int or None, optional
+        Refer the method of "make_inverse_double_wedge_mask"
+    ver_drop : int or None, optional
+        Refer the method of "make_inverse_double_wedge_mask"
 
     Returns
     -------
@@ -228,7 +250,8 @@ def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
         start + np.arange(-radius, radius + step, step), 0.0, ncol - 1.0)
     list_metric = np.zeros(len(list_cor), dtype=np.float32)
     num_metric = len(list_metric)
-    mask = make_inverse_double_wedge_mask(2 * nrow, ncol, 0.5 * ratio * ncol)
+    mask = make_inverse_double_wedge_mask(2 * nrow, ncol, 0.5 * ratio * ncol,
+                                          hor_drop, ver_drop)
     if ncore == 1:
         for i, cor in enumerate(list_cor):
             list_metric[i] = calculate_center_metric(
@@ -260,8 +283,8 @@ def downsample_cor(image, dsp_fact0, dsp_fact1):
         2D array. Downsampled image.
     """
     (height, width) = image.shape
-    dsp_fact0 = np.clip(np.int16(dsp_fact0), 1, height // 2)
-    dsp_fact1 = np.clip(np.int16(dsp_fact1), 1, width // 2)
+    dsp_fact0 = np.clip(int(dsp_fact0), 1, height // 2)
+    dsp_fact1 = np.clip(int(dsp_fact1), 1, width // 2)
     height_dsp = height // dsp_fact0
     width_dsp = width // dsp_fact1
     image_dsp = image[0:dsp_fact0 * height_dsp, 0:dsp_fact1 * width_dsp]
@@ -271,7 +294,8 @@ def downsample_cor(image, dsp_fact0, dsp_fact1):
 
 
 def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
-                   ratio=0.5, dsp=True, ncore=None):
+                   ratio=0.5, dsp=True, ncore=None, hor_drop=None,
+                   ver_drop=None):
     """
     Find the center-of-rotation using the method described in Ref. [1].
 
@@ -295,6 +319,10 @@ def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
         Enable/disable downsampling.
     ncore: int or None
         Number of cpu-cores used for computing. Automatically selected if None.
+    hor_drop : int or None, optional
+        Refer the method of "make_inverse_double_wedge_mask"
+    ver_drop : int or None, optional
+        Refer the method of "make_inverse_double_wedge_mask"
 
     Returns
     -------
@@ -324,15 +352,19 @@ def find_center_vo(sino_180, start=None, stop=None, step=0.25, radius=4,
         start = int(np.floor(1.0 * start / dsp_col))
         stop = int(np.ceil(1.0 * stop / dsp_col))
         raw_cor = coarse_search_cor(sino_dsp, start, stop, ratio,
-                                    denoise=False, ncore=ncore)
+                                    denoise=False, ncore=ncore,
+                                    hor_drop=hor_drop, ver_drop=ver_drop)
         fine_cor = fine_search_cor(sino_180, raw_cor * dsp_col + off_set,
                                    radius, step, ratio, denoise=True,
-                                   ncore=ncore)
+                                   ncore=ncore, hor_drop=hor_drop,
+                                   ver_drop=ver_drop)
     else:
         raw_cor = coarse_search_cor(sino_180, start, stop, ratio, denoise=True,
-                                    ncore=ncore)
+                                    ncore=ncore, hor_drop=hor_drop,
+                                    ver_drop=ver_drop)
         fine_cor = fine_search_cor(sino_180, raw_cor, radius, step, ratio,
-                                   denoise=True, ncore=ncore)
+                                   denoise=True, ncore=ncore,
+                                   hor_drop=hor_drop, ver_drop=ver_drop)
     return fine_cor
 
 
@@ -432,7 +464,7 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
     (nrow2, ncol2) = mat2.shape
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
-    win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2 - 1))
+    win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2 - 1))
     offset = win_width // 2
     win_width = 2 * offset  # Make it even
     ramp_down = np.linspace(1.0, 0.0, win_width)
@@ -518,7 +550,7 @@ def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     """
     (_, ncol1) = mat1.shape
     (_, ncol2) = mat2.shape
-    win_width = np.int16(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
+    win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
     if side == 1:
         (list_metric, offset) = search_overlap(mat1, mat2, win_width, side,
                                                denoise, norm, use_overlap)

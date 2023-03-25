@@ -67,7 +67,7 @@ def load_image(file_path):
     if "\\" in file_path:
         raise ValueError("Please use the forward slash in the file path")
     try:
-        mat = np.asarray(Image.open(file_path), dtype=np.float32)
+        mat = np.array(Image.open(file_path), dtype=np.float32)
     except IOError:
         raise ValueError("No such file or directory: {}".format(file_path))
     if len(mat.shape) > 2:

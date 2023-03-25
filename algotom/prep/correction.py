@@ -29,6 +29,7 @@ Module of correction methods in the preprocessing stage:
     -   Tilted sinogram generation.
     -   Tilted 1D intensity-profile generation.
     -   Beam hardening correction.
+    -   Sinogram upsampling.
 """
 
 import numpy as np
@@ -38,6 +39,7 @@ import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
 import algotom.prep.phase as ps
 import algotom.util.utility as util
+import algotom.prep.conversion as conv
 
 
 def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
@@ -570,3 +572,61 @@ def beam_hardening_correction(mat, q, n, opt=True):
     if n < 2.0:
         raise ValueError("!!! n must be larger than or equal to 2 !!!")
     return np.asarray([non_linear_function(x, q, n, opt) for x in mat])
+
+
+def upsample_sinogram(sinogram, scale, center=0, sino_type="180", iteration=1,
+                      pad=50):
+    """
+    Upsample a sinogram-image along angular direction based on the
+    double-wedge filter (Ref. [1]).
+
+    Parameters
+    ----------
+    sinogram : array_like
+        2D array. Sinogram image.
+    scale : int
+        Upscale 2n_x time. E.g. 2, 4, 6.
+    center : float, optional
+        Center-of-rotation. No need for a 360-sinogram.
+    sino_type : {"180", "360"}
+        Sinogram type : 180-degree or 360-degree.
+    iteration : int, optional
+        Number of iteration for the double-wedge filter.
+    pad : int, optional
+        Padding width for FFT.
+
+    Returns
+    -------
+    array_like
+        Upsampled sinogram.
+    """
+    scale = np.clip(int(scale), 1, None)
+    if scale % 2 != 0:
+        raise ValueError("Scaling value must be an even number and starting "
+                         "from 2!!!")
+    if sino_type == "180":
+        if center > 0:
+            sino_360 = conv.convert_sinogram_180_to_360(sinogram, center)
+        else:
+            raise ValueError("Please input the center-of-rotation !!!")
+    else:
+        sino_360 = np.copy(sinogram)
+    num_iter = int(scale / 2)
+    for i in range(num_iter):
+        (height, width) = sino_360.shape
+        db_height = 2 * height - 1
+        sino_tmp = np.zeros((db_height, width), dtype=np.float32)
+        sino_tmp[0:2 * height:2] = sino_360
+        sino_tmp = filt.double_wedge_filter(sino_tmp, sino_type="360", ratio=1,
+                                            iteration=iteration, pad=pad)
+        num = np.mean(sino_tmp)
+        sino_tmp = sino_tmp * np.mean(sino_360) / num
+        sino_tmp[0:2 * height:2] = sino_360
+        sino_tmp = filt.double_wedge_filter(sino_tmp, sino_type="360", ratio=1,
+                                            iteration=iteration, pad=pad)
+        sino_360 = sino_tmp
+    if sino_type == "180":
+        height = sino_360.shape[0]
+        return sino_360[:height // 2 + 1]
+    else:
+        return sino_360

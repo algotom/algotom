@@ -29,6 +29,7 @@ Module of simulation methods:
         slice theorem.
     -   Methods for adding artifacts to a simulated sinogram.
 """
+import warnings
 
 import numpy as np
 import scipy.signal.windows as win
@@ -352,8 +353,8 @@ def make_sinogram(mat, angles, pad_rate=0.5, pad_mode="edge"):
         raise ValueError(
             "Width and height of the image are not the same")
     if np.max(np.abs(angles)) > np.pi:
-        print("!!! Warning !!!\nMaking sure that the angles are converted to "
-              "Radian and in the range of [0; Pi]")
+        warnings.warn("Making sure that the angles are converted to radian "
+                      "and in the range of [0; Pi]")
     pad = int(pad_rate * nrow0)
     mat_pad = np.pad(mat, pad, mode=pad_mode)
     if mat_pad.shape[0] % 2 == 0:

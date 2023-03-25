@@ -26,6 +26,7 @@ Module of methods in the postprocessing stage:
     -   Get statistical information of reconstructed images or a dataset.
     -   Downsample 2D, 3D array, or a dataset.
     -   Rescale 2D, 3D array or a dataset to 8-bit or 16-bit data-type.
+    -   Reslice 3D array or a dataset (hdf/nxs file or tif images).
     -   Removing ring artifacts in a reconstructed image by transform back and
         forth between the polar coordinates and the Cartesian coordinates.
 """
@@ -35,7 +36,7 @@ import shutil
 import h5py
 import numpy as np
 from PIL import Image
-from scipy.ndimage import gaussian_filter
+import scipy.ndimage as ndi
 import algotom.util.utility as util
 import algotom.io.loadersaver as losa
 import algotom.prep.removal as remo
@@ -144,8 +145,8 @@ def __get_cropped_shape(input_, crop, key_path=None):
     w1, w2 = cr_w1, width - cr_w2
     height1, width1 = h2 - h1, w2 - w1
     if (depth1 <= 0) or (height1 <= 0) or (width1 <= 0):
-        raise ValueError("Can't crop the data with shape: "
-                         "{}".format((depth, height, width)))
+        raise ValueError("Check crop parameters!!! Can't crop the data having"
+                         " shape: {}".format((depth, height, width)))
     return (d1, d2, h1, h2, w1, w2), (depth1, height1, width1)
 
 
@@ -181,7 +182,7 @@ def get_statistical_information(mat, percentile=(0, 100), denoise=False):
         The variance of the data array.
     """
     if denoise is True:
-        mat = gaussian_filter(mat, 2)
+        mat = ndi.gaussian_filter(mat, 2)
     gmin = np.min(mat)
     gmax = np.max(mat)
     min_percent = np.percentile(mat, percentile[0])
@@ -246,7 +247,7 @@ def get_statistical_information_dataset(input_, percentile=(0, 100), skip=5,
         for i in range(d1, d2, skip):
             mat = losa.load_image(list_file[i])[h1:h2, w1:w2]
             if denoise is True:
-                mat = gaussian_filter(mat, 2)
+                mat = ndi.gaussian_filter(mat, 2)
             list_stat.append(f_alias(mat, percentile, denoise))
     elif in_type == "hdf":
         data = losa.load_hdf(input_, key_path)
@@ -254,14 +255,14 @@ def get_statistical_information_dataset(input_, percentile=(0, 100), skip=5,
         for i in range(d1, d2, skip):
             mat = data[i, h1:h2, w1:w2]
             if denoise is True:
-                mat = gaussian_filter(mat, 2)
+                mat = ndi.gaussian_filter(mat, 2)
             list_stat.append(f_alias(mat, percentile, denoise))
     else:
         list_stat = []
         for i in range(d1, d2, skip):
             mat = input_[i, h1:h2, w1:w2]
             if denoise is True:
-                mat = gaussian_filter(mat, 2)
+                mat = ndi.gaussian_filter(mat, 2)
             list_stat.append(f_alias(mat, percentile, denoise))
     list_stat = np.asarray(list_stat)
     gmin, gmax = np.min(list_stat[:, 0]), np.max(list_stat[:, 1])
@@ -563,12 +564,13 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
     return data_res
 
 
-def __save_intermediate_data(input_, output, axis, crop, key_path=None):
+def __save_intermediate_data(input_, output, axis, crop, key_path=None,
+                             rotate=0.0, mode="nearest"):
     in_type = __get_input_type(input_)
     results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
     (d1, d2, h1, h2, w1, w2) = results[0]
     (depth1, height1, width1) = results[1]
-    folder_tmp = os.path.splitext(output)[0] + "/tmp/"
+    folder_tmp = os.path.splitext(output)[0] + "/tmp_/"
     file_tmp = folder_tmp + "/file_tmp.hdf"
     losa.make_folder(folder_tmp)
     out_key = "entry/data"
@@ -580,13 +582,20 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None):
             data_tmp = ofile.create_dataset(out_key, (depth1, width1, height1),
                                             dtype=data_type)
             for i in range(depth1):
-                data_tmp[i] = np.transpose(
-                    losa.load_image(data[i + d1])[h1:h2, w1:w2])
+                mat = losa.load_image(data[i + d1])
+                if rotate != 0.0:
+                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
+                                     order=1)
+                data_tmp[i] = np.transpose(mat[h1:h2, w1:w2])
         else:
             data_tmp = ofile.create_dataset(out_key, (depth1, height1, width1),
                                             dtype=data_type)
             for i in range(depth1):
-                data_tmp[i] = losa.load_image(data[i + d1])[h1:h2, w1:w2]
+                mat = losa.load_image(data[i + d1])
+                if rotate != 0.0:
+                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
+                                     order=1)
+                data_tmp[i] = mat[h1:h2, w1:w2]
     else:
         data = losa.load_hdf(input_, key_path)
         data_type = data.dtype
@@ -594,18 +603,27 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None):
             data_tmp = ofile.create_dataset(out_key, (depth1, width1, height1),
                                             dtype=data_type)
             for i in range(depth1):
-                data_tmp[i] = np.transpose(data[i + d1, h1:h2, w1:w2])
+                mat = data[i + d1]
+                if rotate != 0.0:
+                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
+                                     order=1)
+                data_tmp[i] = np.transpose(mat[h1:h2, w1:w2])
         else:
             data_tmp = ofile.create_dataset(out_key, (depth1, height1, width1),
                                             dtype=data_type)
             for i in range(depth1):
-                data_tmp[i] = data[i + d1, h1:h2, w1:w2]
+                mat = data[i + d1]
+                if rotate != 0.0:
+                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
+                                     order=1)
+                data_tmp[i] = mat[h1:h2, w1:w2]
     ofile.close()
     return file_tmp, out_key, folder_tmp
 
 
 def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
-                    nbit=16, minmax=None, skip=None, crop=(0, 0, 0, 0, 0, 0)):
+                    nbit=16, minmax=None, skip=None, rotate=0.0,
+                    mode="constant", crop=(0, 0, 0, 0, 0, 0)):
     """
     Reslice a 3d dataset. Input can be a folder of tif files or a hdf file.
 
@@ -628,6 +646,11 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
     skip : int or None
         Skipping step of images used for getting statistical information if
         rescaling is True and input is 32-bit data.
+    rotate : float
+        Rotate image (degree). Positive direction is counterclockwise.
+    mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', \
+           'nearest', 'mirror', 'grid-wrap', 'wrap'}
+        Select how the input array is extended beyond its boundaries.
     crop : tuple of int, optional
         Crop 3D data from the edges, i.e.
         crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
@@ -648,7 +671,8 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
     in_type = __get_input_type(input_)
     if in_type != "tif" and in_type != "hdf":
         raise ValueError("Wrong input type !!!")
-    results = __save_intermediate_data(input_, output, axis, crop, key_path)
+    results = __save_intermediate_data(input_, output, axis, crop, key_path,
+                                       rotate, mode)
     file_tmp, key_tmp, folder_tmp = results
     hdf_object = h5py.File(file_tmp, 'r')
     data = hdf_object[key_tmp]

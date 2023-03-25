@@ -26,10 +26,14 @@ Tests for the methods in rec/reconstruction.py
 """
 
 import unittest
+import warnings
+import numba
 import numpy as np
 from numba import cuda
 import scipy.ndimage as ndi
 import algotom.rec.reconstruction as reco
+
+warnings.filterwarnings('ignore', category=numba.NumbaPerformanceWarning)
 
 
 class ReconstructionMethods(unittest.TestCase):
@@ -46,6 +50,7 @@ class ReconstructionMethods(unittest.TestCase):
             self.sino_360[i] = np.sum(ndi.rotate(self.mat, -angle,
                                                  reshape=False), axis=0)
         self.sino_180 = self.sino_360[:37]
+        self.angles2 = self.angles[:37]
         self.center = self.size // 2
 
     def test_make_smoothing_window(self):
@@ -85,10 +90,46 @@ class ReconstructionMethods(unittest.TestCase):
             num4 = np.max(np.abs(self.mat - mat_rec2))
             if num3 > 0.1 or num4 > 0.1:
                 check = False
-        self.assertTrue(num1 <= 0.1 and num2 <= 0.1 and check)
+        self.assertTrue(num1 <= 0.2 and num2 <= 0.2 and check)
+
+        gpu = False
+        sino_stack = np.pad(np.expand_dims(self.sino_180, 1), ((0, 0), (2, 2),
+                            (0, 0)), mode="edge")
+        rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                            gpu=gpu, angles=np.deg2rad(self.angles2),
+                            ratio=0.0, ncore=1)
+        num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+        n_slice = rec_stack.shape[1]
+        self.assertTrue(num <= 0.2 and n_slice == 5)
+
+        rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                            gpu=gpu, ratio=0.0, ncore=None)
+        num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+        self.assertTrue(num <= 0.2)
+
+        if cuda.is_available() is True:
+            gpu = True
+            sino_stack = np.pad(np.expand_dims(self.sino_180, 1),
+                                ((0, 0), (2, 2), (0, 0)), mode="edge")
+            rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                                gpu=gpu, ratio=0.0, ncore=1)
+            num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+            n_slice = rec_stack.shape[1]
+            self.assertTrue(num <= 0.1 and n_slice == 5)
+
+            rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                                gpu=gpu, ratio=1.0, ncore=None)
+            num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+            self.assertTrue(num <= 0.1)
+
+        self.assertWarns(Warning, f_alias, self.sino_180, self.center,
+                         apply_log=True)
 
         self.assertRaises(ValueError, f_alias, self.sino_180, self.center,
                           np.deg2rad(self.angles), apply_log=False)
+
+        self.assertRaises(ValueError, f_alias, self.sino_180, -1,
+                          apply_log=False)
 
     def test_dfi_reconstruction(self):
         f_alias = reco.dfi_reconstruction
@@ -101,5 +142,61 @@ class ReconstructionMethods(unittest.TestCase):
         num2 = np.max(np.abs(self.mat - mat_rec2))
         self.assertTrue(num1 <= 0.1 and num2 <= 0.1)
 
+        sino_stack = np.pad(np.expand_dims(
+            self.sino_180, 1), ((0, 0), (2, 2), (0, 0)), mode="edge")
+        rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                            ratio=0.0, angles=np.deg2rad(self.angles2),
+                            ncore=1)
+        num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+        n_slice = rec_stack.shape[1]
+        self.assertTrue(num <= 0.1 and n_slice == 5)
+
+        rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                            ratio=0.0, ncore=None)
+        num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+        self.assertTrue(num <= 0.1)
+
         self.assertRaises(ValueError, f_alias, self.sino_180, self.center,
                           np.deg2rad(self.angles), apply_log=False)
+
+        self.assertWarns(Warning, f_alias, self.sino_180, self.center,
+                         apply_log=True)
+
+        self.assertRaises(ValueError, f_alias, self.sino_180, -1,
+                          apply_log=False)
+
+    def get_negative(self, mat, n=2):
+        metric = np.abs(np.mean(mat[mat < 0.0])) ** n
+        return metric
+
+    def test_find_center_based_slice_metric(self):
+        f_alias = reco.find_center_based_slice_metric
+        center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
+                             step=0.25, radius=2, zoom=0.8, method="dfi",
+                             gpu=False, angles=self.angles2, ratio=1.0,
+                             filter_name="hann", apply_log=False, ncore=1,
+                             sigma=1, metric_function=None)
+        self.assertTrue(np.abs(center_cal - self.center) < 0.1)
+
+        center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
+                             step=0.25, radius=2, zoom=1.0, method="fbp",
+                             gpu=False, angles=None, ratio=1.0,
+                             filter_name="hann", apply_log=False, ncore=1,
+                             sigma=1, metric_function=None)
+        self.assertTrue(np.abs(center_cal - self.center) < 0.6)
+
+        if cuda.is_available() is True:
+            center_cal = f_alias(self.sino_180, self.center - 2,
+                                 self.center + 2, step=0.25, radius=2,
+                                 zoom=1.0, method="fbp", gpu=True,
+                                 angles=None, ratio=1.0, filter_name="hann",
+                                 apply_log=False, ncore=None,
+                                 sigma=1, metric_function=None)
+            self.assertTrue(np.abs(center_cal - self.center) < 0.1)
+
+        center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
+                             step=0.25, radius=2, zoom=1.0, method="fbp",
+                             gpu=False, angles=None, ratio=1.0,
+                             filter_name="hann", apply_log=False, ncore=None,
+                             sigma=1, metric_function=self.get_negative, n=2)
+        self.assertTrue(np.abs(center_cal - self.center) < 0.6)

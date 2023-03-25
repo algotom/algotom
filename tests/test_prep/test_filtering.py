@@ -85,3 +85,13 @@ class FilteringMethods(unittest.TestCase):
                 np.mean(sino_180_crop0) / np.mean(np.abs(sino_180_filt)))
         num2 = np.max(np.abs(sino_180_filt - sino_180_crop0))
         self.assertTrue(num2 <= 0.1 and num2 <= 0.1)
+
+        self.assertRaises(ValueError, filt.double_wedge_filter, sino_180_crop,
+                          center=32.0, sino_type="18")
+
+        self.assertRaises(ValueError, filt.double_wedge_filter, sino_180_crop,
+                          center=0.0, sino_type="180")
+
+        mask = filt.make_double_wedge_mask(num_proj, size, size / 2.0)
+        self.assertRaises(ValueError, filt.double_wedge_filter, sino_360,
+                          center=0.0, sino_type="360", pad=1, mask=mask)

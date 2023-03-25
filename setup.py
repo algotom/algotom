@@ -16,7 +16,7 @@ if python_version == "3.7":
 else:
     dependencies = [
         "numpy>=1.18,<1.24",
-        "scipy",
+        "scipy>=1.6",
         "numba",
         "pywavelets",
         "pillow",
