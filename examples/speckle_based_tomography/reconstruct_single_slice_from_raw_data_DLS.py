@@ -33,15 +33,17 @@ input_base = "/dls/beamline/data/2022/visit/rawdata/speckle_tomo_00009/"
 output_base = "/dls/beamline/data/2022/visit/spool/speckle_tomo_00009/single_slice/"
 
 # Initial parameters
-get_trans_dark_signal = True
-num_use = 40  # Number of speckle positions used for phase retrieval.
-gpu = True
-dim = 1  # Use 1D/2D-searching for finding shifts
+dark_signal = True
+num_use = None  # Number of speckle positions used for phase retrieval.
+gpu = True # Use GPU for computing
+chunk_size = 100 # Process 100 rows in one go. Adjust to suit CPU/GPU memory.
 win_size = 7  # Size of window around each pixel
 margin = 10  # Searching range for finding shifts
-
+ncore = None  # Number of cpu
+# find_shift = "umpa"
+find_shift = "correl"
+dim = 1  # Use 1D/2D-searching for finding shifts
 slice_idx = 1200 # Slice to reconstruct
-
 
 print("********************************")
 print("*************Start**************")
@@ -69,46 +71,62 @@ for file in list_file:
     num_proj.append(num_proj1)
 num_proj = np.min(np.asarray(num_proj))
 
-# Assign aliases to functions for convenient use
-f_alias1 = losa.get_reference_sample_stacks_dls
-f_alias2 = ps.retrieve_phase_based_speckle_tracking
-f_alias3 = ps.get_transmission_dark_field_signal
+
 t0 = timeit.default_timer()
 sino_phase = []
-if get_trans_dark_signal:
+if dark_signal:
     sino_trans = []
     sino_dark = []
 name = ("0000" + str(slice_idx))[-5:]
 for i in range(num_proj):
-    ref_stack, sam_stack = f_alias1(i, list_file, data_key=data_key,
-                                    image_key=image_key, crop=crop,
-                                    flat_field=None, dark_field=None,
-                                    num_use=num_use, fix_zero_div=True)
-    x_shifts, y_shifts, phase = f_alias2(ref_stack, sam_stack, dim=dim,
-                                         win_size=win_size, margin=margin,
-                                         method="diff", size=3, gpu=gpu,
-                                         block=(16, 16), ncore=None, norm=True,
-                                         norm_global=True, chunk_size=None,
-                                         surf_method="SCS", return_shift=True)
+    ref_stack, sam_stack = losa.get_reference_sample_stacks_dls(i, list_file, data_key=data_key,
+                                                                image_key=image_key, crop=crop,
+                                                                flat_field=None, dark_field=None,
+                                                                num_use=num_use, fix_zero_div=True)
+    if dark_signal:
+        phase, trans, dark = ps.retrieve_phase_based_speckle_tracking(
+            ref_stack, sam_stack,
+            find_shift=find_shift,
+            filter_name=None,
+            dark_signal=True, dim=dim, win_size=win_size,
+            margin=margin, method="diff", size=3,
+            gpu=gpu, block=(16, 16),
+            ncore=ncore, norm=True,
+            norm_global=False, chunk_size=chunk_size,
+            surf_method="SCS",
+            correct_negative=True, pad=100,
+            return_shift=False)
+    else:
+        phase = ps.retrieve_phase_based_speckle_tracking(
+            ref_stack, sam_stack,
+            find_shift=find_shift,
+            filter_name=None,
+            dark_signal=False, dim=dim, win_size=win_size,
+            margin=margin, method="diff", size=3,
+            gpu=gpu, block=(16, 16),
+            ncore=ncore, norm=True,
+            norm_global=False, chunk_size=chunk_size,
+            surf_method="SCS",
+            correct_negative=True, pad=100,
+            return_shift=False)
     mid = phase.shape[0] // 2
     sino_phase.append(phase[mid])
-    if get_trans_dark_signal:
-        trans, dark = f_alias3(ref_stack, sam_stack, x_shifts, y_shifts,
-                               win_size, ncore=None)
+    if dark_signal:
         sino_trans.append(trans[mid])
         sino_dark.append(dark[mid])
     t1 = timeit.default_timer()
     print("Done projection {0}. Time cost: {1} ".format(i, t1 - t0))
+
 print("Done phase retrieval !!!")
 sino_phase = np.asarray(sino_phase)
-if get_trans_dark_signal:
+if dark_signal:
     sino_trans = np.asarray(sino_trans)
     sino_dark = np.asarray(sino_dark)
     losa.save_image(output_base + "/sinogram/trans_" + name + ".tif", sino_trans)
     losa.save_image(output_base + "/sinogram/dark_" + name + ".tif", sino_dark)
 losa.save_image(output_base + "/sinogram/phase_" + name + ".tif", sino_phase)
 
-if get_trans_dark_signal:
+if dark_signal:
     center = calc.find_center_vo(sino_trans)
 else:
     center = calc.find_center_vo(sino_phase)
@@ -117,6 +135,11 @@ print("Center of rotation {}".format(center))
 # Correct the fluctuation of the phase image.
 sino_phase1 = filt.double_wedge_filter(sino_phase, center)
 losa.save_image(output_base + "/sinogram/phase_corr.tif", sino_phase1)
+
+# Remove ring
+sino_phase = rem.remove_stripe_based_wavelet_fft(sino_phase, 5, 1.0)
+sino_trans = rem.remove_all_stripe(sino_trans, 1.5, 71, 31)
+sino_dark = rem.remove_all_stripe(sino_dark, 1.5, 71, 21)
 
 # Reconstruction
 rec_phase = reco.fbp_reconstruction(sino_phase, center, apply_log=False, filter_name="hann")

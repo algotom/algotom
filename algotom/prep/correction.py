@@ -29,6 +29,7 @@ Module of correction methods in the preprocessing stage:
     -   Tilted sinogram generation.
     -   Tilted 1D intensity-profile generation.
     -   Beam hardening correction.
+    -   Sinogram upsampling.
 """
 
 import numpy as np
@@ -36,7 +37,9 @@ import numpy.fft as fft
 from scipy.ndimage import map_coordinates
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
+import algotom.prep.phase as ps
 import algotom.util.utility as util
+import algotom.prep.conversion as conv
 
 
 def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
@@ -69,6 +72,8 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     array_like
         3D or 2D array. Corrected projections or corrected sinograms.
     """
+    msg = "\n Please use the dictionary format: options={'method':" \
+          " 'filter_name', 'para1': parameter_1, 'para2': parameter_2}"
     flat = ratio * flat
     if use_dark:
         flat_dark = flat - dark
@@ -94,34 +99,36 @@ def flat_field_correction(proj, flat, dark, ratio=1.0, use_dark=True,
     if len(options) != 0:
         for opt_name in options:
             opt = options[opt_name]
-            if opt is not None:
-                if 'method' in opt.keys():
-                    method = opt['method']
-                    list_para = tuple(opt.values())[1:]
-                    if proj_corr.ndim == 2:
-                        if method in dir(remo):
-                            proj_corr = getattr(remo, method)(proj_corr,
-                                                              *list_para)
-                        elif method in dir(filt):
-                            proj_corr = getattr(filt, method)(proj_corr,
-                                                              *list_para)
-                        else:
-                            raise ValueError("Can't find the method: '{}' in"
-                                             " the namespace".format(method))
+            if isinstance(opt, dict):
+                method = tuple(opt.values())[0]
+                para = tuple(opt.values())[1:]
+                if proj_corr.ndim == 2:
+                    if method in dir(remo):
+                        proj_corr = getattr(remo, method)(proj_corr, *para)
+                    elif method in dir(filt):
+                        proj_corr = getattr(filt, method)(proj_corr, *para)
+                    elif method in dir(ps):
+                        proj_corr = getattr(ps, method)(proj_corr, *para)
                     else:
-                        for i in np.arange(proj_corr.shape[1]):
-                            if method in dir(remo):
-                                proj_corr[:, i, :] = getattr(remo, method)(
-                                    proj_corr[:, i, :], *list_para)
-                            elif method in dir(filt):
-                                proj_corr[:, i, :] = getattr(filt, method)(
-                                    proj_corr[:, i, :], *list_para)
-                            else:
-                                raise ValueError("Can't find the method: '{}'"
-                                                 " in the namespace"
-                                                 "".format(method))
+                        raise ValueError("Can't find the method: '{}' in"
+                                         " the namespace".format(method))
                 else:
-                    raise ValueError("Incorrect option: {}".format(opt))
+                    for i in np.arange(proj_corr.shape[1]):
+                        if method in dir(remo):
+                            proj_corr[:, i, :] = getattr(remo, method)(
+                                proj_corr[:, i, :], *para)
+                        elif method in dir(filt):
+                            proj_corr[:, i, :] = getattr(filt, method)(
+                                proj_corr[:, i, :], *para)
+                        elif method in dir(ps):
+                            proj_corr[:, i, :] = getattr(ps, method)(
+                                proj_corr[:, i, :], *para)
+                        else:
+                            raise ValueError("Can't find the method: '{}' in "
+                                             "the namespace".format(method))
+            else:
+                if opt is not None:
+                    raise ValueError(msg)
     return proj_corr
 
 
@@ -565,3 +572,61 @@ def beam_hardening_correction(mat, q, n, opt=True):
     if n < 2.0:
         raise ValueError("!!! n must be larger than or equal to 2 !!!")
     return np.asarray([non_linear_function(x, q, n, opt) for x in mat])
+
+
+def upsample_sinogram(sinogram, scale, center=0, sino_type="180", iteration=1,
+                      pad=50):
+    """
+    Upsample a sinogram-image along angular direction based on the
+    double-wedge filter (Ref. [1]).
+
+    Parameters
+    ----------
+    sinogram : array_like
+        2D array. Sinogram image.
+    scale : int
+        Upscale 2n_x time. E.g. 2, 4, 6.
+    center : float, optional
+        Center-of-rotation. No need for a 360-sinogram.
+    sino_type : {"180", "360"}
+        Sinogram type : 180-degree or 360-degree.
+    iteration : int, optional
+        Number of iteration for the double-wedge filter.
+    pad : int, optional
+        Padding width for FFT.
+
+    Returns
+    -------
+    array_like
+        Upsampled sinogram.
+    """
+    scale = np.clip(int(scale), 1, None)
+    if scale % 2 != 0:
+        raise ValueError("Scaling value must be an even number and starting "
+                         "from 2!!!")
+    if sino_type == "180":
+        if center > 0:
+            sino_360 = conv.convert_sinogram_180_to_360(sinogram, center)
+        else:
+            raise ValueError("Please input the center-of-rotation !!!")
+    else:
+        sino_360 = np.copy(sinogram)
+    num_iter = int(scale / 2)
+    for i in range(num_iter):
+        (height, width) = sino_360.shape
+        db_height = 2 * height - 1
+        sino_tmp = np.zeros((db_height, width), dtype=np.float32)
+        sino_tmp[0:2 * height:2] = sino_360
+        sino_tmp = filt.double_wedge_filter(sino_tmp, sino_type="360", ratio=1,
+                                            iteration=iteration, pad=pad)
+        num = np.mean(sino_tmp)
+        sino_tmp = sino_tmp * np.mean(sino_360) / num
+        sino_tmp[0:2 * height:2] = sino_360
+        sino_tmp = filt.double_wedge_filter(sino_tmp, sino_type="360", ratio=1,
+                                            iteration=iteration, pad=pad)
+        sino_360 = sino_tmp
+    if sino_type == "180":
+        height = sino_360.shape[0]
+        return sino_360[:height // 2 + 1]
+    else:
+        return sino_360

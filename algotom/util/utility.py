@@ -49,18 +49,23 @@ Module of utility methods:
             +   locate_slice_chunk
     -   Methods for speckle-based tomography
             +   generate_spiral_positions
+    -   Methods for finding the center of rotation by visual inspection.
+            +   find_center_visual_sinograms
+            +   find_center_visual_slices
  """
 
 import sys
 import multiprocessing as mp
 import pywt
 import numpy as np
+import numpy.fft as fft
+from numba import cuda
 import scipy.ndimage as ndi
 from scipy import interpolate
 import scipy.signal.windows as win
 from scipy.signal import savgol_filter
 from joblib import Parallel, delayed
-import numpy.fft as fft
+import algotom.io.loadersaver as losa
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
 import algotom.rec.reconstruction as reco
@@ -1340,3 +1345,127 @@ def generate_spiral_positions(step, num_pos, height, width, spiral_shape=1.0):
             raise ValueError(msg)
         positions.append([x_pos, y_pos])
     return np.asarray(positions, dtype=np.float32)
+
+
+def find_center_visual_sinograms(sino_180, output, start, stop, step=1,
+                                 zoom=1.0):
+    """
+    For visually finding the center-of-rotation (COR) using converted
+    360-degree sinograms from a 180-degree sinogram at different
+    CORs (Ref. [1]).
+
+    Parameters
+    ----------
+    sino_180 : array_like
+        2D array. 180-degree sinogram.
+    output : str
+        Base folder for saving converted 360-degree sinograms.
+    start : float
+        Starting point for searching CoR.
+    stop : float
+        Ending point for searching CoR.
+    step : float
+        Searching step.
+    zoom : float
+        To resize output images. For example, 0.5 <=> reduce the size of
+        output images by half.
+
+    Returns
+    -------
+    str
+        Folder path to tif images.
+
+    References
+    ----------
+    [1] : https://doi.org/10.1364/OE.22.019078
+    """
+    (nrow, ncol) = sino_180.shape
+    output_name = losa.make_folder_name(output, name_prefix="Find_center",
+                                        zero_prefix=3)
+    output_base = output + "/" + output_name
+    step = np.clip(step, 0.05, ncol - 1)
+    start = np.clip(start, 0, ncol - 1)
+    stop = np.clip(stop + step, start + step, ncol - 1)
+    center_flip = (ncol - 1.0) / 2.0
+    sino_flip = np.fliplr(sino_180)
+    for center in np.arange(start, stop, step):
+        shift_col = 2.0 * (center - center_flip)
+        sino_shift = ndi.shift(sino_flip, (0, shift_col), order=3,
+                               prefilter=False, mode="nearest")
+        sino_360 = np.vstack((sino_180, sino_shift))
+        sino_zoom = ndi.zoom(sino_360, zoom, mode="nearest")
+        file_name = "/center_{0:6.2f}".format(center) + ".tif"
+        losa.save_image(output_base + file_name, sino_zoom)
+    return output_base
+
+
+def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
+                              method="dfi", gpu=False, angles=None,
+                              ratio=1.0, filter_name="hann", apply_log=True,
+                              ncore=None):
+    """
+    For visually finding the center-of-rotation (COR) using reconstructed
+    slices at different CORs.
+
+    Parameters
+    ----------
+    sinogram : array_like
+        2D array. Sinogram image.
+    output : str
+        Base folder for saving reconstructed slices.
+    start : float
+        Starting point for searching CoR.
+    stop : float
+        Ending point for searching CoR.
+    step : float
+        Searching step.
+    zoom : float
+        To resize input and output images. For example, 0.5 <=> reduce the
+        size of images by half.
+    method : {"dfi", "gridrec", "fbp", "astra"}
+        To select a backend method for reconstruction.
+    gpu : bool, optional
+        Use GPU for computing if True.
+    angles : array_like, optional
+        1D array. List of angles (in radian) corresponding to the sinogram.
+    ratio : float, optional
+        To apply a circle mask to the reconstructed image.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+        Apply a smoothing filter.
+    apply_log : bool, optional
+        Apply the logarithm function to the sinogram before reconstruction.
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
+
+    Returns
+    -------
+    str
+        Folder path to tif images.
+    """
+    output_name = losa.make_folder_name(output, name_prefix="Find_center",
+                                        zero_prefix=3)
+    output_base = output + "/" + output_name
+    (nrow, ncol) = sinogram.shape
+    step = np.clip(step, 0.05, ncol - 1)
+    start = np.clip(start, 0, ncol - 1)
+    stop = np.clip(stop + step, start + step, ncol - 1)
+    if zoom != 1.0:
+        sinogram = ndi.zoom(sinogram, zoom, order=1, mode="nearest")
+        start = start * zoom
+        stop = stop * zoom
+        step = step * zoom
+        list_center = np.arange(start, stop, step)
+        if angles is not None:
+            angles = ndi.zoom(np.tile(angles, (1, 1)), (1.0, zoom))[0]
+    else:
+        list_center = np.arange(start, stop, step)
+    if not cuda.is_available():
+        gpu = False
+    for center in list_center:
+        rec_img = reco._reconstruct_slice(sinogram, center, method, angles,
+                                          ratio, filter_name, apply_log, gpu,
+                                          ncore)
+        file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
+        losa.save_image(output_base + "/" + file_name, rec_img)
+    return output_base

@@ -25,13 +25,26 @@ Tests for the methods in util/utility.py
 
 """
 
+import os
+import shutil
 import unittest
 import numpy as np
 import scipy.ndimage as ndi
 import algotom.util.utility as util
+import algotom.io.loadersaver as losa
 
 
 class UtilityMethods(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.isdir("./tmp"):
+            os.makedirs("./tmp")
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.isdir("./tmp"):
+            shutil.rmtree("./tmp")
 
     def setUp(self):
         self.eps = 10 ** (-6)
@@ -453,3 +466,31 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(len(xy_list) == 40)
 
         self.assertRaises(ValueError, f_alias, 200, 40, 2000, 2000)
+
+    def test_find_center_visual_sinograms(self):
+        output_base = "./tmp"
+        (hei, wid) = self.mat_sino.shape
+        start, stop = wid // 2 - 3, wid // 2 + 3
+        num_img = stop - start + 1
+        output_folder = util.find_center_visual_sinograms(self.mat_sino,
+                                                          output_base, start,
+                                                          stop, step=1,
+                                                          zoom=1.0)
+        files = losa.find_file(output_folder + "/*.tif*")
+        img = losa.load_image(files[0])
+        hei2 = img.shape[0]
+        self.assertTrue(len(files) == num_img and hei2 == 2 * hei)
+
+    def test_find_center_visual_slices(self):
+        output_base = "./tmp"
+        (hei, wid) = self.mat_sino.shape
+        start, stop = wid // 2 - 3, wid // 2 + 3
+        num_img = stop - start + 1
+        output_folder = util.find_center_visual_slices(self.mat_sino,
+                                                       output_base, start,
+                                                       stop, step=1, zoom=0.5,
+                                                       apply_log=False)
+        files = losa.find_file(output_folder + "/*.tif*")
+        img = losa.load_image(files[0])
+        hei2 = img.shape[0]
+        self.assertTrue(len(files) == num_img and hei2 == hei // 2)

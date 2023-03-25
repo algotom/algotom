@@ -86,7 +86,9 @@ class CorrectionMethods(unittest.TestCase):
                                         option=opt2)
         self.assertTrue(np.abs(np.mean(m4) - np.mean(m7)) < 0.05)
 
-        m8 = corr.flat_field_correction(proj, flat, dark, option=opt2)
+        opt3 = {"method": "unwrap_phase_based_cosine_transform"}
+        m8 = corr.flat_field_correction(proj, flat, dark, option1=opt1,
+                                        option2=opt2, option3=opt3)
         self.assertTrue(m8.shape == proj.shape)
 
     def test_unwarp_projection(self):
@@ -183,3 +185,22 @@ class CorrectionMethods(unittest.TestCase):
         mat_corr1 = corr.beam_hardening_correction(mat, 0.01, 3, opt=True)
         num2 = np.sum(mat_corr1[0] - mat[0])
         self.assertTrue((num1 > self.eps) and (num2 < self.eps))
+
+    def test_upsample_sinogram(self):
+        sinogram = np.random.rand(self.size // 2, self.size)
+        (hei, wid) = sinogram.shape
+        ups_sinogram = corr.upsample_sinogram(sinogram, 2, center=wid // 2,
+                                              sino_type="180")
+        (hei2, wid2) = ups_sinogram.shape
+        self.assertTrue((hei2 == 2 * (hei - 1) + 1) and (wid2 == wid))
+
+        ups_sinogram = corr.upsample_sinogram(sinogram, 4, center=0,
+                                              sino_type="360")
+        (hei2, wid2) = ups_sinogram.shape
+        self.assertTrue((hei2 == 4 * (hei - 1) + 1) and (wid2 == wid))
+
+        self.assertRaises(ValueError, corr.upsample_sinogram, sinogram, 2,
+                          center=0, sino_type="180")
+
+        self.assertRaises(ValueError, corr.upsample_sinogram, sinogram, 3,
+                          center=0, sino_type="180")

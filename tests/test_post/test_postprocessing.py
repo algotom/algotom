@@ -40,13 +40,13 @@ class UtilityMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if not os.path.isdir("data"):
-            os.makedirs("data")
+        if not os.path.isdir("./tmp"):
+            os.makedirs("./tmp")
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.isdir("data"):
-            shutil.rmtree("data")
+        if os.path.isdir("./tmp"):
+            shutil.rmtree("./tmp")
 
     def setUp(self):
         size = 129
@@ -64,12 +64,12 @@ class UtilityMethods(unittest.TestCase):
         self.mat = np.ones_like(mask1) - np.ceil(self.mask)
         (self.dep, self.hei, self.wid) = (30, 50, 60)
         self.mat3d = np.float32(np.random.rand(self.dep, self.hei, self.wid))
-        self.tif_folder = "data/tif/"
+        self.tif_folder = "./tmp/tif/"
         for i in range(self.dep):
             name = "0000" + str(i)
             losa.save_image(self.tif_folder + "/img_" + name[-3:] + ".tif",
                             self.mat3d[i, :, :])
-        self.hdf_file = "data/data_test.hdf"
+        self.hdf_file = "./tmp/data_test.hdf"
         ifile = h5py.File(self.hdf_file, "w")
         self.key_path = "entry/data"
         ifile.create_dataset(self.key_path, data=self.mat3d)
@@ -121,18 +121,19 @@ class UtilityMethods(unittest.TestCase):
         mat_dsp = post.downsample_dataset(mat, None, (2, 2, 2))
         self.assertTrue(mat_dsp.shape == (dep1, hei1, wid1))
 
-        post.downsample_dataset(mat, "data/dsp1/", (2, 2, 2))
-        files = glob.glob("data/dsp1/*tif*")
+        post.downsample_dataset(mat, "./tmp/dsp1/", (2, 2, 2))
+        files = glob.glob("./tmp/dsp1/*tif*")
         self.assertTrue(len(files) == self.dep // 2)
 
-        post.downsample_dataset(self.tif_folder, "data/dsp2/", (2, 2, 2))
-        files = glob.glob("data/dsp2/*tif*")
+        post.downsample_dataset(self.tif_folder, "./tmp/dsp2/", (2, 2, 2))
+        files = glob.glob("./tmp/dsp2/*tif*")
         self.assertTrue(len(files) == self.dep // 2)
 
-        post.downsample_dataset(self.hdf_file, "data/dsp3/file.hdf", (2, 2, 2),
+        post.downsample_dataset(self.hdf_file, "./tmp/dsp3/file.hdf",
+                                (2, 2, 2),
                                 crop=(0, 0, 0, 0, 0, 0), rescaling=True,
                                 nbit=16, key_path=self.key_path)
-        self.assertTrue(os.path.isfile("data/dsp3/file.hdf"))
+        self.assertTrue(os.path.isfile("./tmp/dsp3/file.hdf"))
 
         output = post.downsample_dataset(mat, None, (2, 2, 2),
                                          crop=(4, 4, 5, 5, 6, 6),
@@ -153,16 +154,16 @@ class UtilityMethods(unittest.TestCase):
         mat = np.float32(np.random.rand(16, 64, 64))
         mat_res = post.rescale_dataset(mat, None, nbit=8)
         self.assertTrue(256 > mat_res[0, 32, 32] >= 0)
-        post.rescale_dataset(self.tif_folder, "data/rescale/", nbit=8,
+        post.rescale_dataset(self.tif_folder, "./tmp/rescale/", nbit=8,
                              crop=(2, 2, 3, 3, 4, 4))
-        files = glob.glob("data/rescale/*tif*")
+        files = glob.glob("./tmp/rescale/*tif*")
         mat_tmp = np.asarray(Image.open(files[0]))
         data_type = str(mat_tmp.dtype)
         data_shape = (len(files), mat_tmp.shape[0], mat_tmp.shape[1])
         crop_shape = (self.dep - 4, self.hei - 6, self.wid - 8)
         self.assertTrue(data_shape == crop_shape and data_type == "uint8")
 
-        output = "data/rescale2/file.hdf"
+        output = "./tmp/rescale2/file.hdf"
         post.rescale_dataset(self.hdf_file, output, nbit=16,
                              key_path=self.key_path)
         key_path = losa.get_hdf_information(output)[0][0]
@@ -173,24 +174,40 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(data.shape == (self.dep, self.hei, self.wid))
 
     def test_reslice_dataset(self):
-        post.reslice_dataset(self.tif_folder, "data/reslice/", axis=1,
+        post.reslice_dataset(self.tif_folder, "./tmp/reslice/", axis=1,
                              rescaling=True, nbit=8, crop=(2, 2, 3, 3, 4, 4))
-        files = glob.glob("data/reslice/*tif*")
+        files = glob.glob("./tmp/reslice/*tif*")
         mat_tmp = np.asarray(Image.open(files[0]))
         data_type = str(mat_tmp.dtype)
         data_shape = (len(files), mat_tmp.shape[0], mat_tmp.shape[1])
         crop_shape = (self.hei - 6, self.dep - 4, self.wid - 8)
         self.assertTrue(data_shape == crop_shape and data_type == "uint8")
 
-        post.reslice_dataset(self.tif_folder, "data/reslice2/", axis=2,
+        post.reslice_dataset(self.tif_folder, "./tmp/reslice1/", axis=1,
+                             rotate=30.0, rescaling=True, nbit=8,
+                             crop=(2, 2, 3, 3, 4, 4))
+        files = glob.glob("./tmp/reslice1/*tif*")
+        mat_tmp2 = np.asarray(Image.open(files[0]))
+        num = np.mean(np.abs(mat_tmp2 - mat_tmp))
+        self.assertTrue(num > 1.0e-9)
+
+        post.reslice_dataset(self.tif_folder, "./tmp/reslice2/", axis=2,
                              rescaling=False, crop=(2, 2, 3, 3, 4, 4))
-        files = glob.glob("data/reslice2/*tif*")
+        files = glob.glob("./tmp/reslice2/*tif*")
         mat_tmp = np.asarray(Image.open(files[0]))
         data_shape = (len(files), mat_tmp.shape[0], mat_tmp.shape[1])
         crop_shape = (self.wid - 8, self.dep - 4, self.hei - 6)
         self.assertTrue(data_shape == crop_shape)
 
-        output = "data/reslice3/file.hdf"
+        post.reslice_dataset(self.tif_folder, "./tmp/reslice2b/", axis=2,
+                             rescaling=False, rotate=15,
+                             crop=(2, 2, 3, 3, 4, 4))
+        files = glob.glob("./tmp/reslice2b/*tif*")
+        mat_tmp2 = np.asarray(Image.open(files[0]))
+        num = np.mean(np.abs(mat_tmp2 - mat_tmp))
+        self.assertTrue(num > 1.0e-9)
+
+        output = "./tmp/reslice3/file.hdf"
         post.reslice_dataset(self.hdf_file, output, axis=1, rescaling=True,
                              nbit=16, key_path=self.key_path,
                              crop=(2, 2, 3, 3, 4, 4))
@@ -201,7 +218,7 @@ class UtilityMethods(unittest.TestCase):
         crop_shape = (self.hei - 6, self.dep - 4, self.wid - 8)
         self.assertTrue(data.shape == crop_shape and data_type == "uint16")
 
-        output = "data/reslice4/file.hdf"
+        output = "./tmp/reslice4/file.hdf"
         post.reslice_dataset(self.hdf_file, output, axis=2, rescaling=True,
                              nbit=8, key_path=self.key_path,
                              crop=(2, 2, 3, 3, 4, 4))
@@ -212,7 +229,7 @@ class UtilityMethods(unittest.TestCase):
         crop_shape = (self.wid - 8, self.dep - 4, self.hei - 6)
         self.assertTrue(data.shape == crop_shape and data_type == "uint8")
 
-        output = "data/reslice5/file.hdf"
+        output = "./tmp/reslice5/file.hdf"
         post.reslice_dataset(self.hdf_file, output, axis=2,
                              key_path=self.key_path)
         key_path = losa.get_hdf_information(output)[0][0]

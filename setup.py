@@ -16,7 +16,7 @@ if python_version == "3.7":
 else:
     dependencies = [
         "numpy>=1.18,<1.24",
-        "scipy",
+        "scipy>=1.6",
         "numba",
         "pywavelets",
         "pillow",
@@ -28,7 +28,7 @@ readme = (current_folder / "README.md").read_text()
 
 setuptools.setup(
     name="algotom",
-    version="1.2.0",
+    version="1.3.0",
     author="Nghia Vo",
     author_email="nvo@bnl.gov",
     description="Data processing algorithms for tomography",

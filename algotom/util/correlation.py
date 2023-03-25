@@ -32,13 +32,15 @@ stacks of images. The methods are designed to be flexible to:
 """
 
 import math
-import numpy as np
-from numba import jit, cuda
-import multiprocessing as mp
-from joblib import Parallel, delayed
 import warnings
+import multiprocessing as mp
+import numpy as np
+from numba import jit, cuda, NumbaWarning
+from joblib import Parallel, delayed
 from scipy.signal import correlate
 from algotom.rec.reconstruction import make_smoothing_window
+
+warnings.filterwarnings("ignore", category=NumbaWarning)
 
 
 def normalize_image(mat):
@@ -470,7 +472,7 @@ def generate_correlation_map(ref_mat, mat, gpu=False, block=(16, 16)):
     """
     if gpu is True:
         if cuda.is_available() is False:
-            print("!!! No Nvidia GPU found !!! Run with CPU instead !!!")
+            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
             gpu = False
     dim = len(ref_mat.shape)
     if dim != 2 and dim != 3:
@@ -1263,14 +1265,13 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
     else:
         if ncore is None:
             ncore = np.clip(mp.cpu_count() - 1, 1, None)
-        shifts = np.asarray(Parallel(n_jobs=ncore)(delayed(
-            f_alias)(ref_mat[:, i - start:i + start1, j - start:j + start1],
-                     mat[:, i - radi:i + radi1, j - radi:j + radi1], margin,
-                     None, sub_pixel, method, 2, size, False, None)
-                                                   for i in
-                                                   range(start, stop_row)
-                                                   for j in
-                                                   range(start, stop_col)))
+        shifts = np.asarray(
+            Parallel(n_jobs=ncore)(delayed(f_alias)(
+                ref_mat[:, i - start:i + start1, j - start:j + start1],
+                mat[:, i - radi:i + radi1, j - radi:j + radi1],
+                margin, None, sub_pixel, method, 2, size, False, None)
+                                   for i in range(start, stop_row)
+                                   for j in range(start, stop_col)))
         shifts = np.reshape(np.asarray(shifts),
                             (stop_row - start, stop_col - start, 2))
     (x_shifts, y_shifts) = np.moveaxis(shifts, 2, 0)
@@ -1788,7 +1789,7 @@ def __inverse_values(mat, val_max):  # pragma: no cover
     ----------
     mat : array_like
         2D array.
-    val_mat : float
+    val_max : float
         Maximum value of the array.
 
     Returns
@@ -2419,8 +2420,6 @@ def _get_2d_shift_full_image_3d_input_cpu_gpu(ref_mat, mat, chunk_size=None,
         sub-pixel searching.
     block : tuple of two integer-values, optional
         Size of a GPU block. E.g. (4,4), (8, 8), ...
-    pad : bool, optional
-        Padding the result to the same as the original images.
     ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     norm : bool, optional
@@ -2530,7 +2529,7 @@ def find_local_shifts(ref_mat, mat, dim=1, win_size=7, margin=10,
     """
     if gpu is True:
         if cuda.is_available() is False:
-            print("!!! No Nvidia GPU found !!! Run with CPU instead !!!")
+            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
             gpu = False
     if len(ref_mat.shape) == 2:
         if gpu is False:
@@ -2994,7 +2993,7 @@ def find_global_shift_based_local_shifts(ref_mat, mat, win_size, margin,
 
     if gpu is True:
         if cuda.is_available() is False:
-            print("!!! No Nvidia GPU found !!! Run with CPU instead !!!")
+            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
             gpu = False
     if gpu is True:
         f_alias = _find_global_shift_based_local_shifts_gpu
@@ -3191,9 +3190,9 @@ def __calc_shift_umpa_gpu_kernel(shifts, trans, dark, ref_mat, mat, coef_4d,
                     A[u, v] = beta + K
                     if A[u, v] != 0.0:
                         V[u, v] = K / A[u, v]
-                    num1 = t1 + (beta ** 2) * t2 + (K ** 2) * t3[u, v] \
-                           - 2 * beta * t4 - 2 * K * t5[u, v] \
-                           + 2 * beta * K * t6[u, v]
+                    num1 = t1 + ((beta ** 2) * t2 + (K ** 2) * t3[u, v]
+                                 - 2 * beta * t4 - 2 * K * t5[u, v]
+                                 + 2 * beta * K * t6[u, v])
                 else:
                     K = t5[u, v] / t3[u, v]
                     num1 = t1 + (K ** 2) * t3[u, v] - 2 * K * t5[u, v]
@@ -3319,7 +3318,7 @@ def find_local_shifts_umpa(ref_mat, mat, win_size=7, margin=10,
     """
     if gpu is True:
         if cuda.is_available() is False:
-            print("!!! No Nvidia GPU found !!! Run with CPU instead !!!")
+            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
             gpu = False
     if ref_mat.shape != mat.shape:
         raise ValueError("Data shape must be the same !!!")
