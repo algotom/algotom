@@ -22,3 +22,4 @@ References
 .. bibliography:: bibtex/ref.bib
    :style: plain
    :labelprefix: R
+   :all:
