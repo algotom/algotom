@@ -35,12 +35,10 @@ import math
 import warnings
 import multiprocessing as mp
 import numpy as np
-from numba import jit, cuda, NumbaWarning
+from numba import jit, cuda
 from joblib import Parallel, delayed
 from scipy.signal import correlate
 from algotom.rec.reconstruction import make_smoothing_window
-
-warnings.filterwarnings("ignore", category=NumbaWarning)
 
 
 def normalize_image(mat):
@@ -1895,7 +1893,7 @@ def _get_2d_shift_multi_rows_2d_input_kernel(shifts, ref_mat, mat, coef_4d,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[i - radi_ref:i + radi_ref + 1,
-                           j - radi_ref: j + radi_ref + 1]
+                   j - radi_ref: j + radi_ref + 1]
         mat1 = mat[i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = coef_4d[y_index, x_index, :, :]
         coef_mat1 = __gen_2d_corr_map_2d_input(ref_mat1, mat1, coef_mat1)
@@ -2085,7 +2083,7 @@ def _get_2d_shift_multi_rows_3d_input_kernel(shifts, ref_mat, mat, coef_4d,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref + 1,
-                           j - radi_ref: j + radi_ref + 1]
+                   j - radi_ref: j + radi_ref + 1]
         mat1 = mat[:, i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = coef_4d[y_index, x_index, :, :]
         coef_mat1 = __gen_2d_corr_map_3d_input(ref_mat1, mat1, coef_mat1)
@@ -2280,7 +2278,7 @@ def _generate_4d_correlation_map_3d_input_kernel(coef_4d, ref_mat, mat, height,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref + 1,
-                           j - radi_ref: j + radi_ref + 1]
+                   j - radi_ref: j + radi_ref + 1]
         mat1 = mat[:, i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = coef_4d[y_index, x_index, :, :]
         coef_mat1 = __gen_2d_corr_map_3d_input(ref_mat1, mat1, coef_mat1)
@@ -2743,9 +2741,9 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
         shifts = np.asarray(Parallel(n_jobs=ncore)(
             delayed(f_alias)(
                 ref_mat[list_i[k] - start:list_i[k] + start1,
-                        list_j[k] - start:list_j[k] + start1],
+                list_j[k] - start:list_j[k] + start1],
                 mat[list_i[k] - radi:list_i[k] + radi1,
-                    list_j[k] - radi:list_j[k] + radi1],
+                list_j[k] - radi:list_j[k] + radi1],
                 margin, None, sub_pixel, method, 2, size, False, None)
             for k in range(num_point)))
     x_shifts, y_shifts = shifts[:, 0], shifts[:, 1]
@@ -2813,7 +2811,7 @@ def _get_local_shifts_gpu_kernel(shifts, ref_mat, mat, list_i, list_j,
         i = list_i[idx]
         j = list_j[idx]
         ref_mat1 = ref_mat[i - radi_ref:i + radi_ref + 1,
-                           j - radi_ref: j + radi_ref + 1]
+                   j - radi_ref: j + radi_ref + 1]
         mat1 = mat[i - radi:i + radi + 1, j - radi: j + radi + 1]
         coef_mat1 = list_2d_coef[idx, :, :]
         coef_mat1 = __gen_2d_corr_map_2d_input(ref_mat1, mat1, coef_mat1)
@@ -3169,7 +3167,7 @@ def __calc_shift_umpa_gpu_kernel(shifts, trans, dark, ref_mat, mat, coef_4d,
         j = x_index + radi_ref
         i = y_index + radi_ref
         ref_mat1 = ref_mat[:, i - radi_ref:i + radi_ref1,
-                           j - radi_ref: j + radi_ref1]
+                   j - radi_ref: j + radi_ref1]
         mat1 = mat[:, i - radi:i + radi1, j - radi: j + radi1]
         A = A0[y_index, x_index, :, :]
         V = V0[y_index, x_index, :, :]
