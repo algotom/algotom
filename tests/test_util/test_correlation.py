@@ -85,17 +85,18 @@ class UtilityMethods(unittest.TestCase):
         num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
         self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
 
-        coef_mat = f_alias(self.ref_stack,
-                           self.sam_stack[:, drop:-drop, drop:-drop],
-                           gpu=True)
-        num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
-        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+        if cuda.is_available():
+            coef_mat = f_alias(self.ref_stack,
+                               self.sam_stack[:, drop:-drop, drop:-drop],
+                               gpu=True)
+            num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
+            self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
 
-        coef_mat = f_alias(self.ref_stack[0],
-                           self.sam_stack[0, drop:-drop, drop:-drop],
-                           gpu=True)
-        num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
-        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+            coef_mat = f_alias(self.ref_stack[0],
+                               self.sam_stack[0, drop:-drop, drop:-drop],
+                               gpu=True)
+            num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
+            self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
 
         self.assertRaises(ValueError, f_alias, self.ref_stack[0, 1],
                           self.sam_stack[0, 1], gpu=False)
