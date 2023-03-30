@@ -32,7 +32,10 @@ Module of methods in the postprocessing stage:
 """
 
 import os
+import sys
 import shutil
+import timeit
+import glob
 import h5py
 import numpy as np
 from PIL import Image
@@ -148,6 +151,26 @@ def __get_cropped_shape(input_, crop, key_path=None):
         raise ValueError("Check crop parameters!!! Can't crop the data having"
                          " shape: {}".format((depth, height, width)))
     return (d1, d2, h1, h2, w1, w2), (depth1, height1, width1)
+
+
+def __get_dataset_size(input_):
+    """
+    To get the size of 3D array, folder of tif files, or a hdf file in MB.
+    """
+    in_type = __get_input_type(input_)
+    b_unit = 1024.0 * 1024.0
+    if in_type == "numpy_array":
+        size_in_MB = input_.nbytes / b_unit
+    elif in_type == "hdf":
+        size_in_MB = os.path.getsize(input_) / b_unit
+    else:
+        list_file = losa.find_file(input_ + "/*.tif*")
+        if list_file:
+            size_1_file = np.asarray(Image.open(list_file[0])).nbytes / b_unit
+        else:
+            size_1_file = 0.0
+        size_in_MB = len(list_file) * size_1_file
+    return size_in_MB
 
 
 def get_statistical_information(mat, percentile=(0, 100), denoise=False):
@@ -565,65 +588,197 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
 
 
 def __save_intermediate_data(input_, output, axis, crop, key_path=None,
-                             rotate=0.0, mode="nearest"):
+                             rotate=0.0, chunk=16, mode="constant",
+                             ncore=None, show_progress=True):
+    """
+    Supplementary method: save data to an intermediate hdf-file for fast
+    reslicing and reducing the RAM requirements.
+    """
+
     in_type = __get_input_type(input_)
     results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
     (d1, d2, h1, h2, w1, w2) = results[0]
     (depth1, height1, width1) = results[1]
+    chunk = np.clip(chunk, 1, depth1 - 1)
+    last_chunk = depth1 - chunk * (depth1 // chunk)
     folder_tmp = os.path.splitext(output)[0] + "/tmp_/"
     file_tmp = folder_tmp + "/file_tmp.hdf"
     losa.make_folder(folder_tmp)
     out_key = "entry/data"
-    ofile = h5py.File(file_tmp, 'w')
-    if in_type == "tif":
-        data = losa.find_file(input_ + "/*.tif*")
-        data_type = np.asarray(Image.open(data[0])).dtype
-        if axis == 2:
-            data_tmp = ofile.create_dataset(out_key, (depth1, width1, height1),
-                                            dtype=data_type)
-            for i in range(depth1):
-                mat = losa.load_image(data[i + d1])
-                if rotate != 0.0:
-                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
-                                     order=1)
-                data_tmp[i] = np.transpose(mat[h1:h2, w1:w2])
+    b_unit = 1024.0 * 1024.0
+    with h5py.File(file_tmp, 'w') as ofile:
+        t0 = timeit.default_timer()
+        if in_type == "tif":
+            data = losa.find_file(input_ + "/*.tif*")
+            data_type = np.asarray(Image.open(data[0])).dtype
+            if axis == 2:
+                hdf_chunk = (chunk, min(100, width1), min(100, height1))
+                data_tmp = ofile.create_dataset(out_key,
+                                                (depth1, width1, height1),
+                                                dtype=data_type,
+                                                chunks=hdf_chunk)
+                for i in range(0, depth1 - last_chunk, chunk):
+                    if show_progress:
+                        t1 = timeit.default_timer()
+                        f_size = os.path.getsize(file_tmp) / b_unit
+                        msg = "Writing to an intermediate hdf-file: {0:.2f} " \
+                              "MB. Time: {1:0.2f}s".format(f_size, t1 - t0)
+                        len_msg = len(msg)
+                        sys.stdout.write(msg)
+                        sys.stdout.flush()
+                    mat_tmp = []
+                    mat_chunk = losa.load_image_multiple(
+                        data[i + d1: i + chunk + d1], ncore=ncore,
+                        prefer="threads")
+                    for j in range(chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(np.transpose(mat[h1:h2, w1:w2]))
+                    data_tmp[i:i + chunk] = np.asarray(mat_tmp)
+                    if show_progress:
+                        sys.stdout.write("\r" + " " * len_msg + "\r")
+                if last_chunk != 0:
+                    mat_tmp = []
+                    mat_chunk = losa.load_image_multiple(
+                        data[depth1 - last_chunk: depth1], ncore=ncore,
+                        prefer="threads")
+                    for j in range(last_chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(np.transpose(mat[h1:h2, w1:w2]))
+                    data_tmp[depth1 - last_chunk: depth1] = np.asarray(mat_tmp)
+            else:
+                hdf_chunk = (chunk, min(100, height1), min(100, width1))
+                data_tmp = ofile.create_dataset(out_key,
+                                                (depth1, height1, width1),
+                                                dtype=data_type,
+                                                chunks = hdf_chunk)
+                for i in np.arange(0, depth1 - last_chunk, chunk):
+                    if show_progress:
+                        t1 = timeit.default_timer()
+                        f_size = os.path.getsize(file_tmp) / b_unit
+                        msg = "Writing to an intermediate hdf-file: {0:0.2f}" \
+                              "MB. Time: {1:0.2f}s".format(f_size, t1 - t0)
+                        len_msg = len(msg)
+                        sys.stdout.write(msg)
+                        sys.stdout.flush()
+                    mat_tmp = []
+                    mat_chunk = losa.load_image_multiple(
+                        data[i + d1: i + chunk + d1], ncore=ncore,
+                        prefer="threads")
+                    for j in range(chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(mat[h1:h2, w1:w2])
+                    data_tmp[i:i + chunk] = np.asarray(mat_tmp)
+                    if show_progress:
+                        sys.stdout.write("\r" + " " * len_msg + "\r")
+                if last_chunk != 0:
+                    mat_tmp = []
+                    mat_chunk = losa.load_image_multiple(
+                        data[depth1 - last_chunk: depth1], ncore=ncore,
+                        prefer="threads")
+                    for j in range(last_chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(mat[h1:h2, w1:w2])
+                    data_tmp[depth1 - last_chunk: depth1] = np.asarray(mat_tmp)
         else:
-            data_tmp = ofile.create_dataset(out_key, (depth1, height1, width1),
-                                            dtype=data_type)
-            for i in range(depth1):
-                mat = losa.load_image(data[i + d1])
-                if rotate != 0.0:
-                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
-                                     order=1)
-                data_tmp[i] = mat[h1:h2, w1:w2]
-    else:
-        data = losa.load_hdf(input_, key_path)
-        data_type = data.dtype
-        if axis == 2:
-            data_tmp = ofile.create_dataset(out_key, (depth1, width1, height1),
-                                            dtype=data_type)
-            for i in range(depth1):
-                mat = data[i + d1]
-                if rotate != 0.0:
-                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
-                                     order=1)
-                data_tmp[i] = np.transpose(mat[h1:h2, w1:w2])
-        else:
-            data_tmp = ofile.create_dataset(out_key, (depth1, height1, width1),
-                                            dtype=data_type)
-            for i in range(depth1):
-                mat = data[i + d1]
-                if rotate != 0.0:
-                    mat = ndi.rotate(mat, rotate, mode=mode, reshape=False,
-                                     order=1)
-                data_tmp[i] = mat[h1:h2, w1:w2]
-    ofile.close()
+            data = losa.load_hdf(input_, key_path)
+            data_type = data.dtype
+            if axis == 2:
+                hdf_chunk = (chunk, min(100, width1), min(100, height1))
+                data_tmp = ofile.create_dataset(out_key,
+                                                (depth1, width1, height1),
+                                                dtype=data_type,
+                                                chunks=hdf_chunk)
+                for i in np.arange(0, depth1 - last_chunk, chunk):
+                    if show_progress:
+                        t1 = timeit.default_timer()
+                        f_size = os.path.getsize(file_tmp) / b_unit
+                        msg = "Writing to an intermediate hdf-file: {0:0.2f}" \
+                              "MB. Time: {1:0.2f}s".format(f_size, t1 - t0)
+                        len_msg = len(msg)
+                        sys.stdout.write(msg)
+                        sys.stdout.flush()
+                    mat_chunk = data[i: i + chunk]
+                    mat_tmp = []
+                    for j in np.arange(chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(np.transpose(mat[h1:h2, w1:w2]))
+                    data_tmp[i:i + chunk] = np.asarray(mat_tmp)
+                    if show_progress:
+                        sys.stdout.write("\r" + " " * len_msg + "\r")
+                if last_chunk != 0:
+                    mat_chunk = data[depth1 - last_chunk: depth1]
+                    mat_tmp = []
+                    for j in np.arange(last_chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(np.transpose(mat[h1:h2, w1:w2]))
+                    data_tmp[depth1 - last_chunk: depth1] = np.asarray(mat_tmp)
+            else:
+                hdf_chunk = (chunk, min(100, height1), min(100, width1))
+                data_tmp = ofile.create_dataset(out_key,
+                                                (depth1, height1, width1),
+                                                dtype=data_type,
+                                                chunks=hdf_chunk)
+                for i in np.arange(0, depth1 - last_chunk, chunk):
+                    if show_progress:
+                        t1 = timeit.default_timer()
+                        f_size = os.path.getsize(file_tmp) / b_unit
+                        msg = "Writing to an intermediate hdf-file: {0:0.2f}" \
+                              "MB. Time: {1:0.2f}s".format(f_size, t1 - t0)
+                        len_msg = len(msg)
+                        sys.stdout.write(msg)
+                        sys.stdout.flush()
+                    mat_chunk = data[i: i + chunk]
+                    mat_tmp = []
+                    for j in np.arange(chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(mat[h1:h2, w1:w2])
+                    data_tmp[i:i + chunk] = np.asarray(mat_tmp)
+                    if show_progress:
+                        sys.stdout.write("\r" + " " * len_msg + "\r")
+                if last_chunk != 0:
+                    mat_chunk = data[depth1 - last_chunk: depth1]
+                    mat_tmp = []
+                    for j in np.arange(last_chunk):
+                        mat = mat_chunk[j]
+                        if rotate != 0.0:
+                            mat = ndi.rotate(mat, rotate, mode=mode,
+                                             reshape=False, order=1)
+                        mat_tmp.append(mat[h1:h2, w1:w2])
+                    data_tmp[depth1 - last_chunk: depth1] = np.asarray(mat_tmp)
+    if show_progress:
+        t1 = timeit.default_timer()
+        f_size = os.path.getsize(file_tmp) / b_unit
+        print("Finish saving intermediate file! File size: {0:0.2f}MB. Time: "
+              "{1:0.2f}s. The file will be deleted at the end!"
+              "".format(f_size, t1 - t0))
     return file_tmp, out_key, folder_tmp
 
 
 def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
-                    nbit=16, minmax=None, skip=None, rotate=0.0,
-                    mode="constant", crop=(0, 0, 0, 0, 0, 0)):
+                    nbit=16, minmax=None, skip=None, rotate=0.0, chunk=16,
+                    mode="constant", crop=(0, 0, 0, 0, 0, 0),
+                    ncore=None, show_progress=True):
     """
     Reslice a 3d dataset. Input can be a folder of tif files or a hdf file.
 
@@ -648,6 +803,8 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
         rescaling is True and input is 32-bit data.
     rotate : float
         Rotate image (degree). Positive direction is counterclockwise.
+    chunk : int
+        Number of images to be loaded/saved in one go to reduce IO overhead.
     mode : {'reflect', 'grid-mirror', 'constant', 'grid-constant', \
            'nearest', 'mirror', 'grid-wrap', 'wrap'}
         Select how the input array is extended beyond its boundaries.
@@ -655,6 +812,10 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
         Crop 3D data from the edges, i.e.
         crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
         crop_width1, crop_width2). Cropping is done before reslicing.
+    ncore : int or None
+        Number of cpu-cores. Automatically selected if None.
+    show_progress : bool
+        Show the progress of reslicing data if True.
 
     Returns
     -------
@@ -672,58 +833,121 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
     if in_type != "tif" and in_type != "hdf":
         raise ValueError("Wrong input type !!!")
     results = __save_intermediate_data(input_, output, axis, crop, key_path,
-                                       rotate, mode)
+                                       rotate, chunk, mode, ncore,
+                                       show_progress)
     file_tmp, key_tmp, folder_tmp = results
-    hdf_object = h5py.File(file_tmp, 'r')
-    data = hdf_object[key_tmp]
-    (depth1, height1, width1) = data.shape
-    data_type = data.dtype
-    res_type = str(data_type)
-    if rescaling is True:
-        if nbit == 16:
-            res_type = "uint16"
-        elif nbit == 8:
-            res_type = "uint8"
-        else:
-            raise ValueError("Only two options for nbit: 8 or 16 !!!")
-        if str(data_type) != res_type:
-            if data_type == np.uint8:
-                minmax = (0, 255)
-            elif data_type == np.uint16:
-                minmax = (0, 65535)
+    with h5py.File(file_tmp, 'r') as hdf_object:
+        data = hdf_object[key_tmp]
+        (depth1, height1, width1) = data.shape
+        chunk = np.clip(chunk, 1, height1 - 1)
+        last_chunk = height1 - chunk * (height1 // chunk)
+        data_type = data.dtype
+        res_type = str(data_type)
+        if rescaling is True:
+            if nbit == 16:
+                res_type = "uint16"
+            elif nbit == 8:
+                res_type = "uint8"
             else:
-                if skip is None:
-                    skip = int(np.clip(np.ceil(0.15 * depth1), 1, depth1 - 1))
-                if minmax is None:
-                    f_alias = get_statistical_information_dataset
-                    minmax = f_alias(input_, percentile=(0, 100), skip=skip,
-                                     crop=crop, key_path=key_path)[0:2]
+                raise ValueError("Only two options for nbit: 8 or 16 !!!")
+            if str(data_type) != res_type:
+                if data_type == np.uint8:
+                    minmax = (0, 255)
+                elif data_type == np.uint16:
+                    minmax = (0, 65535)
+                else:
+                    if skip is None:
+                        skip = min(20, int(0.02 * depth1))
+                    skip = int(np.clip(skip, 1, depth1 - 1))
+                    if minmax is None:
+                        f_alias = get_statistical_information_dataset
+                        minmax = f_alias(input_, percentile=(0, 100),
+                                         skip=skip, crop=crop,
+                                         key_path=key_path)[0:2]
+            else:
+                rescaling = False
+        out_type = __get_output_type(output)
+        t0 = timeit.default_timer()
+        if out_type == "hdf":
+            key_path = "entry/data" if key_path is None else key_path
+            data_slice = losa.open_hdf_stream(output,
+                                              (height1, depth1, width1),
+                                              data_type=res_type,
+                                              key_path=key_path,
+                                              overwrite=True)
+            for i in np.arange(0, height1 - last_chunk, chunk):
+                if show_progress:
+                    t1 = timeit.default_timer()
+                    f_size = __get_dataset_size(output)
+                    msg = "Save resliced data to file: {0:0.2f}MB." \
+                          " Time: {1:0.2f}s".format(f_size, t1 - t0)
+                    len_msg = len(msg)
+                    sys.stdout.write(msg)
+                    sys.stdout.flush()
+                mat_chunk = data[:, i: i + chunk, :]
+                if rescaling:
+                    mat_tmp = []
+                    for j in np.arange(chunk):
+                        mat = rescale(mat_chunk[:, j, :], nbit, minmax)
+                        mat_tmp.append(mat)
+                    mat_tmp = np.asarray(mat_tmp)
+                else:
+                    mat_tmp = np.moveaxis(mat_chunk, 1, 0)
+                data_slice[i:i + chunk] = mat_tmp
+                if show_progress:
+                    sys.stdout.write("\r" + " " * len_msg + "\r")
+            if last_chunk != 0:
+                mat_chunk = data[:, height1 - last_chunk: height1, :]
+                if rescaling:
+                    mat_tmp = []
+                    for j in np.arange(last_chunk):
+                        mat = rescale(mat_chunk[:, j, :], nbit, minmax)
+                        mat_tmp.append(mat)
+                    mat_tmp = np.asarray(mat_tmp)
+                else:
+                    mat_tmp = np.moveaxis(mat_chunk, 1, 0)
+                data_slice[height1 - last_chunk: height1] = mat_tmp
         else:
-            rescaling = False
-    out_type = __get_output_type(output)
-    if out_type == "hdf":
-        key_path = "entry/data" if key_path is None else key_path
-        data_slice = losa.open_hdf_stream(output, (height1, depth1, width1),
-                                          data_type=res_type,
-                                          key_path=key_path, overwrite=True)
-        for i in range(height1):
-            mat = data[:, i, :]
-            if rescaling:
-                mat = rescale(mat, nbit, minmax)
-            data_slice[i, :, :] = mat
-    else:
-        for i in range(height1):
-            mat = data[:, i, :]
-            if rescaling:
-                mat = rescale(mat, nbit, minmax)
-            out_name = "0000" + str(i)
-            losa.save_image(output + "/img_" + out_name[-5:] + ".tif",
-                            mat.astype(res_type))
-    hdf_object.close()
+            list_file, len_msg = None, None
+            for i in np.arange(0, height1 - last_chunk, chunk):
+                if show_progress:
+                    t1 = timeit.default_timer()
+                    list_file = glob.glob(output + "/*tif*")
+                    if list_file:
+                        f_size = __get_dataset_size(output)
+                        msg = "Save resliced data to file: {0:0.2f}MB." \
+                              " Time: {1:0.2f}s".format(f_size, t1 - t0)
+                        len_msg = len(msg)
+                        sys.stdout.write(msg)
+                        sys.stdout.flush()
+                mat_chunk = data[:, i: i + chunk, :]
+                out_files = [output + "/img_" + ("0000" + str(
+                    i + j))[-5:] + ".tif" for j in range(chunk)]
+                if rescaling:
+                    mat_chunk = rescale(mat_chunk, nbit, minmax)
+                losa.save_image_multiple(out_files, mat_chunk.astype(res_type),
+                                         axis=1, ncore=ncore, prefer="threads")
+                if show_progress:
+                    if list_file:
+                        sys.stdout.write("\r" + " " * len_msg + "\r")
+            if last_chunk != 0:
+                idx = height1 - last_chunk
+                mat_chunk = data[:, idx: height1, :]
+                out_files = [output + "/img_" + ("0000" + str(
+                    idx + j))[-5:] + ".tif" for j in range(last_chunk)]
+                if rescaling:
+                    mat_chunk = rescale(mat_chunk, nbit, minmax)
+                losa.save_image_multiple(out_files, mat_chunk.astype(res_type),
+                                         axis=1, ncore=ncore, prefer="threads")
     if os.path.isdir(folder_tmp):
         shutil.rmtree(folder_tmp)
         if out_type == "hdf":
             shutil.rmtree(os.path.splitext(output)[0])
+    if show_progress:
+        t1 = timeit.default_timer()
+        f_size = __get_dataset_size(output)
+        print("Finish reslicing data! File size: {0:0.2f}MB. Time: {1:0.2f}s"
+              "".format(f_size, t1 - t0))
 
 
 def remove_ring_based_fft(mat, u=20, n=8, v=1, sort=False):

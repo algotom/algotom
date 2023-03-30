@@ -175,7 +175,8 @@ class UtilityMethods(unittest.TestCase):
 
     def test_reslice_dataset(self):
         post.reslice_dataset(self.tif_folder, "./tmp/reslice/", axis=1,
-                             rescaling=True, nbit=8, crop=(2, 2, 3, 3, 4, 4))
+                             rescaling=True, nbit=8, crop=(2, 2, 3, 3, 4, 4),
+                             show_progress=False)
         files = glob.glob("./tmp/reslice/*tif*")
         mat_tmp = np.asarray(Image.open(files[0]))
         data_type = str(mat_tmp.dtype)
@@ -185,14 +186,16 @@ class UtilityMethods(unittest.TestCase):
 
         post.reslice_dataset(self.tif_folder, "./tmp/reslice1/", axis=1,
                              rotate=30.0, rescaling=True, nbit=8,
-                             crop=(2, 2, 3, 3, 4, 4))
+                             crop=(2, 2, 3, 3, 4, 4),
+                             show_progress=False)
         files = glob.glob("./tmp/reslice1/*tif*")
         mat_tmp2 = np.asarray(Image.open(files[0]))
         num = np.mean(np.abs(mat_tmp2 - mat_tmp))
         self.assertTrue(num > 1.0e-9)
 
         post.reslice_dataset(self.tif_folder, "./tmp/reslice2/", axis=2,
-                             rescaling=False, crop=(2, 2, 3, 3, 4, 4))
+                             rescaling=False, crop=(2, 2, 3, 3, 4, 4),
+                             show_progress=False)
         files = glob.glob("./tmp/reslice2/*tif*")
         mat_tmp = np.asarray(Image.open(files[0]))
         data_shape = (len(files), mat_tmp.shape[0], mat_tmp.shape[1])
@@ -201,7 +204,7 @@ class UtilityMethods(unittest.TestCase):
 
         post.reslice_dataset(self.tif_folder, "./tmp/reslice2b/", axis=2,
                              rescaling=False, rotate=15,
-                             crop=(2, 2, 3, 3, 4, 4))
+                             crop=(2, 2, 3, 3, 4, 4), show_progress=False)
         files = glob.glob("./tmp/reslice2b/*tif*")
         mat_tmp2 = np.asarray(Image.open(files[0]))
         num = np.mean(np.abs(mat_tmp2 - mat_tmp))
@@ -210,7 +213,7 @@ class UtilityMethods(unittest.TestCase):
         output = "./tmp/reslice3/file.hdf"
         post.reslice_dataset(self.hdf_file, output, axis=1, rescaling=True,
                              nbit=16, key_path=self.key_path,
-                             crop=(2, 2, 3, 3, 4, 4))
+                             crop=(2, 2, 3, 3, 4, 4), show_progress=False)
         key_path = losa.get_hdf_information(output)[0][0]
         data = losa.load_hdf(output, key_path)
         data_type = str(data.dtype)
@@ -221,7 +224,7 @@ class UtilityMethods(unittest.TestCase):
         output = "./tmp/reslice4/file.hdf"
         post.reslice_dataset(self.hdf_file, output, axis=2, rescaling=True,
                              nbit=8, key_path=self.key_path,
-                             crop=(2, 2, 3, 3, 4, 4))
+                             crop=(2, 2, 3, 3, 4, 4), show_progress=False)
         key_path = losa.get_hdf_information(output)[0][0]
         data = losa.load_hdf(output, key_path)
         data_type = str(data.dtype)
@@ -231,7 +234,7 @@ class UtilityMethods(unittest.TestCase):
 
         output = "./tmp/reslice5/file.hdf"
         post.reslice_dataset(self.hdf_file, output, axis=2,
-                             key_path=self.key_path)
+                             key_path=self.key_path, show_progress=False)
         key_path = losa.get_hdf_information(output)[0][0]
         data = losa.load_hdf(output, key_path)
         data_type = str(data.dtype)

@@ -1,24 +1,3 @@
-# ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
-# Author: Nghia T. Vo
-# E-mail:  
-# Description: Examples of how to use the Algotom package.
-# ===========================================================================
-
 """
 The following examples show how to use Algotom to reconstruct a few slices
 from a tomographic data affected by the radial lens distortion problem.
@@ -40,7 +19,7 @@ import algotom.prep.correction as corr
 import algotom.prep.removal as remo
 import algotom.prep.calculation as calc
 import algotom.prep.filtering as filt
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 # Paths to data
 proj_path = "D:/data/tomographic_projections.hdf"
@@ -77,7 +56,7 @@ t_stop = timeit.default_timer()
 print("Center-of-rotation = {0}. Take {1} second".format(center, t_stop-t_start))
 t_start = timeit.default_timer()
 print("5 -> Perform reconstruction")
-img_rec = reco.dfi_reconstruction(sinogram, center,apply_log=True)
+img_rec = rec.dfi_reconstruction(sinogram, center,apply_log=True)
 losa.save_image(output_base + "/rec_before_00800.tif", img_rec)
 t_stop = timeit.default_timer()
 print("Done reconstruction without distortion correction!!!")
@@ -95,7 +74,7 @@ t_stop = timeit.default_timer()
 print("Center-of-rotation = {0}. Take {1} second".format(center, t_stop-t_start))
 t_start = timeit.default_timer()
 print("8 -> Perform reconstruction")
-img_rec = reco.dfi_reconstruction(sinogram, center, apply_log=True)
+img_rec = rec.dfi_reconstruction(sinogram, center, apply_log=True)
 losa.save_image(output_base + "/rec_after_00800.tif", img_rec)
 print("!!! Done reconstruction with distortion correction !!!")
 
@@ -112,7 +91,7 @@ sinograms = corr.flat_field_correction(sinograms, flat_discor[start_slice:stop_s
 # Perform reconstruction
 print("10 -> Perform reconstruction")
 for i in range(start_slice, stop_slice):
-    img_rec = reco.dfi_reconstruction(sinograms[:,i - start_slice, :],
+    img_rec = rec.dfi_reconstruction(sinograms[:,i - start_slice, :],
                                       center, apply_log=True)
     name = "0000" + str(i)
     losa.save_image(output_base + "/reconstruction/rec_" + name[-5:] + ".tif", img_rec)

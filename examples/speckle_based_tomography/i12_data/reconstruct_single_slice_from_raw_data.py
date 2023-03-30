@@ -12,7 +12,7 @@ import algotom.prep.phase as ps
 import algotom.prep.calculation as calc
 import algotom.prep.filtering as filt
 import algotom.prep.removal as rem
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
 input_base = "/dls/i12/data/2022/cm31131-1/rawdata/"
@@ -177,9 +177,9 @@ sino_trans = rem.remove_all_stripe(sino_trans, 1.5, 71, 31)
 sino_dark = rem.remove_all_stripe(sino_dark, 1.5, 71, 21)
 
 # Reconstruction
-rec_phase = reco.fbp_reconstruction(sino_phase, center, apply_log=False, filter_name="hann")
-rec_trans = reco.fbp_reconstruction(sino_trans, center, apply_log=True, filter_name="hann")
-rec_dark = reco.fbp_reconstruction(sino_dark, center, apply_log=True, filter_name="hann")
+rec_phase = rec.fbp_reconstruction(sino_phase, center, apply_log=False, filter_name="hann")
+rec_trans = rec.fbp_reconstruction(sino_trans, center, apply_log=True, filter_name="hann")
+rec_dark = rec.fbp_reconstruction(sino_dark, center, apply_log=True, filter_name="hann")
 
 # Save results
 losa.save_image(output_base + "/reconstruction/phase.tif", rec_phase)

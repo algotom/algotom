@@ -1,7 +1,7 @@
 # Algotom
 ### Data processing (**ALGO**)rithms for (**TOM**)ography.
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/algotom/algotom/algotom_ga.yml) [![Downloads](https://static.pepy.tech/personalized-badge/algotom?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Pypi-downloads)](https://pepy.tech/project/algotom) [![Downloads](https://static.pepy.tech/personalized-badge/algotom?period=month&units=international_system&left_color=grey&right_color=blue&left_text=Pypi-downloads/month)](https://pepy.tech/project/algotom) ![Conda](https://img.shields.io/conda/dn/algotom/algotom?label=conda-downloads) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/algotom/algotom) ![Conda](https://img.shields.io/conda/pn/algotom/algotom) ![GitHub issues](https://img.shields.io/github/issues-raw/algotom/algotom) ![Conda](https://img.shields.io/conda/dn/conda-forge/algotom?label=conda-forge%20downloads) ![Coverage](https://github.com/algotom/algotom/blob/doc/docs/coverage_report/coverage.svg)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/algotom/algotom/algotom_ga.yml) [![Downloads](https://static.pepy.tech/personalized-badge/algotom?period=total&units=international_system&left_color=grey&right_color=blue&left_text=Pypi-downloads)](https://pepy.tech/project/algotom) ![Conda](https://img.shields.io/conda/dn/algotom/algotom?label=conda-downloads) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/algotom/algotom) ![Conda](https://img.shields.io/conda/pn/algotom/algotom) ![GitHub issues](https://img.shields.io/github/issues-raw/algotom/algotom) ![Conda](https://img.shields.io/conda/dn/conda-forge/algotom?label=conda-forge%20downloads) ![Coverage](https://github.com/algotom/algotom/raw/doc/docs/coverage_report/coverage.svg)
 
 
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
@@ -11,7 +11,8 @@ tomography. It has methods in a full pipeline of data processing: reading-writin
 pre-processing, tomographic reconstruction, post-processing, and data simulation. 
 Many utility methods are provided to help users quickly develop prototype-methods 
 or build a pipeline for processing their own data. From version 1.1, methods for 
-speckle-based phase-contrast tomography were added to the package. The software was published for the paper: https://doi.org/10.1364/OE.418448.
+speckle-based phase-contrast tomography were added to the package. 
+The software was published for the paper: https://doi.org/10.1364/OE.418448.
 
 Features
 --------
@@ -57,6 +58,8 @@ Some featuring methods in Algotom are as follows:
 - Methods for phase-contrast imaging: phase unwrapping, speckle-based phase retrieval, image correlation, and image alignment.
 
   ![speckle](https://github.com/algotom/algotom/raw/master/figs/readme/speckle_based_tomography.png)
+- Methods for downsampling, rescaling, and reslicing (+rotating, cropping) 
+  3D reconstructed image without large memory usage.
 
 Update notes
 ------------

@@ -26,6 +26,8 @@ Tests for the methods in util/correlation.py
 """
 
 import unittest
+import warnings
+import numba
 import numpy as np
 from numba import cuda
 import scipy.ndimage as ndi
@@ -35,6 +37,8 @@ import algotom.util.correlation as corl
 class UtilityMethods(unittest.TestCase):
 
     def setUp(self):
+        warnings.filterwarnings('ignore',
+                                category=numba.NumbaPerformanceWarning)
         self.eps = 10 ** (-6)
         self.size = (65, 65)
         speckle_size = 2
@@ -49,6 +53,10 @@ class UtilityMethods(unittest.TestCase):
         sample = ndi.shift(speckle, (self.shift, self.shift), mode="nearest")
         self.ref_stack = np.asarray([speckle for _ in range(3)])
         self.sam_stack = np.asarray([sample for _ in range(3)])
+
+    def tearDown(self):
+        warnings.filterwarnings("default",
+                                category=numba.NumbaPerformanceWarning)
 
     def test_normalize_image(self):
         mat = np.random.normal(0.5, 0.6, (64, 64))
@@ -77,17 +85,18 @@ class UtilityMethods(unittest.TestCase):
         num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
         self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
 
-        coef_mat = f_alias(self.ref_stack,
-                           self.sam_stack[:, drop:-drop, drop:-drop],
-                           gpu=True)
-        num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
-        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+        if cuda.is_available():
+            coef_mat = f_alias(self.ref_stack,
+                               self.sam_stack[:, drop:-drop, drop:-drop],
+                               gpu=True)
+            num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
+            self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
 
-        coef_mat = f_alias(self.ref_stack[0],
-                           self.sam_stack[0, drop:-drop, drop:-drop],
-                           gpu=True)
-        num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
-        self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
+            coef_mat = f_alias(self.ref_stack[0],
+                               self.sam_stack[0, drop:-drop, drop:-drop],
+                               gpu=True)
+            num1 = np.percentile(coef_mat, 90) / np.max(coef_mat)
+            self.assertTrue(coef_mat.shape == (size, size) and num1 < 0.5)
 
         self.assertRaises(ValueError, f_alias, self.ref_stack[0, 1],
                           self.sam_stack[0, 1], gpu=False)

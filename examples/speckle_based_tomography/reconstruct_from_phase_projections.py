@@ -19,7 +19,7 @@ import algotom.io.loadersaver as losa
 import algotom.prep.calculation as calc
 import algotom.prep.filtering as filt
 import algotom.prep.removal as rem
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
 phase_path = "C:/user/processed_data/phase.hdf"
@@ -60,11 +60,11 @@ for i in np.arange(start_slice, stop_slice + 1, step):
         sino_trans = rem.remove_all_stripe(sino_trans, 2.0, 51, 17)
         sino_dark = rem.remove_all_stripe(sino_dark, 2.0, 51, 17)
     # Change to CPU methods (DFI or gridrec) if GPU not available
-    rec_phase = reco.fbp_reconstruction(sino_phase, center, apply_log=False,
+    rec_phase = rec.fbp_reconstruction(sino_phase, center, apply_log=False,
                                         filter_name="hann")
-    rec_trans = reco.fbp_reconstruction(sino_trans, center, apply_log=True,
+    rec_trans = rec.fbp_reconstruction(sino_trans, center, apply_log=True,
                                         filter_name="hann")
-    rec_dark = reco.fbp_reconstruction(sino_dark, center, apply_log=True,
+    rec_dark = rec.fbp_reconstruction(sino_dark, center, apply_log=True,
                                        filter_name="hann")
     losa.save_image(output_base + "/phase/rec_" + name + ".tif", rec_phase)
     losa.save_image(output_base + "/transmission/rec_" + name + ".tif",

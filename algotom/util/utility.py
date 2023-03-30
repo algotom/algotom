@@ -68,10 +68,11 @@ from joblib import Parallel, delayed
 import algotom.io.loadersaver as losa
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
-def apply_method_to_multiple_sinograms(data, method, para, ncore=None):
+def apply_method_to_multiple_sinograms(data, method, para, ncore=None,
+                                       prefer="threads"):
     """
     Apply a processing method (in "filtering", "removal", and "reconstruction"
     module) to multiple sinograms or multiple slices in parallel.
@@ -87,6 +88,8 @@ def apply_method_to_multiple_sinograms(data, method, para, ncore=None):
         Parameters of the method. e.g. [21, 1]
     ncore: int or None
         Number of cpu-cores used for computing. Automatically selected if None.
+    prefer : {"threads", "processes"}
+        Prefer backend for parallel processing.
 
     Returns
     -------
@@ -106,12 +109,12 @@ def apply_method_to_multiple_sinograms(data, method, para, ncore=None):
         method_used = getattr(remo, method)
     elif method in dir(filt):
         method_used = getattr(filt, method)
-    elif method in dir(reco):
-        method_used = getattr(reco, method)
+    elif method in dir(rec):
+        method_used = getattr(rec, method)
     else:
         raise ValueError("Can't find the method: '{}' in the namespace"
                          "".format(method))
-    data_out = Parallel(n_jobs=ncore, backend="threading")(
+    data_out = Parallel(n_jobs=ncore, prefer=prefer)(
         delayed(method_used)(data[:, i, :], *para) for i in range(height))
     data_out = np.moveaxis(np.asarray(data_out), 0, 1)
     return data_out
@@ -904,7 +907,7 @@ def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
         mat = np.transpose(mat)
     (nrow, ncol) = mat.shape
     sijmat = calculate_regularization_coefficient(ncol, alpha)
-    mat = np.asarray(Parallel(n_jobs=ncore, backend="threading")(
+    mat = np.asarray(Parallel(n_jobs=ncore, prefer="threads")(
         delayed(apply_1d_regularizer)(mat[i], sijmat) for i in range(nrow)))
     if axis == 0:
         mat = np.transpose(mat)
@@ -1463,7 +1466,7 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
     if not cuda.is_available():
         gpu = False
     for center in list_center:
-        rec_img = reco._reconstruct_slice(sinogram, center, method, angles,
+        rec_img = rec._reconstruct_slice(sinogram, center, method, angles,
                                           ratio, filter_name, apply_log, gpu,
                                           ncore)
         file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
