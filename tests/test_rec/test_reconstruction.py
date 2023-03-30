@@ -33,12 +33,12 @@ from numba import cuda
 import scipy.ndimage as ndi
 import algotom.rec.reconstruction as reco
 
-warnings.filterwarnings('ignore', category=numba.NumbaPerformanceWarning)
-
 
 class ReconstructionMethods(unittest.TestCase):
 
     def setUp(self):
+        warnings.filterwarnings('ignore',
+                                category=numba.NumbaPerformanceWarning)
         self.size = 64
         mat = np.zeros((self.size + 1, self.size + 1), dtype=np.float32)
         mat[20:40, 30:45] = np.float32(1.0)
@@ -52,6 +52,10 @@ class ReconstructionMethods(unittest.TestCase):
         self.sino_180 = self.sino_360[:37]
         self.angles2 = self.angles[:37]
         self.center = self.size // 2
+
+    def tearDown(self):
+        warnings.filterwarnings("default",
+                                category=numba.NumbaPerformanceWarning)
 
     def test_make_smoothing_window(self):
         win1 = reco.make_smoothing_window(None, self.size)
@@ -91,7 +95,8 @@ class ReconstructionMethods(unittest.TestCase):
 
         gpu = False
         sino_stack = np.pad(np.expand_dims(self.sino_180, 1), ((0, 0), (2, 2),
-                            (0, 0)), mode="edge")
+                                                               (0, 0)),
+                            mode="edge")
         rec_stack = f_alias(sino_stack, self.center, apply_log=False,
                             gpu=gpu, angles=np.deg2rad(self.angles2),
                             ratio=0.0, ncore=1)

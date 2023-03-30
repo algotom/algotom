@@ -10,7 +10,7 @@ import algotom.io.loadersaver as losa
 import algotom.prep.calculation as calc
 import algotom.prep.filtering as filt
 import algotom.prep.removal as rem
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
 input_base = "/dls/i12/data/2022/cm31131-1/processing/all_projections/"
@@ -71,11 +71,11 @@ for i in range(num_iter):
         sino_trans = rem.remove_all_stripe(sino_trans, 1.5, 71, 31)
         sino_dark = rem.remove_all_stripe(sino_dark, 1.5, 71, 21)
 
-        rec_phase = reco.fbp_reconstruction(sino_phase, center,
+        rec_phase = rec.fbp_reconstruction(sino_phase, center,
                                             apply_log=False, filter_name="hann")
-        rec_trans = reco.fbp_reconstruction(sino_trans, center,
+        rec_trans = rec.fbp_reconstruction(sino_trans, center,
                                             apply_log=True, filter_name="hann")
-        rec_dark = reco.fbp_reconstruction(sino_dark, center,
+        rec_dark = rec.fbp_reconstruction(sino_dark, center,
                                            apply_log=True, filter_name="hann")
         rec_phase_hdf[j - start_slice] = rec_phase
         rec_trans_hdf[j - start_slice] = rec_trans
@@ -104,11 +104,11 @@ if num_rest != 0:
             sino_trans = rem.remove_all_stripe(sino_trans, 1.5, 71, 31)
             sino_dark = rem.remove_all_stripe(sino_dark, 1.5, 71, 21)
 
-            rec_phase = reco.fbp_reconstruction(sino_phase, center, apply_log=False,
+            rec_phase = rec.fbp_reconstruction(sino_phase, center, apply_log=False,
                                                 filter_name="hann")
-            rec_trans = reco.fbp_reconstruction(sino_trans, center, apply_log=True,
+            rec_trans = rec.fbp_reconstruction(sino_trans, center, apply_log=True,
                                                 filter_name="hann")
-            rec_dark = reco.fbp_reconstruction(sino_dark, center, apply_log=True,
+            rec_dark = rec.fbp_reconstruction(sino_dark, center, apply_log=True,
                                                filter_name="hann")
 
             rec_phase_hdf[j - start_slice] = rec_phase

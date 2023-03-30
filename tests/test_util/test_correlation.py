@@ -26,6 +26,8 @@ Tests for the methods in util/correlation.py
 """
 
 import unittest
+import warnings
+import numba
 import numpy as np
 from numba import cuda
 import scipy.ndimage as ndi
@@ -35,6 +37,8 @@ import algotom.util.correlation as corl
 class UtilityMethods(unittest.TestCase):
 
     def setUp(self):
+        warnings.filterwarnings('ignore',
+                                category=numba.NumbaPerformanceWarning)
         self.eps = 10 ** (-6)
         self.size = (65, 65)
         speckle_size = 2
@@ -49,6 +53,10 @@ class UtilityMethods(unittest.TestCase):
         sample = ndi.shift(speckle, (self.shift, self.shift), mode="nearest")
         self.ref_stack = np.asarray([speckle for _ in range(3)])
         self.sam_stack = np.asarray([sample for _ in range(3)])
+
+    def tearDown(self):
+        warnings.filterwarnings("default",
+                                category=numba.NumbaPerformanceWarning)
 
     def test_normalize_image(self):
         mat = np.random.normal(0.5, 0.6, (64, 64))

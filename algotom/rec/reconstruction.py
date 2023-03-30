@@ -429,7 +429,7 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
                                                            pad_mode)
         else:
             ncore = np.clip(ncore, 1, num_sino)
-            sino_filtered = Parallel(n_jobs=ncore, prefer="processes")(
+            sino_filtered = Parallel(n_jobs=ncore, prefer="threads")(
                 delayed(apply_ramp_filter)(
                     sinogram[:, i, :], ramp_win, filter_name, pad,
                     pad_mode) for i in range(num_sino))
@@ -661,7 +661,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
     if num_sino > 1:
         if ncore > 1:
             ncore = np.clip(ncore, 1, num_sino)
-            recon = Parallel(n_jobs=ncore, prefer="processes")(
+            recon = Parallel(n_jobs=ncore, prefer="threads")(
                 delayed(__dfi_single_slice)(
                     sinogram[:, i, :], window, mask, r_mat,
                     theta_mat) for i in range(num_sino))
@@ -941,7 +941,7 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
                                                   filter_name, num_iter))
         else:
             ncore = np.clip(ncore, 1, num_sino)
-            recon = Parallel(n_jobs=ncore, prefer="processes")(delayed(
+            recon = Parallel(n_jobs=ncore, prefer="threads")(delayed(
                 __astra_recon_single)(sinogram[:, i, :], center, angles, pad,
                                       method, filter_name,
                                       num_iter) for i in range(num_sino))

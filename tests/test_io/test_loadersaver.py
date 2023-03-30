@@ -328,3 +328,20 @@ class LoaderSaverMethods(unittest.TestCase):
 
         self.assertTrue((check1 and check2 and check3 and check4) and (
                 check5 and check6 and check7))
+
+    def test_load_image_multiple(self):
+        num_img = 4
+        for j in range(num_img):
+            file_path = "./tmp/multi/img_" + str(j) + ".tif"
+            losa.save_image(file_path, np.ones((64, 64), dtype=np.float32))
+        list_path = losa.find_file("./tmp/multi/*tif")
+        img_stack = losa.load_image_multiple(list_path)
+        self.assertTrue(num_img == img_stack.shape[0])
+
+    def test_save_image_multiple(self):
+        num_img = 4
+        list_path = ["./tmp/multi2/img_" + str(j) + ".tif" for j in range(num_img)]
+        img_stack = np.ones((num_img, 64, 64), dtype=np.float32)
+        losa.save_image_multiple(list_path, img_stack)
+        list_path2 = losa.find_file("./tmp/multi2/*tif")
+        self.assertTrue(num_img == len(list_path2))

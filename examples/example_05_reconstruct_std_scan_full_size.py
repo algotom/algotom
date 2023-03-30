@@ -1,24 +1,3 @@
-# ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
-# Author: Nghia T. Vo
-# E-mail:  
-# Description: Examples of how to use the Algotom package.
-# ===========================================================================
-
 """
 The following examples show how to use Algotom to perform full reconstruction
 of a standard tomographic data.
@@ -39,7 +18,7 @@ import timeit
 import algotom.io.loadersaver as losa
 import algotom.prep.correction as corr
 import algotom.prep.calculation as calc
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
 import algotom.util.utility as util
@@ -121,7 +100,7 @@ for i in range(num_iter):
 
     # # Reconstruct the slices using a GPU-based method
     # for j in range(start_sino, stop_sino):
-    #     recon_img = reco.fbp_reconstruction(sinograms[:, j - start_sino, :],
+    #     recon_img = rec.fbp_reconstruction(sinograms[:, j - start_sino, :],
     #                                         center, angles=thetas)
     #     name = "0000" + str(j)
     #     losa.save_image(output_base + "/rec_" + name[-5:] + ".tif", recon_img)
@@ -149,7 +128,7 @@ if num_rest != 0:
 
     # # Reconstruct the slices using a GPU-based method
     # for j in range(start_sino, stop_sino):
-    #     recon_img = reco.fbp_reconstruction(sinograms[:, j - start_sino, :],
+    #     recon_img = rec.fbp_reconstruction(sinograms[:, j - start_sino, :],
     #                                         center, angles=thetas)
     #     name = "0000" + str(j)
     #     losa.save_image(output_base + "/rec_" + name[-5:] + ".tif",

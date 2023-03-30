@@ -37,6 +37,8 @@ Module for I/O tasks:
 import os
 import glob
 import warnings
+import multiprocessing as mp
+from joblib import Parallel, delayed, parallel_backend
 from collections import OrderedDict, deque
 import h5py
 import numpy as np
@@ -61,7 +63,7 @@ def load_image(file_path):
 
     Returns
     -------
-    float
+    array_like
         2D array.
     """
     if "\\" in file_path:
@@ -204,7 +206,7 @@ def find_hdf_key(file_path, pattern, display=False):
     return list_dkey, list_dshape, list_dtype
 
 
-def load_hdf(file_path, key_path):
+def load_hdf(file_path, key_path, return_file_obj=False):
     """
     Load a hdf/nexus dataset as an object.
 
@@ -214,11 +216,12 @@ def load_hdf(file_path, key_path):
         Path to the file.
     key_path : str
         Key path to the dataset.
+    return_file_obj : bool, optional
 
     Returns
     -------
-    object
-        hdf/nxs object.
+    objects
+        hdf-dataset object, and file-object if return_file_obj is True.
     """
     try:
         hdf_object = h5py.File(file_path, 'r')
@@ -228,7 +231,10 @@ def load_hdf(file_path, key_path):
     if not check:
         raise ValueError(
             "Couldn't open object with the given key: {}".format(key_path))
-    return hdf_object[key_path]
+    if return_file_obj:
+        return hdf_object[key_path], hdf_object
+    else:
+        return hdf_object[key_path]
 
 
 def make_folder(file_path):
@@ -245,8 +251,10 @@ def make_folder(file_path):
     if not os.path.exists(file_base):
         try:
             os.makedirs(file_base)
+        except FileExistsError:
+            pass
         except OSError:
-            raise ValueError("Can't create the folder: {}".format(file_path))
+            raise ValueError("Can't create the folder: {}".format(file_base))
 
 
 def make_file_name(file_path):
@@ -953,7 +961,7 @@ def get_reference_sample_stacks(proj_idx, ref_path, sam_path, ref_key, sam_key,
 def get_tif_stack(file_base, idx=None, crop=(0, 0, 0, 0), flat_field=None,
                   dark_field=None, num_use=None, fix_zero_div=True):
     """
-    Load tif images to a stack.
+    Load tif images to a stack. Supplementary method for 'get_image_stack'.
 
     Parameters
     ----------
@@ -1152,3 +1160,102 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
                                   dark_field=dark_field, num_use=num_use,
                                   fix_zero_div=fix_zero_div)
     return img_stack
+
+
+def load_image_multiple(list_path, ncore=None, prefer="threads"):
+    """
+    Load list of images in parallel.
+
+    Parameters
+    ----------
+    list_path : str
+        List of file paths.
+    ncore : int or None
+        Number of cpu-cores. Automatically selected if None.
+    prefer : {"threads", "processes"}
+        Prefer backend for parallel processing.
+
+    Returns
+    -------
+    array_like
+        3D array.
+    """
+    if isinstance(list_path, list):
+        if ncore is None:
+            ncore = mp.cpu_count() - 1
+        num_file = len(list_path)
+        ncore = np.clip(ncore, 1, num_file)
+        if ncore > 1:
+            imgs = Parallel(n_jobs=ncore, prefer=prefer)(
+                delayed(load_image)(list_path[i]) for i in range(num_file))
+        else:
+            imgs = [load_image(list_path[i]) for i in range(num_file)]
+    else:
+        raise ValueError("Input must be a list of file paths!!!")
+    return np.asarray(imgs)
+
+
+def save_image_multiple(list_path, image_stack, axis=0, overwrite=True,
+                        ncore=None, prefer="threads"):
+    """
+    Save an 3D-array to a list of tif images in parallel.
+
+    Parameters
+    ----------
+    list_path : str
+        List of output paths.
+    image_stack : array_like
+        3D array.
+    overwrite : bool
+        Overwrite an existing file if True.
+    ncore : int or None
+        Number of cpu-cores. Automatically selected if None.
+    prefer : {"threads", "processes"}
+        Prefer backend for parallel processing.
+    """
+    if not isinstance(list_path, list):
+        raise ValueError("Input must be a list of file paths!!!")
+    num_file = len(list_path)
+    (depth, height, width) = image_stack.shape
+    if ncore is None:
+        ncore = mp.cpu_count() - 1
+    ncore = np.clip(ncore, 1, num_file)
+    if axis == 2:
+        if width != num_file:
+            raise ValueError("Mismatch between the number of images: {0} and "
+                             "the number of file paths: {1}"
+                             "".format(width, num_file))
+        else:
+            if ncore > 1:
+                Parallel(n_jobs=ncore, prefer=prefer)(
+                    delayed(save_image)(list_path[i], image_stack[:, :, i],
+                                        overwrite) for i in range(num_file))
+            else:
+                for i in range(num_file):
+                    save_image(list_path[i], image_stack[:, :, i], overwrite)
+    elif axis == 1:
+        if height != num_file:
+            raise ValueError("Mismatch between the number of images: {0} and "
+                             "the number of file paths: {1}"
+                             "".format(height, num_file))
+        else:
+            if ncore > 1:
+                Parallel(n_jobs=ncore, prefer=prefer)(
+                    delayed(save_image)(list_path[i], image_stack[:, i, :],
+                                        overwrite) for i in range(num_file))
+            else:
+                for i in range(num_file):
+                    save_image(list_path[i], image_stack[:, i, :], overwrite)
+    else:
+        if depth != num_file:
+            raise ValueError("Mismatch between the number of images: {0} and "
+                             "the number of file paths: {1}"
+                             "".format(depth, num_file))
+        else:
+            if ncore > 1:
+                Parallel(n_jobs=ncore, prefer=prefer)(
+                    delayed(save_image)(list_path[i], image_stack[i],
+                                        overwrite) for i in range(num_file))
+            else:
+                for i in range(num_file):
+                    save_image(list_path[i], image_stack[i], overwrite)

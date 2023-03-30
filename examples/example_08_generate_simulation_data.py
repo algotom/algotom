@@ -1,21 +1,5 @@
 # ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
 # Author: Nghia T. Vo
-# E-mail:  
 # Description: Examples of how to generate simulation data
 # ===========================================================================
 
@@ -26,7 +10,7 @@ import algotom.util.simulation as sim
 import algotom.prep.calculation as calc
 import algotom.prep.removal as rem
 import algotom.prep.filtering as filt
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
 # Where to save the outputs
@@ -44,10 +28,10 @@ losa.save_image(output_base + "/sinogram.tif", sinogram)
 # Find center of rotation
 center = calc.find_center_vo(sinogram)
 # Reconstruct using the DFI method
-rec_image = reco.dfi_reconstruction(sinogram, center, apply_log=False)
+rec_image = rec.dfi_reconstruction(sinogram, center, apply_log=False)
 losa.save_image(output_base + "/recon_dfi.tif", rec_image)
 # Reconstruct using the FBP (GPU) method
-rec_image = reco.fbp_reconstruction(sinogram, center, apply_log=False)
+rec_image = rec.fbp_reconstruction(sinogram, center, apply_log=False)
 losa.save_image(output_base + "/recon_fbp.tif", rec_image)
 
 # Convert to X-ray image
@@ -66,7 +50,7 @@ sinogram = sim.add_stripe_artifact(sinogram, 1, size // 2 - size // 4,
                                    stripe_type="fluctuating")
 losa.save_image(output_base + "/sinogram_with_artifacts.tif", sinogram)
 # Reconstruct
-rec_image = reco.dfi_reconstruction(sinogram, center)
+rec_image = rec.dfi_reconstruction(sinogram, center)
 losa.save_image(output_base + "/recon_with_artifacs.tif", rec_image)
 
 # Remove stripe artifacts
@@ -75,5 +59,5 @@ sinogram = rem.remove_all_stripe(sinogram, 2.0, 9, 5)
 sinogram = filt.fresnel_filter(sinogram, 50)
 losa.save_image(output_base + "/sinogram_after_artifact_removed.tif", sinogram)
 # Reconstruct
-rec_image = reco.dfi_reconstruction(sinogram, center)
+rec_image = rec.dfi_reconstruction(sinogram, center)
 losa.save_image(output_base + "/recon_after_artifacs_removed.tif", rec_image)

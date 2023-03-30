@@ -1,21 +1,5 @@
 # ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
 # Author: Nghia T. Vo
-# E-mail:  
 # Description: Examples of how to use the Algotom package.
 # ===========================================================================
 
@@ -41,7 +25,7 @@ import numpy as np
 import algotom.io.loadersaver as losa
 import algotom.prep.correction as corr
 import algotom.prep.calculation as calc
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
 import algotom.util.utility as util
@@ -142,10 +126,10 @@ for ii in range(num_tomo):
             dark_field[start_sino:stop_sino, left:right],
             option1=opt1, option2=opt2, option3=opt3)
         for j in range(start_sino, stop_sino):
-            # img_rec = reco.dfi_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas, apply_log=True)
-            # img_rec = reco.gridrec_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
+            # img_rec = rec.dfi_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas, apply_log=True)
+            # img_rec = rec.gridrec_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
             #                                       apply_log=True)
-            img_rec = reco.fbp_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas, apply_log=True)
+            img_rec = rec.fbp_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas, apply_log=True)
             name = "0000" + str(j)
             losa.save_image(output_base + "/" + folder_name + "/rec_" + name[-5:] + ".tif", img_rec)
 
@@ -162,11 +146,11 @@ for ii in range(num_tomo):
                 dark_field[start_sino:stop_sino, left:right],
                 option1=opt1, option2=opt2, option3=opt3)
             for j in range(start_sino, stop_sino):
-                # img_rec = reco.dfi_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
+                # img_rec = rec.dfi_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
                 #                                   apply_log=True)
-                # img_rec = reco.gridrec_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
+                # img_rec = rec.gridrec_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
                 #                                       apply_log=True)
-                img_rec = reco.fbp_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
+                img_rec = rec.fbp_reconstruction(sinograms[:, j - start_sino, :], center, angles=thetas,
                                                   apply_log=True)
                 name = "0000" + str(j)
                 losa.save_image(output_base + "/" + folder_name + "/rec_" + name[-5:] + ".tif", img_rec)

@@ -1,24 +1,3 @@
-# ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
-# Author: Nghia T. Vo
-# E-mail:  
-# Description: Examples of how to use the Algotom package.
-# ===========================================================================
-
 """
 The following examples show how to use Algotom to reconstruct a few slices
 from a standard tomographic data.
@@ -38,7 +17,7 @@ import numpy as np
 import algotom.io.loadersaver as losa
 import algotom.prep.correction as corr
 import algotom.prep.calculation as calc
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
 import algotom.util.utility as util
@@ -91,21 +70,21 @@ print("Center-of-rotation is {}".format(center))
 thetas = angles[proj_idx[0]:proj_idx[-1]]*np.pi/180
 # # DFI method, a built-in function:
 print("5 -> Perform reconstruction without artifact removal methods")
-img_rec = reco.dfi_reconstruction(sinogram, center, angles=thetas, apply_log=True)
+img_rec = rec.dfi_reconstruction(sinogram, center, angles=thetas, apply_log=True)
 
 # # FBP-CPU method, a built-in function:
-# img_rec = reco.fbp_reconstruction(sinogram, center, angles=thetas, apply_log=True, gpu=False)
+# img_rec = rec.fbp_reconstruction(sinogram, center, angles=thetas, apply_log=True, gpu=False)
 #
 # # Gridrec method in Tomopy (Tomopy must be installed before use):
-# img_rec = reco.gridrec_reconstruction(sinogram, center, apply_log=True, ratio=1.0)
+# img_rec = rec.gridrec_reconstruction(sinogram, center, apply_log=True, ratio=1.0)
 #
 # # If GPU is available:
 #
 # # FBP-GPU method, a built-in function:
-# img_rec = reco.fbp_reconstruction(sinogram, center, angles=thetas, apply_log=True, gpu=True)
+# img_rec = rec.fbp_reconstruction(sinogram, center, angles=thetas, apply_log=True, gpu=True)
 #
 # # FBP-GPU method in Astra (Astra must be installed before use):
-# img_rec = reco.astra_reconstruction(sinogram, center, apply_log=True, ratio=1.0,method="FBP_CUDA")
+# img_rec = rec.astra_reconstruction(sinogram, center, apply_log=True, ratio=1.0,method="FBP_CUDA")
 losa.save_image(output_base + "/reconstruction/recon_mid.tif", img_rec)
 
 # Pre-processing methods should be used to clean the data before reconstruction.
@@ -118,7 +97,7 @@ sinogram = remo.remove_all_stripe(sinogram, 3, 51, 17)
 # sinogram = filt.fresnel_filter(sinogram, 200, dim=1)
 # Perform reconstruction and save result
 print("7 -> Perform reconstruction with artifact removal methods")
-img_rec = reco.dfi_reconstruction(sinogram, center, angles=thetas, apply_log=True)
+img_rec = rec.dfi_reconstruction(sinogram, center, angles=thetas, apply_log=True)
 losa.save_image(output_base + "/reconstruction/recon_mid_cleaned.tif", img_rec)
 
 # Extracting sinograms one-by-one  and doing reconstruction is not efficient and slow due to
@@ -139,7 +118,7 @@ print("9 -> Perform reconstruction on this chunk in parallel...")
 recon_img = util.apply_method_to_multiple_sinograms(sinograms, "dfi_reconstruction",
                                                     [center])
 for i in range(start_slice, stop_slice):
-    #img_rec = reco.dfi_reconstruction(sinograms[:,i - start_slice, :], center, apply_log=True)
+    #img_rec = rec.dfi_reconstruction(sinograms[:,i - start_slice, :], center, apply_log=True)
     name = "0000" + str(i)
     losa.save_image(output_base + "/reconstruction2/rec_" + name[-5:] \
                     + ".tif", recon_img[:, i - start_slice, :])

@@ -1,24 +1,3 @@
-# ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
-# Author: Nghia T. Vo
-# E-mail:  
-# Description: Examples of how to use the Algotom package.
-# ===========================================================================
-
 """
 The following examples show how to use Algotom to reconstruct a few slices
 from a tomographic data acquired by using a 360-degree scan with the offset
@@ -42,9 +21,8 @@ import algotom.prep.removal as remo
 import algotom.prep.calculation as calc
 import algotom.prep.conversion as conv
 import algotom.prep.filtering as filt
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 import timeit
-
 
 
 proj_path = "D:/data/scan_00008/projections_00000.hdf"
@@ -85,9 +63,9 @@ losa.save_image(output_base + "/reconstruction/sino_180.tif", sino_180)
 ## Denoising
 sino_180 = filt.fresnel_filter(sino_180, 250, 1, apply_log=True)
 # Perform reconstruction
-img_rec = reco.dfi_reconstruction(sino_180, center1, apply_log=True)
+img_rec = rec.dfi_reconstruction(sino_180, center1, apply_log=True)
 ## Using fbp with GPU for faster reconstruction
-# img_rec = reco.fbp_reconstruction(sino_180, center1, apply_log=True, gpu=True)
+# img_rec = rec.fbp_reconstruction(sino_180, center1, apply_log=True, gpu=True)
 losa.save_image(output_base + "/reconstruction/recon_image_1.tif", img_rec)
 
 # 2nd way: Extending the 360-degree sinogram (by weighting and padding).
@@ -96,9 +74,9 @@ losa.save_image(output_base + "/reconstruction/sino_360_extened.tif", sino_ext)
 # Denoising
 sino_ext = filt.fresnel_filter(sino_ext, 250, 1, apply_log=False)
 # Perform reconstruction
-# img_rec = reco.dfi_reconstruction(sino_ext, center2, angles=angles*np.pi/180.0,apply_log=False)
+# img_rec = rec.dfi_reconstruction(sino_ext, center2, angles=angles*np.pi/180.0,apply_log=False)
 ## Using fbp with GPU for faster reconstruction
-img_rec = reco.fbp_reconstruction(sino_ext, center2,
+img_rec = rec.fbp_reconstruction(sino_ext, center2,
                                   angles=angles * np.pi / 180.0,
                                   apply_log=False, gpu=True)
 losa.save_image(output_base + "/reconstruction/recon_image_2.tif", img_rec)

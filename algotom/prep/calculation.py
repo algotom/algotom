@@ -192,7 +192,7 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
             list_metric[i] = calculate_center_metric(
                 list_cor[i], sino_180, sino_flip, sino_comp, mask)
     else:
-        list_metric = Parallel(n_jobs=ncore, backend="threading")(
+        list_metric = Parallel(n_jobs=ncore, prefer="threads")(
             delayed(calculate_center_metric)(list_cor[i], sino_180, sino_flip,
                                              sino_comp, mask) for i in
             range(num_metric))
@@ -257,7 +257,7 @@ def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
             list_metric[i] = calculate_center_metric(
                 list_cor[i], sino_180, sino_flip, sino_comp, mask)
     else:
-        list_metric = Parallel(n_jobs=ncore, backend="threading")(
+        list_metric = Parallel(n_jobs=ncore, prefer="threads")(
             delayed(calculate_center_metric)(list_cor[i], sino_180, sino_flip,
                                              sino_comp, mask) for i in
             range(num_metric))

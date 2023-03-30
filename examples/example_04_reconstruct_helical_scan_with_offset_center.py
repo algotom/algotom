@@ -1,24 +1,3 @@
-# ===========================================================================
-# ===========================================================================
-# Copyright (c) 2021 Nghia T. Vo. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ===========================================================================
-# Author: Nghia T. Vo
-# E-mail:  
-# Description: Examples of how to use the Algotom package.
-# ===========================================================================
-
 """
 The following examples show how to use Algotom to reconstruct a sample slice
 from a tomographic data acquired by using a helical scan with the offset
@@ -44,7 +23,7 @@ import algotom.prep.removal as remo
 import algotom.prep.calculation as calc
 import algotom.prep.conversion as conv
 import algotom.prep.filtering as filt
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 # Paths to data
 proj_path = "D:/data/scan_00010/projections_00000.hdf"
@@ -101,10 +80,10 @@ sino_180 = remo.remove_zinger(sino_180, 0.08)
 # Denoising
 sino_180 = filt.fresnel_filter(sino_180, 250, 1)
 # Perform recosntruction
-img_rec = reco.dfi_reconstruction(sino_180, center1, apply_log=True)
+img_rec = rec.dfi_reconstruction(sino_180, center1, apply_log=True)
 
 ## Use gpu for fast reconstruction
-# img_rec = reco.fbp_reconstruction(sino_180, center1, apply_log=True, gpu=True)
+# img_rec = rec.fbp_reconstruction(sino_180, center1, apply_log=True, gpu=True)
 
 losa.save_image(output_base + "/reconstruction/sino_360.tif", sino_360)
 losa.save_image(output_base + "/reconstruction/sino_180.tif", sino_180)
