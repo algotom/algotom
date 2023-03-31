@@ -76,10 +76,10 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-Affiliation1 = u' Diamond Light Source, UK'
-Affiliation2 = u'; NSLS-II, Brookhaven National Lab, US'
-project = u'Algotom'
-copyright = u'2021, Nghia T. Vo ' + Affiliation1 + Affiliation2
+Affiliation1 = "NSLS-II, Brookhaven National Lab, US"
+Affiliation2 = "; Diamond Light Source, UK"
+project = "Algotom"
+copyright = "2021, Nghia T. Vo " + Affiliation1 + Affiliation2
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

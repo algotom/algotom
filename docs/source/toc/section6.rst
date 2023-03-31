@@ -39,3 +39,8 @@ Update notes
     + Add method for finding the center of rotation (COR) using the entropy-based metric.
     + Add utility methods for visually finding the COR using: converted 360-degree sinograms and reconstructed slices.
     + Improve reconstruction methods to process multiple-sinograms.
+
+- 30/03/2023:
+
+    + Improve the performance of the reslicing method.
+    + Release version 1.3.
