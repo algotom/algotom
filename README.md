@@ -61,6 +61,8 @@ Some featuring methods in Algotom are as follows:
 - Methods for downsampling, rescaling, and reslicing (+rotating, cropping) 
   3D reconstructed image without large memory usage.
 
+  ![reslicing](https://github.com/algotom/algotom/raw/master/figs/readme/reslicing.jpg)
+
 Update notes
 ------------
 
