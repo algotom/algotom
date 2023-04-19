@@ -7,6 +7,7 @@ Demonstrations
     section4/section4_2
     section4/section4_3
     section4/section4_4
+    section4/section4_5
 
 Examples of how to use the package are under the example folder of `Algotom <https://github.com/algotom/algotom/tree/master/examples>`_.
 They cover most of use-cases which users can adapt to process their own data. Examples
@@ -14,7 +15,7 @@ of how to process speckle-based phase-contrast tomography is at `here <https://g
 
 Users can use Algotom to re-process some old data collected at synchrotron facilities suffering from:
 
-    +   Various types of `ring artifacts <https://sarepy.readthedocs.io/>`__.
+    +   Various types of `ring artifacts <https://sarepy.readthedocs.io/toc/section2.html/>`__.
     +   Cupping artifacts (also known as beam hardening artifacts) which are caused by using:
         FFT-based reconstruction methods without proper padding; polychromatic X-ray sources;
         or low-dynamic-range detectors to record high-dynamic-range projection-images.

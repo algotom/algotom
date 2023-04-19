@@ -20,11 +20,11 @@ from numba import NumbaPerformanceWarning
 
 warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
-proj_path = "E:/Tomo_data/68067_tif_small/projections/"
-flat_path = "E:/Tomo_data/68067_tif_small/flats/"
-dark_path = "E:/Tomo_data/68067_tif_small/darks/"
+proj_path = "E:/Tomo_data/68067_tif/projections/"
+flat_path = "E:/Tomo_data/68067_tif/flats/"
+dark_path = "E:/Tomo_data/68067_tif/darks/"
 
-output_base0 = "E:/tmp/full_size_std_small/"
+output_base0 = "E:/output/full_reconstruction/"
 folder_name = losa.make_folder_name(output_base0, name_prefix="recon",
                                     zero_prefix=3)
 output_base = output_base0 + "/" + folder_name + "/"
@@ -90,10 +90,10 @@ t_load = 0.0
 t_prep = 0.0
 t_rec = 0.0
 t_save = 0.0
-chunk = np.clip(chunk, 1, total_slice - 1)
+chunk = np.clip(chunk, 1, total_slice)
 last_chunk = total_slice - chunk * (total_slice // chunk)
 # Perform full reconstruction
-for i in np.arange(start_slice, total_slice - last_chunk, chunk):
+for i in np.arange(start_slice, start_slice + total_slice - last_chunk, chunk):
     start_sino = i
     stop_sino = start_sino + chunk
 
@@ -135,9 +135,7 @@ for i in np.arange(start_slice, total_slice - last_chunk, chunk):
     # Save output
     t0 = timeit.default_timer()
     if output_format == "hdf":
-        recon_hdf[
-        start_sino - start_slice:stop_sino - start_slice] = np.moveaxis(
-            recon_imgs, 1, 0)
+        recon_hdf[start_sino - start_slice:stop_sino - start_slice] = np.moveaxis(recon_imgs, 1, 0)
     else:
         for j in range(start_sino, stop_sino):
             out_file = output_base + "/rec_" + ("0000" + str(j))[-5:] + ".tif"
@@ -188,9 +186,7 @@ if last_chunk != 0:
     # Save output
     t0 = timeit.default_timer()
     if output_format == "hdf":
-        recon_hdf[
-        start_sino - start_slice:stop_sino - start_slice] = np.moveaxis(
-            recon_imgs, 1, 0)
+        recon_hdf[start_sino - start_slice:stop_sino - start_slice] = np.moveaxis(recon_imgs, 1, 0)
     else:
         for j in range(start_sino, stop_sino):
             out_file = output_base + "/rec_" + ("0000" + str(j))[-5:] + ".tif"

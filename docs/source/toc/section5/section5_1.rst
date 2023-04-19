@@ -166,7 +166,7 @@ Practical design-principles have been followed in the implementation:
 
 -   To ensure that the software can work across platforms and is easy-to-install; dependencies are minimized,
     and only well-maintained Python libraries are used.
--   For high performance computing, making use of GPU, ease of understanding and use; Numba library is used instead
+-   For high performance computing, making use of GPU, but ease of understanding and use; Numba library is used instead
     of Cupy or PyCuda.
 -   Methods are broken down into building blocks to be able to run on either small or large memory RAM/GPU.
     More importantly, this design allows users to customize methods or build data processing pipeline.

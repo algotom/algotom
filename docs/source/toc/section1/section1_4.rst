@@ -73,6 +73,8 @@ There are many Algotom's functions in the `IO module <https://algotom.readthedoc
 to handle different tasks such as converting tif images to hdf, displaying the
 hdf tree, or saving output to a hdf file.
 
+.. _flat_field_correction:
+
 Flat-field correction
 ---------------------
 

@@ -66,3 +66,11 @@ Some featuring methods in Algotom are as follows:
        :width: 100%
        :name: fig_2_6
        :align: center
+
+-   Methods for downsampling, rescaling, and reslicing (+rotating, cropping)
+    3D reconstructed image without large memory usage.
+
+    .. image:: section2/figs/fig_2_7.jpg
+       :width: 100%
+       :name: fig_2_7
+       :align: center

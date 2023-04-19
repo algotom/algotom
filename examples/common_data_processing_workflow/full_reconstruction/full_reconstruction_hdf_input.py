@@ -1,12 +1,6 @@
 """
 The following example shows how to reconstruct full size of a standard
-dataset (hdf/nxs format) acquired at tomographic beamlines at Diamond Light
-Source, UK.
-
-Raw data is at: https://zenodo.org/record/1443568
-There're two files: "pco1-68067.hdf" contains flat-field, dark-field, and
-projection images; "68067.nxs" contains metadata with a link to the
-"pco1-68067.hdf" file.
+dataset in h5/hdf/nxs format.
 """
 
 import numpy as np
@@ -23,20 +17,19 @@ from numba import NumbaPerformanceWarning
 
 warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
-file_path = "E:/tomo_data/68067.nxs"
+file_path = "E:/Tomo_data/scan_68067.hdf"
 
 output_base0 = "E:/output/full_reconstruction/"
-folder_name = losa.make_folder_name(output_base0, name_prefix="recon",
-                                    zero_prefix=3)
+folder_name = losa.make_folder_name(output_base0, name_prefix="recon", zero_prefix=3)
 output_base = output_base0 + "/" + folder_name + "/"
 
 # Optional parameters
 start_slice = 10
-stop_slice = -1
-chunk = 16  # Number of slices to be reconstructed in one go
-ncore = None
-output_format = "hdf"  # "tif" or "hdf"
-preprocessing = True
+stop_slice = 110
+chunk = 100  # Number of slices to be reconstructed in one go. Adjust to suit RAM or GPU memory.
+ncore = 16  # Number of cpu-core for parallel processing. Set to None for autoselecting.
+output_format = "tif"  # "tif" or "hdf".
+preprocessing = True  # Clean data before reconstruction.
 
 # Give alias to a reconstruction method which is convenient for later change
 # recon_method = rec.dfi_reconstruction
@@ -44,33 +37,28 @@ recon_method = rec.fbp_reconstruction
 # recon_method = rec.gridrec_reconstruction # Fast cpu-method. Must install Tomopy.
 # recon_method = rec.astra_reconstruction # To use iterative methods. Must install Astra.
 
-# Provide metadata for loading hdf file, get data shape and rotation angles.
-data_key = "/entry1/tomo_entry/data/data"
-image_key = "/entry1/tomo_entry/instrument/detector/image_key"
-angle_key = "/entry1/tomo_entry/data/rotation_angle"
-ikey = np.squeeze(np.asarray(losa.load_hdf(file_path, image_key)))
-angles = np.squeeze(np.asarray(losa.load_hdf(file_path, angle_key)))
-data = losa.load_hdf(file_path, data_key)  # This is an object not ndarray.
-(depth, height, width) = data.shape
-
-# Get indices of projection images and angles
-proj_idx = np.squeeze(np.where(ikey == 0))
-angles = np.deg2rad(angles[proj_idx[0]:proj_idx[-1]])
+# Provide metadata for loading hdf file
+proj_path = "/entry/projections"
+flat_path = "/entry/flats"
+dark_path = "/entry/darks"
+angle_path = "/entry/rotation_angle"
 
 t_start = timeit.default_timer()
 print("---------------------------------------------------------------")
 print("-----------------------------Start-----------------------------\n")
-
-# Load dark-field images and flat-field images, averaging each result.
 print("1 -> Load dark-field and flat-field images, average each result")
-dark_field = np.mean(np.asarray(data[np.squeeze(np.where(ikey == 2.0)), :, :]),
-                     axis=0)
-flat_field = np.mean(np.asarray(data[np.squeeze(np.where(ikey == 1.0)), :, :]),
-                     axis=0)
+# Load data, average flat and dark images, get data shape and rotation angles.
+proj_obj = losa.load_hdf(file_path, proj_path)  # hdf object
+(depth, height, width) = proj_obj.shape
+flat_field = np.mean(np.asarray(losa.load_hdf(file_path, flat_path)), axis=0)
+dark_field = np.mean(np.asarray(losa.load_hdf(file_path, dark_path)), axis=0)
+angles = np.deg2rad(np.squeeze(np.asarray(losa.load_hdf(file_path, angle_path))))
+(depth, height, width) = proj_obj.shape
+
 print("2 -> Calculate the center-of-rotation")
 # Extract sinogram at the middle for calculating the center of rotation
 index = height // 2
-sinogram = corr.flat_field_correction(data[proj_idx[0]:proj_idx[-1], index, :],
+sinogram = corr.flat_field_correction(proj_obj[:, index, :],
                                       flat_field[index, :],
                                       dark_field[index, :])
 center = calc.find_center_vo(sinogram)
@@ -79,7 +67,6 @@ print("Center-of-rotation is {}".format(center))
 if (stop_slice == -1) or (stop_slice > height):
     stop_slice = height
 total_slice = stop_slice - start_slice
-
 if output_format == "hdf":
     # Note about the change of data-shape
     recon_hdf = losa.open_hdf_stream(output_base + "/recon_data.hdf",
@@ -92,15 +79,15 @@ t_rec = 0.0
 t_save = 0.0
 chunk = np.clip(chunk, 1, total_slice)
 last_chunk = total_slice - chunk * (total_slice // chunk)
+
 # Perform full reconstruction
 for i in np.arange(start_slice, start_slice + total_slice - last_chunk, chunk):
     start_sino = i
     stop_sino = start_sino + chunk
-
     # Load data, perform flat-field correction
     t0 = timeit.default_timer()
     sinograms = corr.flat_field_correction(
-        data[proj_idx[0]:proj_idx[-1], start_sino:stop_sino, :],
+        proj_obj[:, start_sino:stop_sino, :],
         flat_field[start_sino:stop_sino, :],
         dark_field[start_sino:stop_sino, :])
     t1 = timeit.default_timer()
@@ -153,7 +140,7 @@ if last_chunk != 0:
     # Load data, perform flat-field correction
     t0 = timeit.default_timer()
     sinograms = corr.flat_field_correction(
-        data[proj_idx[0]:proj_idx[-1], start_sino:stop_sino, :],
+        proj_obj[:, start_sino:stop_sino, :],
         flat_field[start_sino:stop_sino, :],
         dark_field[start_sino:stop_sino, :])
     t1 = timeit.default_timer()
