@@ -141,7 +141,7 @@ def apply_ramp_filter(sinogram, ramp_win=None, filter_name=None, pad=None,
     if pad is None:
         pad = min(int(0.15 * ncol), 150)
     sino_pad = np.pad(sinogram, ((0, 0), (pad, pad)), mode=pad_mode)
-    if (ramp_win is None) or (ramp_win.shape != sinogram.shape):
+    if (ramp_win is None) or (ramp_win.shape != sino_pad.shape):
         ramp_win = make_2d_ramp_window(nrow, ncol + 2 * pad, filter_name)
     sino_fft = fft.fftshift(fft.fft(sino_pad), axes=1) * ramp_win
     sino_filtered = np.real(

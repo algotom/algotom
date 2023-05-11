@@ -25,6 +25,7 @@ Module for phase contrast imaging:
 
     -   Unwrap phase images.
     -   Generate a quality map, weight mask.
+    -   Reconstruct surface from gradient images.
     -   Methods for speckle-based phase-contrast imaging.
             +   Find shifts between two stacks of images.
             +   Find shifts between sample-images.

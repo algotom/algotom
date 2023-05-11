@@ -1196,14 +1196,14 @@ def load_image_multiple(list_path, ncore=None, prefer="threads"):
 
 
 def save_image_multiple(list_path, image_stack, axis=0, overwrite=True,
-                        ncore=None, prefer="threads"):
+                        ncore=None, prefer="threads", start_idx=0):
     """
     Save an 3D-array to a list of tif images in parallel.
 
     Parameters
     ----------
     list_path : str
-        List of output paths.
+        List of output paths or a folder path
     image_stack : array_like
         3D array.
     overwrite : bool
@@ -1212,50 +1212,47 @@ def save_image_multiple(list_path, image_stack, axis=0, overwrite=True,
         Number of cpu-cores. Automatically selected if None.
     prefer : {"threads", "processes"}
         Prefer backend for parallel processing.
+    start_idx : int
+        Starting index of the output files if input is a folder.
     """
-    if not isinstance(list_path, list):
-        raise ValueError("Input must be a list of file paths!!!")
-    num_file = len(list_path)
-    (depth, height, width) = image_stack.shape
+    if isinstance(list_path, list):
+        num_path = len(list_path)
+        num_file = image_stack.shape[axis]
+        if num_path != num_file:
+            raise ValueError("Number of file paths: {0} is different to the "
+                             "number of images: {1} given the axis of {2}!!!"
+                             "".format(num_path, num_file, axis))
+    elif isinstance(list_path, str):
+        num_file = image_stack.shape[axis]
+        start_idx = int(start_idx)
+        list_path = [(list_path + "/img_" + ("00000" + str(i))[-5:] + ".tif")
+                     for i in range(start_idx, start_idx + num_file)]
+    else:
+        raise ValueError("Input must be a list of file paths or a folder path")
     if ncore is None:
         ncore = mp.cpu_count() - 1
     ncore = np.clip(ncore, 1, num_file)
     if axis == 2:
-        if width != num_file:
-            raise ValueError("Mismatch between the number of images: {0} and "
-                             "the number of file paths: {1}"
-                             "".format(width, num_file))
+        if ncore > 1:
+            Parallel(n_jobs=ncore, prefer=prefer)(
+                delayed(save_image)(list_path[i], image_stack[:, :, i],
+                                    overwrite) for i in range(num_file))
         else:
-            if ncore > 1:
-                Parallel(n_jobs=ncore, prefer=prefer)(
-                    delayed(save_image)(list_path[i], image_stack[:, :, i],
-                                        overwrite) for i in range(num_file))
-            else:
-                for i in range(num_file):
-                    save_image(list_path[i], image_stack[:, :, i], overwrite)
+            for i in range(num_file):
+                save_image(list_path[i], image_stack[:, :, i], overwrite)
     elif axis == 1:
-        if height != num_file:
-            raise ValueError("Mismatch between the number of images: {0} and "
-                             "the number of file paths: {1}"
-                             "".format(height, num_file))
+        if ncore > 1:
+            Parallel(n_jobs=ncore, prefer=prefer)(
+                delayed(save_image)(list_path[i], image_stack[:, i, :],
+                                    overwrite) for i in range(num_file))
         else:
-            if ncore > 1:
-                Parallel(n_jobs=ncore, prefer=prefer)(
-                    delayed(save_image)(list_path[i], image_stack[:, i, :],
-                                        overwrite) for i in range(num_file))
-            else:
-                for i in range(num_file):
-                    save_image(list_path[i], image_stack[:, i, :], overwrite)
+            for i in range(num_file):
+                save_image(list_path[i], image_stack[:, i, :], overwrite)
     else:
-        if depth != num_file:
-            raise ValueError("Mismatch between the number of images: {0} and "
-                             "the number of file paths: {1}"
-                             "".format(depth, num_file))
+        if ncore > 1:
+            Parallel(n_jobs=ncore, prefer=prefer)(
+                delayed(save_image)(list_path[i], image_stack[i],
+                                    overwrite) for i in range(num_file))
         else:
-            if ncore > 1:
-                Parallel(n_jobs=ncore, prefer=prefer)(
-                    delayed(save_image)(list_path[i], image_stack[i],
-                                        overwrite) for i in range(num_file))
-            else:
-                for i in range(num_file):
-                    save_image(list_path[i], image_stack[i], overwrite)
+            for i in range(num_file):
+                save_image(list_path[i], image_stack[i], overwrite)
