@@ -13,6 +13,15 @@ if python_version == "3.7":
         "pillow",
         "h5py",
         "joblib"]
+elif python_version == "3.8":
+    dependencies = [
+        "numpy>=1.18,<1.23",
+        "scipy<1.11",
+        "numba<0.57",
+        "pywavelets",
+        "pillow",
+        "h5py",
+        "joblib"]
 else:
     dependencies = [
         "numpy>=1.18,<1.24",
