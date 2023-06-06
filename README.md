@@ -23,6 +23,7 @@ Algotom have been developed and tested at synchrotron beamlines where massive
 datasets are produced. This factor drives the methods developed to be easy-to-use, 
 robust, and practical. Algotom can be used on a normal computer to process large tomographic data. 
 Some featuring methods in Algotom are as follows:
+
 - Methods in a full data processing pipeline: reading-writing data, 
   pre-processing, tomographic reconstruction, and post-processing.
   
@@ -50,18 +51,40 @@ Some featuring methods in Algotom are as follows:
   
 - Utility methods for [customizing ring/stripe artifact removal methods](https://algotom.readthedocs.io/en/latest/toc/section4/section4_3.html) 
   and parallelizing computational work.
+
 - Calibration methods for determining pixel-size in helical scans.
+
 - Methods for generating simulation data: phantom creation, sinogram calculation
   based on the Fourier slice theorem, and artifact generation.
   
   ![simulation](https://github.com/algotom/algotom/raw/master/figs/readme/simulation.png)
+
 - Methods for phase-contrast imaging: phase unwrapping, speckle-based phase retrieval, image correlation, and image alignment.
 
   ![speckle](https://github.com/algotom/algotom/raw/master/figs/readme/speckle_based_tomography.png)
+
 - Methods for downsampling, rescaling, and reslicing (+rotating, cropping) 
   3D reconstructed image without large memory usage.
 
   ![reslicing](https://github.com/algotom/algotom/raw/master/figs/readme/reslicing.jpg)
+
+Development principles
+----------------------
+
+- While Algotom offers a comprehensive range of tools for tomographic data processing covering raw-data reading, 
+  pre-processing, reconstruction, post-processing, and data saving; its development primarily focuses on 
+  pre-processing techniques. This distinction makes it a prominent feature among other tomographic software.   
+
+- To ensure that the software can work across platforms and is easy-to-install; dependencies are minimized, and only 
+  well-maintained [Python libraries](https://github.com/algotom/algotom/blob/master/requirements.txt) are used.
+
+- To achieve high-performance computing and leverage GPU utilization while ensuring ease of understanding, usage, and software 
+  maintenance, Numba is used instead of Cupy or PyCuda.
+
+- Methods are structured into modules and functions rather than classes to enhance usability, debugging, and maintenance.
+
+- Algotom is highly practical as it can run on computers with or without a GPU, multicore CPUs; and accommodates both small 
+  and large memory capacities.
 
 Update notes
 ------------
