@@ -1043,21 +1043,23 @@ def get_tif_stack(file_base, idx=None, crop=(0, 0, 0, 0), flat_field=None,
     return img_stack
 
 
-def get_image_stack(idx, list_path, data_key=None, average=False,
+def get_image_stack(idx, paths, data_key=None, average=False,
                     crop=(0, 0, 0, 0), flat_field=None, dark_field=None,
                     num_use=None, fix_zero_div=True):
     """
-    Stack images having the same index from multiple datasets. For tif images,
-    if only one dataset is provided (list_path is a string, not a list),
-    there is an option, idx = None, to load the whole stack.
+    To get multiple images with the same index from multiple datasets
+    (tif format or hdf format). For tif images, if paths is a string
+    (not a list) use idx=None to load all images. For getting a stack of images
+    from a single hdf file, use the "load_hdf" method instead.
 
     Parameters
     ----------
     idx : int or None
         Index of an image in a dataset. Use None to load all images if only
         one dataset provided.
-    list_path : list of str
-        List of hdf/nxs file-paths or folders of tif-images to datasets.
+    paths : list of str or str
+        List of hdf/nxs file-paths, list of folders of tif-images, or a folder
+        of tif-images.
     data_key : str
         Requested if input is a hdf/nxs files.
     average : bool, optional
@@ -1079,14 +1081,22 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
     img_stack : ndarray
         3D array. A stack of images.
     """
-    if isinstance(list_path, list):
-        num_file = len(list_path)
+    if isinstance(paths, str):
+        file_base, file_ext = os.path.splitext(paths)
+        if file_ext != "":
+            raise ValueError("Input must be a folder path!!!")
+        img_stack = get_tif_stack(paths, idx=idx, crop=crop,
+                                  flat_field=flat_field,
+                                  dark_field=dark_field, num_use=num_use,
+                                  fix_zero_div=fix_zero_div)
+    elif isinstance(paths, list):
+        num_file = len(paths)
         if num_use is None:
             num_use = num_file
         else:
             num_use = np.clip(num_use, 1, num_file)
         tif_format = False
-        file_base, file_ext = os.path.splitext(list_path[0])
+        file_base, file_ext = os.path.splitext(paths[0])
         if file_ext == "":
             tif_format = True
         else:
@@ -1100,7 +1110,7 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
             else:
                 raise ValueError("No tif-images in: {}".format(file_base))
         else:
-            (height, width) = load_hdf(list_path[0], data_key).shape[-2:]
+            (height, width) = load_hdf(paths[0], data_key).shape[-2:]
         cr_top, cr_bot, cr_left, cr_right = crop
         top = cr_top
         bot = height - cr_bot
@@ -1123,7 +1133,7 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
         img_stack = []
         if not tif_format:
             for i in range(num_use):
-                data_obj = load_hdf(list_path[i], data_key)
+                data_obj = load_hdf(paths[i], data_key)
                 if len(data_obj.shape) == 3:
                     if average:
                         img = np.mean(data_obj[:, top:bot, left:right], axis=0)
@@ -1138,7 +1148,7 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
                 img_stack.append(img)
         else:
             for i in range(num_use):
-                list_file = find_file(list_path[i] + "/*tif*")
+                list_file = find_file(paths[i] + "/*tif*")
                 if average:
                     img = np.mean(
                         np.asarray([load_image(file)[top:bot, left:right]
@@ -1155,10 +1165,7 @@ def get_image_stack(idx, list_path, data_key=None, average=False,
             nmean = np.mean(img_stack)
             img_stack[img_stack == 0.0] = nmean
     else:
-        img_stack = get_tif_stack(list_path, idx=idx, crop=crop,
-                                  flat_field=flat_field,
-                                  dark_field=dark_field, num_use=num_use,
-                                  fix_zero_div=fix_zero_div)
+        raise ValueError("Input must be a list of strings or a folder path!!!")
     return img_stack
 
 
