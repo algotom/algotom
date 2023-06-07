@@ -1048,7 +1048,7 @@ def get_image_stack(idx, paths, data_key=None, average=False,
                     num_use=None, fix_zero_div=True):
     """
     To get multiple images with the same index from multiple datasets
-    (tif format or hdf format). For tif images, if paths is a string
+    (tif format or hdf format). For tif images, if "paths" is a string
     (not a list) use idx=None to load all images. For getting a stack of images
     from a single hdf file, use the "load_hdf" method instead.
 
@@ -1082,13 +1082,13 @@ def get_image_stack(idx, paths, data_key=None, average=False,
         3D array. A stack of images.
     """
     if isinstance(paths, str):
-        file_base, file_ext = os.path.splitext(paths)
-        if file_ext != "":
-            raise ValueError("Input must be a folder path!!!")
-        img_stack = get_tif_stack(paths, idx=idx, crop=crop,
-                                  flat_field=flat_field,
-                                  dark_field=dark_field, num_use=num_use,
-                                  fix_zero_div=fix_zero_div)
+        if os.path.isdir(paths):
+            img_stack = get_tif_stack(paths, idx=idx, crop=crop,
+                                      flat_field=flat_field,
+                                      dark_field=dark_field, num_use=num_use,
+                                      fix_zero_div=fix_zero_div)
+        else:
+            raise ValueError("The folder: {} does not exist.".format(paths))
     elif isinstance(paths, list):
         num_file = len(paths)
         if num_use is None:
@@ -1096,19 +1096,18 @@ def get_image_stack(idx, paths, data_key=None, average=False,
         else:
             num_use = np.clip(num_use, 1, num_file)
         tif_format = False
-        file_base, file_ext = os.path.splitext(paths[0])
-        if file_ext == "":
+        if os.path.isdir(paths[0]):
             tif_format = True
         else:
             if data_key is None:
                 raise ValueError(
                     "Please provide the key to a dataset in the hdf/nxs file")
         if tif_format:
-            list_file = find_file(file_base + "/*tif*")
+            list_file = find_file(paths[0] + "/*tif*")
             if len(list_file) != 0:
                 (height, width) = np.shape(load_image(list_file[0]))
             else:
-                raise ValueError("No tif-images in: {}".format(file_base))
+                raise ValueError("No tif-images in: {}".format(paths[0]))
         else:
             (height, width) = load_hdf(paths[0], data_key).shape[-2:]
         cr_top, cr_bot, cr_left, cr_right = crop
