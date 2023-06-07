@@ -1164,7 +1164,7 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
         noise-free data (simulation).
     metric_function : obj
         To apply a customized function for calculating metric going with
-        keyword arguments (**kwargs).
+        keyword arguments.
 
     Returns
     -------

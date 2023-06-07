@@ -1,7 +1,10 @@
 .. _section2:
 
-Features and capabilities
-=========================
+Features
+========
+
+Capabilities
+------------
 
 Algotom is a lightweight package. The software is built on top of a few core Python
 libraries to ensure its ease-of-installation. Methods distributed in Algotom have
@@ -74,3 +77,24 @@ Some featuring methods in Algotom are as follows:
        :width: 100%
        :name: fig_2_7
        :align: center
+
+Development principles
+----------------------
+
+-   While Algotom offers a comprehensive range of tools for tomographic data processing
+    covering raw-data reading, pre-processing, reconstruction, post-processing, and data
+    saving; its development primarily focuses on pre-processing techniques. This distinction
+    makes it a prominent feature among other tomographic software.
+
+-   To ensure that the software can work across platforms and is easy-to-install; dependencies
+    are minimized, and only well-maintained `Python libraries <https://github.com/algotom/algotom/blob/master/requirements.txt>`__
+    are used.
+
+-   To achieve high-performance computing and leverage GPU utilization while ensuring ease of
+    understanding, usage, and software maintenance, Numba is used instead of Cupy or PyCuda.
+
+-   Methods are structured into modules and functions rather than classes to enhance usability,
+    debugging, and maintenance.
+
+-   Algotom is highly practical as it can run on computers with or without a GPU, multicore CPUs;
+    and accommodates both small and large memory capacities.
