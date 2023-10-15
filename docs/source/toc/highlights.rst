@@ -14,6 +14,7 @@ Algotom was used for some experiments featured on media:
 
 *   Scanning `Herculaneum Scrolls <https://www.diamond.ac.uk/Home/News/LatestNews/2019/03-10-2019.html>`_
     using grid scans with offset rotation-axis respect to the grid's FOV. Featured on `BBC <https://www.bbc.co.uk/news/av/uk-england-oxfordshire-49926789>`__.
+    The latest updates on the scroll's reading progress are `here <https://www.nature.com/articles/d41586-023-03212-1>`__.
 
     .. image:: figs/Herculaneum_scroll.jpg
         :name: Herculaneum_scroll
