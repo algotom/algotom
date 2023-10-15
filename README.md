@@ -125,7 +125,8 @@ Algotom was used for some experiments featured on media:
 
   ![herculaneum_scroll](https://github.com/algotom/algotom/raw/master/figs/readme/Herculaneum_scroll.jpg)
 - Scanning ['Little Foot' fossil](https://www.diamond.ac.uk/Home/News/LatestNews/2021/02-03-21.html) 
-  using two-camera detector with offset rotation-axis. Featured on [BBC](https://www.bbc.co.uk/news/science-environment-56241509). 
+  using two-camera detector with offset rotation-axis. Featured on [BBC](https://www.bbc.co.uk/news/science-environment-56241509).
+  The latest updates on the scroll's reading progress are [here](https://www.nature.com/articles/d41586-023-03212-1).  
 
   ![little_foot](https://github.com/algotom/algotom/raw/master/figs/readme/Little_foot.jpg)
   

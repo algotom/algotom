@@ -262,7 +262,7 @@ class PhaseMethods(unittest.TestCase):
         self.assertTrue(num1 < 0.1 and num2 < 1.0)
 
         trans, dark = f_alias2(self.ref_stack[0], self.sam_stack1[0],
-                               x_shifts, y_shifts, 5, ncore=2)
+                               x_shifts, y_shifts, 5, ncore=1)
         num1 = np.abs(
             np.mean(np.abs(trans[margin:-margin, margin:-margin])) - 1.0)
         num2 = np.std(np.abs(dark[margin:-margin, margin:-margin]))

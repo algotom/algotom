@@ -359,7 +359,8 @@ def save_image(file_path, mat, overwrite=True):
         raise ValueError("Please use the forward slash in the file path")
     file_ext = os.path.splitext(file_path)[-1]
     if not ((file_ext == ".tif") or (file_ext == ".tiff")):
-        mat = np.uint8(255 * (mat - np.min(mat)) / (np.max(mat) - np.min(mat)))
+        mat = np.uint8(
+            255.0 * (mat - np.min(mat)) / (np.max(mat) - np.min(mat)))
     else:
         data_type = str(mat.dtype)
         if "complex" in data_type:

@@ -804,6 +804,9 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
     chunk_size = (height - 2 * pad) // ncore
     f_alias = _get_transmission_dark_field_signal
+    if len(ref_stack.shape) == 2:
+        ref_stack = np.expand_dims(ref_stack, 0)
+        sam_stack = np.expand_dims(sam_stack, 0)
     if ncore == 1 or chunk_size < 20:
         trans, dark = f_alias(ref_stack, sam_stack, x_shifts, y_shifts,
                               win_size, margin)
@@ -813,9 +816,6 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
         list_index = np.array_split(np.arange(pad, height - pad), ncore)
         b_e = np.asarray([[pos[0], pos[-1] + 1] for pos in list_index])
         ntime = len(b_e)
-        if len(ref_stack.shape) == 2:
-            ref_stack = np.expand_dims(ref_stack, 0)
-            sam_stack = np.expand_dims(sam_stack, 0)
         results = Parallel(n_jobs=ncore)(
             delayed(f_alias)(ref_stack[:, b_e[i, 0] - pad:b_e[i, 1] + pad, :],
                              sam_stack[:, b_e[i, 0] - pad:b_e[i, 1] + pad, :],
