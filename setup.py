@@ -24,7 +24,7 @@ elif python_version == "3.8":
         "joblib"]
 else:
     dependencies = [
-        "numpy>=1.18,<1.26",
+        "numpy>=1.18",
         "scipy>=1.6",
         "numba",
         "pywavelets",
@@ -37,7 +37,7 @@ readme = (current_folder / "README.md").read_text()
 
 setuptools.setup(
     name="algotom",
-    version="1.3.0",
+    version="1.4.0",
     author="Nghia Vo",
     author_email="nvo@bnl.gov",
     description="Data processing algorithms for tomography",
