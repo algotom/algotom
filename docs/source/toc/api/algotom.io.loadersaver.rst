@@ -27,3 +27,5 @@
         get_reference_sample_stacks
         get_tif_stack
         get_image_stack
+        load_image_multiple
+        save_image_multiple

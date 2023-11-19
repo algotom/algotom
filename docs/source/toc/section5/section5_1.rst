@@ -1,3 +1,5 @@
+.. _section5_1:
+
 Implementations of X-ray speckle-based phase-contrast tomography
 ================================================================
 

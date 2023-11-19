@@ -51,7 +51,7 @@ Some featuring methods in Algotom are as follows:
        :name: fig_2_4
        :align: center
 
--   Utility methods for customizing ring/stripe artifact removal methods and
+-   Utility methods for customizing :ref:`ring/stripe artifact removal methods <section4_3>` and
     parallelizing computational work.
 -   Calibration methods for determining pixel-size in helical scans.
 -   Methods for generating simulation data: phantom creation, sinogram calculation
@@ -62,7 +62,7 @@ Some featuring methods in Algotom are as follows:
        :name: fig_2_5
        :align: center
 
--   Methods for phase-contrast imaging: phase unwrapping, speckle-based phase retrieval,
+-   Methods for phase-contrast imaging: phase unwrapping, :ref:`speckle-based phase retrieval <section5_1>`,
     image correlation, and image alignment.
 
     .. image:: section2/figs/fig_2_6.png

@@ -43,17 +43,17 @@ Open Linux terminal or Miniconda/Anaconda Powershell prompt and run the followin
 
 If install to an existing environment::
 
-    conda install -c algotom algotom
+    conda install -c conda-forge algotom
 
-or from the conda-forge channel::
+or::
 
-	conda install -c conda-forge algotom
+	conda install -c algotom algotom
 
 If install to a new environment::
 
     conda create -n algotom python>=3.7
     conda activate algotom
-    conda install -c algotom algotom
+    conda install -c conda-forge algotom
 
 Using pip
 ---------
