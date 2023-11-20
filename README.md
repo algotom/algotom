@@ -69,6 +69,23 @@ tomographic data. Some featuring methods in Algotom are as follows:
 
   ![reslicing](https://github.com/algotom/algotom/raw/master/figs/readme/reslicing.jpg)
 
+Installation
+------------
+
+- https://algotom.readthedocs.io/en/latest/toc/section3.html
+- If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
+  + Downgrade Numpy and install Algotom/Numba again.
+  + Create a new environment and install Algotom first, then other packages.
+  + Use conda instead of pip.
+- Avoid using the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
+
+Usage
+-----
+- https://algotom.readthedocs.io/en/latest/toc/section4/section4_5.html
+- https://algotom.readthedocs.io/en/latest/toc/section1/section1_4.html
+- https://algotom.readthedocs.io/en/latest/toc/section4.html
+- https://github.com/algotom/algotom/tree/master/examples
+
 Development principles
 ----------------------
 
@@ -96,22 +113,6 @@ Author
 ------
 
 - Nghia T. Vo - *NSLS-II, Brookhaven National Lab, USA*; *Diamond Light Source, UK.*  
-
-How to install
---------------
-
-- https://algotom.readthedocs.io/en/latest/toc/section3.html
-- If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
-  + Downgrade Numpy and install Algotom/Numba again.
-  + Create a new environment and install Algotom first, then other packages.
-  + Use conda instead of pip.
-- Avoid using the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
-
-How to use
-----------
-- https://algotom.readthedocs.io/en/latest/toc/section4.html
-- https://algotom.readthedocs.io/en/latest/toc/section1/section1_4.html
-- https://github.com/algotom/algotom/tree/master/examples
  
 Highlights
 ----------
