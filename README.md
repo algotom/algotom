@@ -6,13 +6,13 @@
 
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
 
-**Algotom** is a Python package implementing data processing methods for 
-tomography. It has methods in a full pipeline of data processing: reading-writing data, 
+**Algotom** is a Python package that implements data processing methods for tomography. 
+It offers a comprehensive pipeline for data processing; including reading and writing data, 
 pre-processing, tomographic reconstruction, post-processing, and data simulation. 
-Many utility methods are provided to help users quickly develop prototype-methods 
-or build a pipeline for processing their own data. From version 1.1, methods for 
-speckle-based phase-contrast tomography were added to the package. 
-The software was published for the paper: https://doi.org/10.1364/OE.418448.
+The package provides numerous utility methods to assist users in rapidly developing 
+prototype methods or constructing a pipeline for processing their own data. 
+Starting from version 1.1, methods for speckle-based phase-contrast tomography 
+have been incorporated into the package.
 
 Features
 --------
@@ -21,8 +21,8 @@ Algotom is a lightweight package. The software is built on top of a few core
 Python libraries to ensure its ease-of-installation. Methods distributed in 
 Algotom have been developed and tested at synchrotron beamlines where massive
 datasets are produced. This factor drives the methods developed to be easy-to-use, 
-robust, and practical. Algotom can be used on a normal computer to process large tomographic data. 
-Some featuring methods in Algotom are as follows:
+robust, and practical. Algotom can be used on a normal computer to process large 
+tomographic data. Some featuring methods in Algotom are as follows:
 
 - Methods in a full data processing pipeline: reading-writing data, 
   pre-processing, tomographic reconstruction, and post-processing.
@@ -31,6 +31,7 @@ Some featuring methods in Algotom are as follows:
  
 - Methods for processing grid scans (or tiled scans) with the offset rotation-axis 
   to multiply double the field-of-view (FOV) of a parallel-beam tomography system.
+  These techniques enable high-resolution tomographic scanning of large samples.
   
   ![grid_scan](https://github.com/algotom/algotom/raw/master/figs/readme/grid_scan.jpg)
   
@@ -68,6 +69,23 @@ Some featuring methods in Algotom are as follows:
 
   ![reslicing](https://github.com/algotom/algotom/raw/master/figs/readme/reslicing.jpg)
 
+Installation
+------------
+
+- https://algotom.readthedocs.io/en/latest/toc/section3.html
+- If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
+  + Downgrade Numpy and install Algotom/Numba again.
+  + Create a new environment and install Algotom first, then other packages.
+  + Use conda instead of pip.
+- Avoid using the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
+
+Usage
+-----
+- https://algotom.readthedocs.io/en/latest/toc/section4/section4_5.html
+- https://algotom.readthedocs.io/en/latest/toc/section1/section1_4.html
+- https://algotom.readthedocs.io/en/latest/toc/section4.html
+- https://github.com/algotom/algotom/tree/master/examples
+
 Development principles
 ----------------------
 
@@ -95,22 +113,6 @@ Author
 ------
 
 - Nghia T. Vo - *NSLS-II, Brookhaven National Lab, USA*; *Diamond Light Source, UK.*  
-
-How to install
---------------
-
-- https://algotom.readthedocs.io/en/latest/toc/section3.html
-- If users install Algotom to an existing environment and Numba fails to install due to the latest Numpy:
-  + Downgrade Numpy and install Algotom/Numba again.
-  + Create a new environment and install Algotom first, then other packages.
-  + Use conda instead of pip.
-- Avoid using the latest version of Python or Numpy as the Python ecosystem taking time to keep up with these twos.
-
-How to use
-----------
-- https://algotom.readthedocs.io/en/latest/toc/section4.html
-- https://algotom.readthedocs.io/en/latest/toc/section1/section1_4.html
-- https://github.com/algotom/algotom/tree/master/examples
  
 Highlights
 ----------
@@ -123,7 +125,8 @@ Algotom was used for some experiments featured on media:
   ![moon_rock](https://github.com/algotom/algotom/raw/master/figs/readme/Moon_rock_Mars_meteorite.jpg)
 
 - Scanning [Herculaneum Scrolls](https://www.diamond.ac.uk/Home/News/LatestNews/2019/03-10-2019.html) 
-  using grid scans with offset rotation-axis respect to the grid's FOV. Featured on [BBC](https://www.bbc.co.uk/news/av/uk-england-oxfordshire-49926789).
+  using grid scans with offset rotation-axis respect to the grid's FOV (pixel size of 7.9 micron; 
+  total size of 11.3 TB). Featured on [BBC](https://www.bbc.co.uk/news/av/uk-england-oxfordshire-49926789).
   The latest updates on the scroll's reading progress are [here](https://www.nature.com/articles/d41586-023-03212-1).
 
   ![herculaneum_scroll](https://github.com/algotom/algotom/raw/master/figs/readme/Herculaneum_scroll.jpg)
