@@ -25,7 +25,7 @@ else:
         "joblib"]
 
 current_folder = pathlib.Path(__file__).parent
-readme = (current_folder / "README.md").read_text()
+readme = (current_folder / "README_algotom.md").read_text()
 
 setuptools.setup(
     name="algotom",
