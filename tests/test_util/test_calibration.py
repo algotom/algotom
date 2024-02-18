@@ -118,3 +118,34 @@ class CalibrationMethods(unittest.TestCase):
         dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
                                       size_opt="min", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
+
+    def test_find_tilt_roll(self):
+        def __generate_ellipse_points(roll, tilt, a_major, noise=0.1):
+            roll = np.deg2rad(roll)
+            b_minor = np.tan(np.deg2rad(tilt)) * a_major
+            theta = np.linspace(0, 2 * np.pi, 37)
+            x = 0.5 * (a_major * np.cos(theta) * np.cos(
+                roll) - b_minor * np.sin(theta) * np.sin(roll))
+            y = 0.5 * (a_major * np.cos(theta) * np.sin(
+                roll) + b_minor * np.sin(theta) * np.cos(roll))
+            if noise > 0.0:
+                x = x + noise * np.random.rand(len(x))
+                y = y + noise * np.random.rand(len(x))
+            return x, y
+        np.random.seed(1)
+        eps = 0.005
+        roll1 = 0.05
+        tilt1 = 0.01
+        x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
+
+        tilt1a, roll1a = cali.find_tilt_roll(x1, y1, method="ellipse")
+        self.assertTrue(
+            (abs(tilt1 - tilt1a) <= eps) and (abs(roll1 - roll1a) <= eps))
+
+        tilt1b, roll1b = cali.find_tilt_roll(x1, y1, method="linear")
+        self.assertTrue(
+            (abs(tilt1 - tilt1b) <= eps) and (abs(roll1 - roll1b) <= eps))
+
+        x2, y2 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.8)
+        with self.assertWarns(UserWarning):
+            cali.find_tilt_roll(x2, y2, method="ellipse")
