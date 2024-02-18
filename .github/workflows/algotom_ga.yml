@@ -8,6 +8,15 @@ on:
     branches: [master, dev, doc]
   pull_request:
     branches: [master, dev, doc]
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test tags'
+        required: false
 
 jobs:
   build:
