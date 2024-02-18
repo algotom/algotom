@@ -15,7 +15,7 @@
 # limitations under the License.
 # ============================================================================
 # Author: Nghia T. Vo
-# E-mail:  
+# E-mail:
 # Description: Python module of reconstruction methods
 # Contributors:
 # ============================================================================
