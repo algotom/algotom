@@ -19,3 +19,5 @@
         check_dot_size
         select_dot_based_size
         calculate_distance
+        fit_points_to_ellipse
+        find_tilt_roll

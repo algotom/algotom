@@ -7,3 +7,4 @@ Basic tutorials
     section1/section1_3.rst
     section1/section1_4.rst
     section1/section1_5.rst
+    section1/section1_6.rst

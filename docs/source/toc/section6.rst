@@ -44,3 +44,8 @@ Update notes
 
     + Improve the performance of the reslicing method.
     + Release version 1.3.
+
+- 19/11/2023:
+
+    + Add methods for loading and saving multiple tiff images in parallel.
+    + Release version 1.4.
