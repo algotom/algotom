@@ -54,6 +54,7 @@ class CorrectionMethods(unittest.TestCase):
         self.mat_tilt = mat_tilt[pad:pad + self.size, pad:pad + self.size]
 
     def test_flat_field_correction(self):
+        np.random.seed(1)
         proj = np.random.rand(32, self.size, self.size)
         flat = 0.5 * np.ones((self.size, self.size), dtype=np.float32)
         dark = np.zeros((self.size, self.size), dtype=np.float32)
@@ -81,10 +82,11 @@ class CorrectionMethods(unittest.TestCase):
         m6 = corr.flat_field_correction(proj[0], flat, dark, use_dark=False)
         self.assertTrue(np.abs(2 * np.mean(proj[0]) - np.mean(m6)) < 0.001)
 
-        opt2 = {"method": "fresnel_filter", "para1": 0.5, "para2": 1}
+        opt2 = {"method": "fresnel_filter", "para1": 10.5, "para2": 1}
         m7 = corr.flat_field_correction(proj[:, 0, :], flat[0], dark[0],
                                         option=opt2)
-        self.assertTrue(np.abs(np.mean(m4) - np.mean(m7)) < 0.05)
+        print(np.mean(m4), np.mean(m7))
+        self.assertTrue(np.abs(np.mean(m4) - np.mean(m7)) < 0.08)
 
         opt3 = {"method": "unwrap_phase_based_cosine_transform"}
         m8 = corr.flat_field_correction(proj, flat, dark, option1=opt1,

@@ -365,39 +365,39 @@ def fit_points_to_ellipse(x, y):
     """
     if len(x) != len(y):
         raise ValueError("x and y must have the same length!!!")
-    x1 = x[:, np.newaxis]
-    y1 = y[:, np.newaxis]
-    D = np.hstack((x1 * x1, x1 * y1, y1 * y1, x1, y1, np.ones_like(x1)))
-    S = np.dot(D.T, D)
-    C = np.zeros([6, 6])
-    C[0, 2] = C[2, 0] = 2
-    C[1, 1] = -1
-    E, V = np.linalg.eig(np.dot(np.linalg.inv(S), C))
-    n = np.argmax(np.abs(E))
-    a0, b0, c0, d0, e0, f0 = V[:, n]
+    A = np.array([x**2, x*y, y**2, x, y, np.ones_like(x)]).T
+    vh = np.linalg.svd(A, full_matrices=False)[-1]
+    a0, b0, c0, d0, e0, f0 = vh.T[:, -1]
     denom = b0 ** 2 - 4 * a0 * c0
     msg = "Can't fit to an ellipse!!!"
     if denom == 0:
         raise ValueError(msg)
     xc = (2 * c0 * d0 - b0 * e0) / denom
     yc = (2 * a0 * e0 - b0 * d0) / denom
-    roll_angle = np.rad2deg(np.pi / 2 +
-                            np.arctan2(c0 - a0 -
-                                       np.sqrt((a0 - c0) ** 2 + b0 ** 2), b0))
-    if roll_angle < 0.0:
-        roll_angle = 90 + roll_angle
-    term = 2 * (a0 * e0 ** 2 + c0 * d0 ** 2 - b0 * d0 * e0 + (
-            b0 ** 2 - 4 * a0 * c0) * f0)
-    term1 = term * (a0 + c0 + np.sqrt((a0 - c0) ** 2 + b0 ** 2))
-    if term1 < 0.0:
+    roll_angle = np.rad2deg(
+        np.arctan2(c0 - a0 - np.sqrt((a0 - c0) ** 2 + b0 ** 2), b0))
+    if roll_angle > 90.0:
+        roll_angle = - (180 - roll_angle)
+    if roll_angle < -90.0:
+        roll_angle = (180 + roll_angle)
+    a_term = 2 * (a0 * e0 ** 2 + c0 * d0 ** 2 -
+                  b0 * d0 * e0 + denom * f0) * (
+                         a0 + c0 + np.sqrt((a0 - c0) ** 2 + b0 ** 2))
+    if a_term < 0.0:
         raise ValueError(msg)
-    a_major = -2 * np.sqrt(term1) / denom
-    term2 = term * (a0 + c0 - np.sqrt((a0 - c0) ** 2 + b0 ** 2))
-    if term2 < 0.0:
+    a_major = -2 * np.sqrt(a_term) / denom
+    b_term = 2 * (a0 * e0 ** 2 + c0 * d0 ** 2 -
+                  b0 * d0 * e0 + denom * f0) * (
+                      a0 + c0 - np.sqrt((a0 - c0) ** 2 + b0 ** 2))
+    if b_term < 0.0:
         raise ValueError(msg)
-    b_minor = -2 * np.sqrt(term2) / denom
+    b_minor = -2 * np.sqrt(b_term) / denom
     if a_major < b_minor:
         a_major, b_minor = b_minor, a_major
+        if roll_angle < 0.0:
+            roll_angle = 90 + roll_angle
+        else:
+            roll_angle = -90 + roll_angle
     return roll_angle, a_major, b_minor, xc, yc
 
 
@@ -497,9 +497,16 @@ def find_tilt_roll(x, y, method="ellipse"):
     if method == "linear":
         tilt, roll = find_tilt_roll_based_linear_fit(x, y)
     else:
-        tilt, roll = find_tilt_roll_based_ellipse_fit(x, y)
-        if tilt is None:
-            warnings.warn("Can't fit to an ellipse, use the linear-fit "
-                          "method instead!!!")
+        (a, b) = np.polyfit(x, y, 1)[:2]
+        dist_list = np.abs(a * x - y + b) / np.sqrt(a ** 2 + 1)
+        dist_list = ndi.gaussian_filter1d(dist_list, 2)
+        msg = "Can't fit to an ellipse, use the linear-fit method instead!!!"
+        if np.max(dist_list) < 1.0:
+            warnings.warn(msg)
             tilt, roll = find_tilt_roll_based_linear_fit(x, y)
+        else:
+            tilt, roll = find_tilt_roll_based_ellipse_fit(x, y)
+            if tilt is None:
+                warnings.warn(msg)
+                tilt, roll = find_tilt_roll_based_linear_fit(x, y)
     return tilt, roll
