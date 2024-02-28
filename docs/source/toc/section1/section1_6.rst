@@ -74,14 +74,14 @@ axis from projections of a sphere scanned over the range of [0, 360] degrees.
 
         have_flat = True
         fit_ellipse = True  # Use an ellipse-fit method
+        ratio = 1.0  # To adjust the threshold for binarization
 
         crop_left = 10
         crop_right = 10
-        crop_top = 800
-        crop_bottom = 800
-        ratio = 1.0  # To adjust the threshold for binarization if need to
-        figsize = (15, 7)
+        crop_top = 1000
+        crop_bottom = 1000
 
+        figsize = (15, 7)
         (depth, height, width) = proj_data.shape
         left = crop_left
         right = width - crop_right
@@ -145,13 +145,10 @@ axis from projections of a sphere scanned over the range of [0, 360] degrees.
             mat_bin = calib.select_dot_based_size(mat_bin0, sphere_size)
             nmean = np.sum(mat_bin)
             if nmean == 0.0:
-                print(
-                    "\n**************************************************************************")
-                print(
-                    "Adjust threshold or crop the FOV to remove objects larger than the sphere!")
+                print("\n************************************************************************")
+                print("Adjust threshold or crop the FOV to remove objects larger than the sphere!")
                 print("Current threshold used: {}".format(threshold))
-                print(
-                    "**************************************************************************")
+                print("**************************************************************************")
                 plt.figure(figsize=figsize)
                 plt.imshow(mat_bin0, cmap="gray")
                 plt.show()
@@ -171,8 +168,46 @@ axis from projections of a sphere scanned over the range of [0, 360] degrees.
 
     .. code-block:: python
 
+
         # ==============================================================================
 
+        def fit_points_to_ellipse(x, y):
+            if len(x) != len(y):
+                raise ValueError("x and y must have the same length!!!")
+            A = np.array([x ** 2, x * y, y ** 2, x, y, np.ones_like(x)]).T
+            vh = np.linalg.svd(A, full_matrices=False)[-1]
+            a0, b0, c0, d0, e0, f0 = vh.T[:, -1]
+            denom = b0 ** 2 - 4 * a0 * c0
+            msg = "Can't fit to an ellipse!!!"
+            if denom == 0:
+                raise ValueError(msg)
+            xc = (2 * c0 * d0 - b0 * e0) / denom
+            yc = (2 * a0 * e0 - b0 * d0) / denom
+            roll_angle = np.rad2deg(
+                np.arctan2(c0 - a0 - np.sqrt((a0 - c0) ** 2 + b0 ** 2), b0))
+            if roll_angle > 90.0:
+                roll_angle = - (180 - roll_angle)
+            if roll_angle < -90.0:
+                roll_angle = (180 + roll_angle)
+            a_term = 2 * (a0 * e0 ** 2 + c0 * d0 ** 2 - b0 * d0 * e0 + denom * f0) * (
+                    a0 + c0 + np.sqrt((a0 - c0) ** 2 + b0 ** 2))
+            if a_term < 0.0:
+                raise ValueError(msg)
+            a_major = -2 * np.sqrt(a_term) / denom
+            b_term = 2 * (a0 * e0 ** 2 + c0 * d0 ** 2 - b0 * d0 * e0 + denom * f0) * (
+                    a0 + c0 - np.sqrt((a0 - c0) ** 2 + b0 ** 2))
+            if b_term < 0.0:
+                raise ValueError(msg)
+            b_minor = -2 * np.sqrt(b_term) / denom
+            if a_major < b_minor:
+                a_major, b_minor = b_minor, a_major
+                if roll_angle < 0.0:
+                    roll_angle = 90 + roll_angle
+                else:
+                    roll_angle = -90 + roll_angle
+            return roll_angle, a_major, b_minor, xc, yc
+
+        # ==============================================================================
         # Calculate the tilt and roll using an ellipse-fit or a linear-fit method
 
         if fit_ellipse is True:
@@ -192,8 +227,7 @@ axis from projections of a sphere scanned over the range of [0, 360] degrees.
             except ValueError:
                 # If can't fit to an ellipse, using a linear-fit method instead
                 fit_ellipse = False
-                print(
-                    "\nCan't fit points to an ellipse, using a linear-fit method instead!\n")
+                print("\nCan't fit points to an ellipse, using a linear-fit method instead!\n")
 
         if fit_ellipse is False:
             (a, b) = np.polyfit(x, y, 1)[:2]
@@ -216,19 +250,23 @@ axis from projections of a sphere scanned over the range of [0, 360] degrees.
 
     .. code-block:: python
 
+        # Show the results
         plt.figure(1, figsize=figsize)
         plt.imshow(img_overlay, cmap="gray", extent=(0, width_cr, 0, height_cr))
+        plt.tight_layout(rect=[0, 0, 1, 1])
+
         plt.figure(0, figsize=figsize)
         plt.plot(x, y, marker="o", color="blue")
-        plt.title("Roll : {0:2.4f}; Tilt : {1:2.4f} (degree)".format(roll_angle, tilt_angle))
+        plt.title(
+            "Roll : {0:2.4f}; Tilt : {1:2.4f} (degree)".format(roll_angle, tilt_angle))
         if fit_ellipse is True:
-            # Use parametric form for ploting the ellipse
+            # Use parametric form for plotting the ellipse
             angle = np.radians(roll_angle)
             theta = np.linspace(0, 2 * np.pi, 100)
-            x_fit = (xc + 0.5 * major_axis * np.cos(theta) * np.cos(angle)
-                     - 0.5 * minor_axis * np.sin(theta) * np.sin(angle))
-            y_fit = (yc + 0.5 * major_axis * np.cos(theta) * np.sin(angle)
-                     + 0.5 * minor_axis * np.sin(theta) * np.cos(angle))
+            x_fit = (xc + 0.5 * major_axis * np.cos(theta) * np.cos(
+                angle) - 0.5 * minor_axis * np.sin(theta) * np.sin(angle))
+            y_fit = (yc + 0.5 * major_axis * np.cos(theta) * np.sin(
+                angle) + 0.5 * minor_axis * np.sin(theta) * np.cos(angle))
             plt.plot(x_fit, y_fit, color="red")
         else:
             plt.plot(x, a * x + b, color="red")
@@ -309,3 +347,17 @@ the scintillator or optics system, an additional cleaning step for image process
         sphere_size = calib.get_dot_size(mat_bin0, size_opt="max")
         # Keep the sphere only
         # ...
+
+The complete script and its **commandline user interface (CLI) version** are available
+`here <https://github.com/algotom/algotom/tree/master/examples/utilities/tomography_alignment>`__.
+If users prefer an interactive way of assessing tomographic alignment as shown below,
+the ImageJ macros can be downloaded from
+`here <https://github.com/algotom/algotom/blob/master/examples/utilities/tomography_alignment/check_alignment_auto_segmentation.ijm>`__.
+
+    .. figure:: section1_6/figs/fig_1_6_11.jpg
+        :name: fig_1_6_11
+        :figwidth: 100 %
+        :align: center
+        :figclass: align-center
+
+        Interactive approach for tomography alignment using ImageJ macro.
