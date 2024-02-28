@@ -838,11 +838,15 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
     Wrapper of reconstruction methods implemented in the astra toolbox package.
     https://www.astra-toolbox.com/docs/algs/index.html
     Users must install Astra Toolbox before using this function.
+    Apply the method to a sinogram-image or a chunk of sinogram-images.
+    Angular axis is 0. If input is 3D array, the slicing axis of sinograms
+    must be 1, e.g. data[:, index, :]
+
 
     Parameters
     ----------
     sinogram : array_like
-        2D array. Sinogram image.
+        2D/3D array. Sinogram image.
     center : float
         Center of rotation.
     angles : array_like

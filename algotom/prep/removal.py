@@ -865,7 +865,7 @@ def select_zinger(mat, max_size):
     return mat_out
 
 
-def remove_zinger(mat, threshold, size=2):
+def remove_zinger(mat, threshold, size=2, check_size=False):
     """
     Remove zinger using the method in Ref. [1], working on a projection image
     or sinogram image.
@@ -879,6 +879,8 @@ def remove_zinger(mat, threshold, size=2):
         Recommended range [0.05, 0.1].
     size : int
         Size of a zinger.
+    check_size : bool
+        Enable/disable size checking before removal.
 
     Returns
     -------
@@ -900,7 +902,8 @@ def remove_zinger(mat, threshold, size=2):
     mat_ave[mat_ave == 0.0] = 1.0
     mat_nor = mat / mat_ave - 1.0
     mask = np.asarray(mat_nor > threshold, dtype=np.float32)
-    mask = select_zinger(mask, size)
+    if check_size:
+        mask = select_zinger(mask, size)
     mat[mask > 0.0] = mat_ave[mask > 0.0]
     return mat
 

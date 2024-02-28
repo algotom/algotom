@@ -436,7 +436,6 @@ def find_tilt_roll_based_linear_fit(x, y):
     appr_minor = 2.0 * np.max(dist_list)
     tilt_angle = np.rad2deg(np.arctan2(appr_minor, appr_major))
     roll_angle = np.rad2deg(np.arctan(a))
-    print("Roll angle ", roll_angle)
     return tilt_angle, roll_angle
 
 

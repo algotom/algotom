@@ -1351,7 +1351,7 @@ def generate_spiral_positions(step, num_pos, height, width, spiral_shape=1.0):
 
 
 def find_center_visual_sinograms(sino_180, output, start, stop, step=1,
-                                 zoom=1.0):
+                                 zoom=1.0, display=False):
     """
     For visually finding the center-of-rotation (COR) using converted
     360-degree sinograms from a 180-degree sinogram at different
@@ -1372,6 +1372,8 @@ def find_center_visual_sinograms(sino_180, output, start, stop, step=1,
     zoom : float
         To resize output images. For example, 0.5 <=> reduce the size of
         output images by half.
+    display : bool
+        Print the output if True.
 
     Returns
     -------
@@ -1396,16 +1398,19 @@ def find_center_visual_sinograms(sino_180, output, start, stop, step=1,
         sino_shift = ndi.shift(sino_flip, (0, shift_col), order=3,
                                prefilter=False, mode="nearest")
         sino_360 = np.vstack((sino_180, sino_shift))
-        sino_zoom = ndi.zoom(sino_360, zoom, mode="nearest")
+        if zoom != 1.0:
+            sino_360 = ndi.zoom(sino_360, zoom, mode="nearest")
         file_name = "/center_{0:6.2f}".format(center) + ".tif"
-        losa.save_image(output_base + file_name, sino_zoom)
+        losa.save_image(output_base + file_name, sino_360)
+        if display:
+            print("Done: {}".format(output_base + file_name))
     return output_base
 
 
 def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
                               method="dfi", gpu=False, angles=None,
                               ratio=1.0, filter_name="hann", apply_log=True,
-                              ncore=None):
+                              ncore=None, display=False):
     """
     For visually finding the center-of-rotation (COR) using reconstructed
     slices at different CORs.
@@ -1440,6 +1445,8 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
         Apply the logarithm function to the sinogram before reconstruction.
     ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
+    display : bool
+        Print the output if True.
 
     Returns
     -------
@@ -1467,8 +1474,10 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
         gpu = False
     for center in list_center:
         rec_img = rec._reconstruct_slice(sinogram, center, method, angles,
-                                          ratio, filter_name, apply_log, gpu,
-                                          ncore)
+                                         ratio, filter_name, apply_log, gpu,
+                                         ncore)
         file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
         losa.save_image(output_base + "/" + file_name, rec_img)
+        if display:
+            print("Done: {}".format(output_base + file_name))
     return output_base
