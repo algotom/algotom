@@ -10,9 +10,12 @@
 It offers a comprehensive pipeline for data processing; including reading and writing data, 
 pre-processing, tomographic reconstruction, post-processing, and data simulation. 
 The package provides numerous utility methods to assist users in rapidly developing 
-prototype methods or constructing a pipeline for processing their own data. 
-Starting from version 1.1, methods for speckle-based phase-contrast tomography 
-have been incorporated into the package.
+prototype methods or constructing a pipeline for processing their own data.
+The main standout features of Algotom are its wealth of pre-processing methods: 
+artifact removal, distortion correction, phase retrieval, processing automation,... 
+The software excels in readability, minimal dependencies, maintainability, 
+and rich documentation. Starting from version 1.1, methods for speckle-based 
+phase-contrast tomography have been incorporated into the package.
 
 Features
 --------
