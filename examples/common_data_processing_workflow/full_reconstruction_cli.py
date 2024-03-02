@@ -23,9 +23,9 @@ or reconstruction methods.
 
 parser = argparse.ArgumentParser(description=usage)
 parser.add_argument("-p", dest="proj_scan", help="Scan number of tomographic data",
-                    type=int, required=True)
+                    type=str, required=True)
 parser.add_argument("-d", dest="df_scan", help="Scan number of dark-flat data",
-                    type=int, required=True)
+                    type=str, required=True)
 parser.add_argument("-c", dest="center", help="Center of rotation", type=float,
                     required=False, default=0.0)
 parser.add_argument("-r", dest="ratio", help="Ratio between delta and beta for phase filter",
@@ -49,8 +49,8 @@ parser.add_argument("--ring", dest="ring_removal", help="Select ring removal: 's
 parser.add_argument("--zing", dest="zinger_removal", help="Enable/disable (1/0) zinger removal",
                     type=int, required=False, default=0)
 
-parser.add_argument("--method", dest="recon_method", help="Select a reconstruction method: 'fbp', 'gridrec', "
-                         "'sirt'", type=str, required=False, default='gridrec')
+parser.add_argument("--method", dest="method", help="Select a reconstruction method: 'fbp', 'gridrec', 'sirt'",
+                    type=str, required=False, default='gridrec')
 parser.add_argument("--ncore", dest="num_core", help="Select number of CPU cores",
                     type=int, required=False, default=None)
 parser.add_argument("--iter", dest="num_iteration", help="Select number of iterations for the SIRT method",
@@ -60,8 +60,8 @@ args = parser.parse_args()
 input_base = "/facl/data/beamline/proposals/2024/pass-123456/tomography/raw_data/"
 output_base0 = "/facl/data/beamline/proposals/2024/pass-123456/tomography/full_reconstruction/"
 
-proj_scan = args.proj_scan
-df_scan = args.df_scan
+proj_scan_num = args.proj_scan
+dark_flat_scan_num = args.df_scan
 center = args.center
 ratio = args.ratio
 output_format = args.output_format
@@ -74,12 +74,9 @@ output_name = args.output_name
 
 ring_removal = args.ring_removal
 zinger_removal = args.zinger_removal
-recon_method = args.recon_method
+method = args.method
 num_iteration = args.num_iteration
 ncore = args.num_core
-
-proj_scan_num = "scan_" + ("0000" + str(proj_scan))[-5:]
-dark_flat_scan_num = "scan_" + ("0000" + str(df_scan))[-5:]
 
 if output_name != "":
     output_base = output_base0 + "/" + proj_scan_num + "/" + output_name + "/"
@@ -111,9 +108,9 @@ else:
         ncore = np.clip(mp.cpu_count() - 2, 1, None)
         print("Number of available CPUs: {0}. Number of use: {1}".format(
             mp.cpu_count(), ncore))
-if recon_method == "fbp":
+if method == "fbp":
     rec_method = rec.fbp_reconstruction
-elif recon_method == "sirt":
+elif method == "sirt":
     rec_method = rec.astra_reconstruction  # To use an iterative method. Must install Astra.
 else:
     rec_method = rec.gridrec_reconstruction  # Fast cpu-method. Must install Tomopy.
@@ -199,11 +196,11 @@ for i in range(num_iter):
 
     # Reconstruct a chunk of slices in parallel if using CPU-based method.
     t0 = timeit.default_timer()
-    if recon_method == "fbp":
+    if method == "fbp":
         recon_img = rec_method(sinograms, center, angles=angles, ncore=ncore,
                                ratio=1.0, filter_name='hann', apply_log=True,
                                gpu=True, block=(16, 16))
-    elif recon_method == "sirt":
+    elif method == "sirt":
         recon_img = rec_method(sinograms, center, angles=angles, ratio=1.0,
                                method="SIRT_CUDA", num_iter=num_iteration,
                                filter_name="hann", pad=None, apply_log=True, ncore=1)
@@ -258,11 +255,11 @@ if num_rest != 0:
 
     # Reconstruct a chunk of slices in parallel if using CPU-based method.
     t0 = timeit.default_timer()
-    if recon_method == "fbp":
+    if method == "fbp":
         recon_img = rec_method(sinograms, center, angles=angles, ncore=ncore,
                                ratio=1.0, filter_name='hann', apply_log=True,
                                gpu=True, block=(16, 16))
-    elif recon_method == "sirt":
+    elif method == "sirt":
         recon_img = rec_method(sinograms, center, angles=angles, ratio=1.0,
                                method="SIRT_CUDA", num_iter=num_iteration,
                                filter_name="hann", pad=None, apply_log=True, ncore=1)
