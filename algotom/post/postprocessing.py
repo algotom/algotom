@@ -642,8 +642,8 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None,
                 if last_chunk != 0:
                     mat_tmp = []
                     mat_chunk = losa.load_image_multiple(
-                        data[depth1 - last_chunk: depth1], ncore=ncore,
-                        prefer="threads")
+                        data[depth1 - last_chunk + d1: depth1 + d1],
+                        ncore=ncore, prefer="threads")
                     for j in range(last_chunk):
                         mat = mat_chunk[j]
                         if rotate != 0.0:
@@ -682,8 +682,8 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None,
                 if last_chunk != 0:
                     mat_tmp = []
                     mat_chunk = losa.load_image_multiple(
-                        data[depth1 - last_chunk: depth1], ncore=ncore,
-                        prefer="threads")
+                        data[depth1 - last_chunk + d1: depth1 + d1],
+                        ncore=ncore, prefer="threads")
                     for j in range(last_chunk):
                         mat = mat_chunk[j]
                         if rotate != 0.0:
