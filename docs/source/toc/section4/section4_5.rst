@@ -1049,16 +1049,16 @@ embarrassingly parallel approach. The procedure of how to run reconstruction pro
         .. code-block:: python
 
             #!/path/to/python/environment/bin/python
+
             import os
             import glob
             import subprocess
 
             python_script = "full_reconstruction.py"
-
+            use_gpu = True
             input_folder = "/facility/beamline/data/year/proposals/visit/raw_data/"
             # Get a list of nxs files in the input folder.
             list_file = glob.glob(input_folder + "/*nxs")
-
             # Specify where to save the processed data
             output_base = "/facility/beamline/data/year/proposals/visit/processing/reconstruction"
             # Specify the folder for cluster output-file and error-file.
@@ -1075,6 +1075,33 @@ embarrassingly parallel approach. The procedure of how to run reconstruction pro
                     except OSError:
                         raise ValueError("Can't create the folder: {}".format(file_base))
 
+            sbatch_script_cpu = """#!/bin/bash
+
+            #SBATCH --job-name=demo_workflow
+            #SBATCH --ntasks 1
+            #SBATCH --cpus-per-task 16
+            #SBATCH --nodes=1
+            #SBATCH --mem=16G
+            #SBATCH --qos=normal
+            #SBATCH --time=60:00
+
+            srun -o {0}/output_%j.txt -e {0}/error_%j.txt ./{1} {2} {3}
+            """
+
+            sbatch_script_gpu = """#!/bin/bash
+
+            #SBATCH --job-name=demo_workflow
+            #SBATCH --ntasks 1
+            #SBATCH --cpus-per-task 16
+            #SBATCH --nodes=1
+            #SBATCH --mem=16G
+            #SBATCH --gres=gpu:1
+            #SBATCH --qos=normal
+            #SBATCH --time=60:00
+
+            srun -o {0}/output_%j.txt -e {0}/error_%j.txt ./{1} {2} {3}
+            """
+
             for file_path in list_file:
                 file_name = os.path.basename(file_path)
                 name = file_name.replace(".nxs", "")
@@ -1082,19 +1109,12 @@ embarrassingly parallel approach. The procedure of how to run reconstruction pro
                 print("Submit to process the raw-data file : {}...".format(file_name))
                 cluster_output = cluster_dir + "/" + name + "/"
                 make_folder(cluster_output)
-
-                sbatch_script = """#!/bin/bash
-                #SBATCH --job-name=demo_workflow
-                #SBATCH --ntasks 1
-                #SBATCH --cpus-per-task 16
-                #SBATCH --nodes=1
-                #SBATCH --mem=16G
-                #SBATCH --qos=normal
-                #SBATCH --time=60:00
-
-                srun -o {0}/output_%j.txt -e {0}/error_%j.txt ./{1} {2} {3}
-                """.format(cluster_output, python_script, file_path, output_folder)
-
+                if use_gpu:
+                    sbatch_script = sbatch_script_gpu.format(cluster_output, python_script,
+                                                             file_path, output_folder)
+                else:
+                    sbatch_script = sbatch_script_cpu.format(cluster_output, python_script,
+                                                             file_path, output_folder)
                 # Call sbatch and pass the sbatch script contents as input
                 process = subprocess.Popen(['sbatch'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdout, stderr = process.communicate(input=sbatch_script.encode())
@@ -1125,7 +1145,7 @@ Algotom provides convenient functions for these tasks, which can be applied to a
         import algotom.io.loadersaver as losa
         import algotom.post.postprocessing as post
 
-        output_base = "E:/output/date_reduction/"
+        output_base = "E:/output/data_reduction/"
 
         # Rescale the volume to 16-bit data including cropping.
         # Input is tif, output is tif
