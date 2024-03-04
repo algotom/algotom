@@ -16,16 +16,17 @@ Table of Contents
 =================
 
 .. toctree::
-   :numbered:
-   :maxdepth: 3
+    :numbered:
+    :maxdepth: 3
 
-   toc/section1
-   toc/section2
-   toc/section3
-   toc/section4
-   toc/section5
-   toc/section6
-   toc/api
-   toc/credits
-   toc/highlights
+    toc/section1
+    toc/section2
+    toc/section3
+    toc/section4
+    toc/section5
+    toc/section6
+    toc/api
+    toc/credits
+    toc/highlights
+    toc/links
 

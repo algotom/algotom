@@ -1,5 +1,5 @@
 Highlights
-----------
+==========
 
 
 Algotom was used for some experiments featured on media:
