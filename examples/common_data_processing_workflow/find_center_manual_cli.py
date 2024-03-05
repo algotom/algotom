@@ -121,10 +121,10 @@ if ratio > 0.0:
 
 if view == "sino":
     util.find_center_visual_sinograms(sinogram, output_base, start_center,
-                                      stop_center, step=1, zoom=1.0)
+                                      stop_center, step=step_center, zoom=1.0)
 else:
     util.find_center_visual_slices(sinogram, output_base, start_center,
-                                   stop_center, 1.0, zoom=1.0, method=method,
+                                   stop_center, step_center, zoom=1.0, method=method,
                                    gpu=False, angles=angles, ratio=1.0,
                                    filter_name=None)
 
