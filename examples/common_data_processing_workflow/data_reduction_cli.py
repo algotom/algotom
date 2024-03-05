@@ -108,6 +108,7 @@ else:
         output_format = "folder"
         if os.path.isdir(output_path):
             num = 1
+            output_path = os.path.normpath(output_path)
             parent_path = os.path.dirname(output_path)
             last_folder = os.path.basename(output_path)
             while True:
@@ -182,7 +183,7 @@ else:
             dsp_folder = folder_path + "_dsp_tmp/"
             dsp_path = dsp_folder + file_name
         else:
-            dsp_folder = dsp_path = output_path + "_dsp_tmp/"
+            dsp_folder = dsp_path = os.path.normpath(output_path) + "_dsp_tmp/"
         try:
             if rescale == 32:
                 post.downsample_dataset(input_path, dsp_path, downsample,
