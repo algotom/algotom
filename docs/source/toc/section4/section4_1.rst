@@ -45,12 +45,12 @@ and less troublesome for beginners.
             :width: 100 %
             :align: center
 
-    First things first, we install Python. Here we specify Python 3.9, not the
+    First things first, we install Python. Here we specify Python 3.10 (or 3.11), not the
     latest one, as the Python ecosystem taking time to keep up.
 
         .. code-block:: console
 
-            conda install python=3.9
+            conda install python=3.10
 
     Then we install tomographic packages. A Python package can be distributed
     through its `own channel <https://anaconda.org/algotom>`__,
@@ -67,20 +67,8 @@ and less troublesome for beginners.
 
     Because Algotom relies on `dependencies <https://github.com/algotom/algotom/blob/master/requirements.txt>`__,
     e.g. Numpy, Numba, Scipy, H5py,... they are also installed at the same time.
-    The Python environment and its packages are at *C:/Users/user_ID/miniconda3/envs/myspace*.
-    Users can run a Python script, in the activated environment, by
-
-        .. code-block:: console
-
-            python C:/my_project/my_script.py
-
-    or in the Window Command Prompt by providing the absolute path to *python.exe* of the enviroment
-
-        .. code-block:: console
-
-            C:/Users/user_ID/miniconda3/envs/myspace/python C:/my_project/my_script.py
-
-    Other conda commands are often used:
+    The Python environment and its packages are at *C:/Users/user_ID/miniconda3/envs/myspace*. Other *conda* commands
+    are often used:
 
     -   *conda list* : list packages installed in an activated environment.
     -   *conda uninstall <package>* : to uninstall a package.
@@ -97,7 +85,7 @@ and less troublesome for beginners.
 
         .. code-block:: console
 
-            conda install -c astra-toolbox astra-toolbox
+            conda install -c astra-toolbox astra-toolbox=2.1.0
 
             conda install -c conda-forge tomopy
 
