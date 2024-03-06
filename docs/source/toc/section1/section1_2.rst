@@ -48,6 +48,9 @@ Hdf format
 
         Displaying the tree view of a nxs/hdf file using an Algotom's function.
 
+    There are many GUI software in Python for viewing hdf/nxs/h5 files such as: `Broh5 <https://github.com/algotom/broh5>`__,
+    `nexpy <https://nexpy.github.io/nexpy/>`__, or `Vitables <https://github.com/uvemas/ViTables>`__.
+
 **How to load datasets from a hdf file**
 
     Utilities for accessing a hdf/nxs file in Python are available in the `h5py <https://docs.h5py.org/>`__
