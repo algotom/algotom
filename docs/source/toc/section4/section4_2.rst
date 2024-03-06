@@ -54,14 +54,16 @@ file at the time they were created, so we only need to work with the nxs file.
             :width: 70 %
             :align: center
 
-    NeXpy provides more options to explore data. Note that it can't resolve `links <https://docs.h5py.org/en/stable/high/group.html#dict-interface-and-links>`__
-    between datasets, so users have to open both files as shown below. Another thing is that image in NeXpy
+    NeXpy provides more options to explore data. Noting that image in NeXpy
     is displayed with the origin at the bottom left. This is different to Hdfview (:numref:`fig_1_4_2`).
 
         .. image:: section4_2/figs/fig_4_2_3.png
             :name: fig_4_2_3
             :width: 100 %
             :align: center
+
+    Other python-based GUI software can be used are: `Broh5 <https://github.com/algotom/broh5>`__ or
+    `Vitables <https://github.com/uvemas/ViTables>`__.
 
 -   Users also can use functions in the :ref:`input-output module <input-output>` of Algotom to explore data.
     For example, to display the hierarchical structure of a hdf file:
