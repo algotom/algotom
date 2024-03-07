@@ -135,6 +135,21 @@ class UtilityMethods(unittest.TestCase):
                                 nbit=16, key_path=self.key_path)
         self.assertTrue(os.path.isfile("./tmp/dsp3/file.hdf"))
 
+        self.assertRaises(ValueError, post.downsample_dataset, self.hdf_file,
+                          "./tmp/dsp3/file.hdf", 2, key_path=self.key_path,
+                          overwrite=False)
+
+        self.assertRaises(ValueError, post.downsample_dataset, self.hdf_file,
+                          "./tmp/dsp1/", 2, key_path=self.key_path,
+                          overwrite=False)
+
+        self.assertRaises(ValueError, post.downsample_dataset, "./tmp/dsp1/",
+                          "./tmp/dsp3/file.hdf", 1, overwrite=False)
+
+        self.assertRaises(ValueError, post.downsample_dataset, "./tmp/dsp1/",
+                          "./tmp/dsp3", 1, overwrite=False)
+
+
         output = post.downsample_dataset(mat, None, (2, 2, 2),
                                          crop=(4, 4, 5, 5, 6, 6),
                                          rescaling=True, nbit=8)
@@ -172,6 +187,21 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(data_type == "uint16")
         self.assertTrue(os.path.isfile(output))
         self.assertTrue(data.shape == (self.dep, self.hei, self.wid))
+
+        self.assertRaises(ValueError, post.rescale_dataset, self.hdf_file,
+                          output, 8, key_path=self.key_path,
+                          overwrite=False)
+
+        self.assertRaises(ValueError, post.rescale_dataset, self.hdf_file,
+                          "./tmp/rescale/", 8, key_path=self.key_path,
+                          overwrite=False)
+
+        self.assertRaises(ValueError, post.rescale_dataset, self.tif_folder,
+                          output, 8, overwrite=False)
+
+        self.assertRaises(ValueError, post.rescale_dataset, self.tif_folder,
+                          "./tmp/rescale/", 8, overwrite=False)
+
 
     def test_reslice_dataset(self):
         post.reslice_dataset(self.tif_folder, "./tmp/reslice/", axis=1,
@@ -241,6 +271,21 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(os.path.isfile(output))
         exp_shape = (self.wid, self.dep, self.hei)
         self.assertTrue(data.shape == exp_shape and data_type == "float32")
+
+        self.assertRaises(ValueError, post.reslice_dataset, self.hdf_file,
+                          output, 1, key_path=self.key_path,
+                          overwrite=False)
+
+        self.assertRaises(ValueError, post.reslice_dataset, self.hdf_file,
+                          "./tmp/reslice1/", 1, key_path=self.key_path,
+                          overwrite=False)
+
+        self.assertRaises(ValueError, post.reslice_dataset, self.tif_folder,
+                          output, 1, overwrite=False)
+
+        self.assertRaises(ValueError, post.reslice_dataset, self.tif_folder,
+                          "./tmp/reslice1/", 1, overwrite=False)
+
 
     def test_remove_ring_based_wavelet_fft(self):
         mat_corr = post.remove_ring_based_wavelet_fft(self.mat, 3, 1)
