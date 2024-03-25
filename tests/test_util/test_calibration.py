@@ -26,7 +26,7 @@ Tests for methods in util/calibration.py
 import unittest
 import numpy as np
 import scipy.ndimage as ndi
-import algotom.util.calibration as cali
+import algotom.util.calibration as calib
 
 
 class CalibrationMethods(unittest.TestCase):
@@ -46,53 +46,53 @@ class CalibrationMethods(unittest.TestCase):
         self.mat_dots = np.float32(ndi.binary_dilation(mat, iterations=2))
 
     def test_normalize_background(self):
-        mat_nor = cali.normalize_background(self.bck, 3)
+        mat_nor = calib.normalize_background(self.bck, 3)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
         bck_zero = np.copy(self.bck)
         bck_zero[6, 5:15] = 0.0
-        mat_nor = cali.normalize_background(bck_zero, 3)
+        mat_nor = calib.normalize_background(bck_zero, 3)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
     def test_normalize_background_based_fft(self):
-        mat_nor = cali.normalize_background_based_fft(self.bck, sigma=5,
+        mat_nor = calib.normalize_background_based_fft(self.bck, sigma=5,
                                                       pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
         bck_zero = np.copy(self.bck)
         bck_zero[6, 5:15] = 0.0
-        mat_nor = cali.normalize_background_based_fft(bck_zero, sigma=5,
+        mat_nor = calib.normalize_background_based_fft(bck_zero, sigma=5,
                                                       pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
         bck_zero = np.pad(bck_zero, ((2, 2), (0, 0)), mode="edge")
-        mat_nor = cali.normalize_background_based_fft(bck_zero, sigma=5,
+        mat_nor = calib.normalize_background_based_fft(bck_zero, sigma=5,
                                                       pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
     def test_binarize_image(self):
         bck = 0.5 * np.random.rand(self.hei, self.wid)
-        mat_bin = cali.binarize_image(self.mat_dots + bck, bgr="dark",
+        mat_bin = calib.binarize_image(self.mat_dots + bck, bgr="dark",
                                       denoise=False)
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
 
-        mat_bin = cali.binarize_image(1.5 - self.mat_dots + bck, bgr="bright",
+        mat_bin = calib.binarize_image(1.5 - self.mat_dots + bck, bgr="bright",
                                       denoise=True, norm=True)
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
 
-        mat_bin = cali.binarize_image(self.mat_dots + bck, threshold=0.85,
+        mat_bin = calib.binarize_image(self.mat_dots + bck, threshold=0.85,
                                       bgr="dark")
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
 
-        self.assertRaises(ValueError, cali.binarize_image, self.mat_dots + bck,
+        self.assertRaises(ValueError, calib.binarize_image, self.mat_dots + bck,
                           threshold=1.5, denoise=True, bgr="bright")
 
     def test_calculate_distance(self):
@@ -103,19 +103,19 @@ class CalibrationMethods(unittest.TestCase):
         mat1 = np.float32(ndi.binary_dilation(mat1, iterations=3))
         mat2[5, 20] = 1.0
         mat2 = np.float32(ndi.binary_dilation(mat2, iterations=3))
-        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+        dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
                                       denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
-        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+        dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
                                       size_opt="median", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
-        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+        dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
                                       size_opt="mean", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
-        dis = cali.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
+        dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
                                       size_opt="min", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
@@ -139,8 +139,8 @@ class CalibrationMethods(unittest.TestCase):
         roll1 = 0.05
         tilt1 = 0.01
         x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
-        tilt1a, roll1a = cali.find_tilt_roll(x1, y1, method="ellipse")
-        tilt1b, roll1b = cali.find_tilt_roll(x1, y1, method="linear")
+        tilt1a, roll1a = calib.find_tilt_roll(x1, y1, method="ellipse")
+        tilt1b, roll1b = calib.find_tilt_roll(x1, y1, method="linear")
         self.assertTrue(
             (abs(tilt1 - tilt1a) <= eps) and (abs(roll1 - roll1a) <= eps))
         self.assertTrue(
@@ -149,8 +149,8 @@ class CalibrationMethods(unittest.TestCase):
         roll1 = -0.05
         tilt1 = 0.01
         x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
-        tilt1a, roll1a = cali.find_tilt_roll(x1, y1, method="ellipse")
-        tilt1b, roll1b = cali.find_tilt_roll(x1, y1, method="linear")
+        tilt1a, roll1a = calib.find_tilt_roll(x1, y1, method="ellipse")
+        tilt1b, roll1b = calib.find_tilt_roll(x1, y1, method="linear")
         self.assertTrue(
             (abs(tilt1 - tilt1a) <= eps) and (abs(roll1 - roll1a) <= eps))
         self.assertTrue(
@@ -159,19 +159,20 @@ class CalibrationMethods(unittest.TestCase):
         roll1 = -89.8
         tilt1 = 0.5
         x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
-        tilt1a, roll1a = cali.find_tilt_roll(x1, y1, method="ellipse")
+        tilt1a, roll1a = calib.find_tilt_roll(x1, y1, method="ellipse")
         self.assertTrue(
             (abs(tilt1 - tilt1a) <= eps) and (abs(roll1 - roll1a) <= eps))
 
         roll1 = 89.8
         tilt1 = 0.1
         x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
-        tilt1a, roll1a = cali.find_tilt_roll(x1, y1, method="ellipse")
+        tilt1a, roll1a = calib.find_tilt_roll(x1, y1, method="ellipse")
         self.assertTrue(
             (abs(tilt1 - tilt1a) <= eps) and (abs(roll1 - roll1a) <= eps))
 
-        roll1 = 0.08
+        roll1 = 0.05
         tilt1 = 0.01
         x2, y2 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.8)
+
         with self.assertWarns(UserWarning):
-            cali.find_tilt_roll(x2, y2, method="ellipse")
+            calib.find_tilt_roll(x2, y2, method="ellipse")
