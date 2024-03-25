@@ -29,7 +29,7 @@ readme = (current_folder / "README.md").read_text()
 
 setuptools.setup(
     name="algotom",
-    version="1.4.0",
+    version="1.5.0",
     author="Nghia Vo",
     author_email="nvo@bnl.gov",
     description="Data processing algorithms for tomography",
@@ -37,7 +37,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     keywords=["Parallel-beam Computed Tomography", "Image Processing",
               "Tomography", "X-ray Imaging", "Phase Contrast Imaging",
-              "Artifact removal"],
+              "Ring artifact removal"],
     url="https://github.com/algotom/algotom",
     license="Apache 2.0",
     platforms="Any",
