@@ -42,7 +42,7 @@ from numba import jit, cuda, prange
 from joblib import Parallel, delayed
 import algotom.util.utility as util
 from numba.core.errors import NumbaPerformanceWarning
-warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
+# warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
 
 def make_smoothing_window(filter_name, width):
