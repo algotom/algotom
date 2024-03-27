@@ -85,7 +85,6 @@ class CorrectionMethods(unittest.TestCase):
         opt2 = {"method": "fresnel_filter", "para1": 10.5, "para2": 1}
         m7 = corr.flat_field_correction(proj[:, 0, :], flat[0], dark[0],
                                         option=opt2)
-        print(np.mean(m4), np.mean(m7))
         self.assertTrue(np.abs(np.mean(m4) - np.mean(m7)) < 0.08)
 
         opt3 = {"method": "unwrap_phase_based_cosine_transform"}

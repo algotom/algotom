@@ -91,16 +91,15 @@ def __check_output(output):
     """
     Supplementary method: to check if output folder/file exists
     """
+    msg = "File/folder exists!!! Choose another path or set `overwrite=True`"
     if isinstance(output, str):
         file_base, file_ext = os.path.splitext(output)
         if file_ext == "":
             if os.path.exists(file_base):
-                raise ValueError(
-                    "Folder exists!!! Please choose another path!!!")
+                raise ValueError(msg)
         else:
             if os.path.isfile(output):
-                raise ValueError(
-                    "File exists!!! Please choose another file path!!!")
+                raise ValueError(msg)
 
 
 def __get_shape(input_, key_path=None):
@@ -367,7 +366,7 @@ def rescale(mat, nbit=16, minmax=None):
 
 def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
                        rescaling=False, nbit=16, minmax=None, skip=None,
-                       crop=(0, 0, 0, 0, 0, 0)):
+                       crop=(0, 0, 0, 0, 0, 0), overwrite=False):
     """
     Downsample a dataset. Input can be a folder of tif files, a hdf file,
     or a 3D array.
@@ -397,13 +396,16 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
         Crop 3D data from the edges, i.e.
         crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
         crop_width1, crop_width2).
+    overwrite : bool
+        Overwrite an existing file/folder if True.
 
     Returns
     -------
     array_like or None
         If output is None, returning a 3D array.
     """
-    __check_output(output)
+    if not overwrite:
+        __check_output(output)
     results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
     (d1, d2, h1, h2, w1, w2) = results[0]
     (depth1, height1, width1) = results[1]
@@ -503,7 +505,7 @@ def downsample_dataset(input_, output, cell_size, method="mean", key_path=None,
 
 
 def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
-                    key_path=None, crop=(0, 0, 0, 0, 0, 0)):
+                    key_path=None, crop=(0, 0, 0, 0, 0, 0), overwrite=False):
     """
     Rescale a dataset to 8-bit or 16-bit data-type. The dataset can be a
     folder of tif files, a hdf file, or a 3D array.
@@ -527,13 +529,16 @@ def rescale_dataset(input_, output, nbit=16, minmax=None, skip=None,
         Crop 3D data from the edges, i.e.
         crop = (crop_depth1, crop_depth2, crop_height1, crop_height2,
         crop_width1, crop_width2).
+    overwrite : bool
+        Overwrite an existing file/folder if True.
 
     Returns
     -------
     array_like or None
         If output is None, returning an 3D array.
     """
-    __check_output(output)
+    if not overwrite:
+        __check_output(output)
     results = __get_cropped_shape(input_, crop=crop, key_path=key_path)
     (d1, d2, h1, h2, w1, w2) = results[0]
     (depth1, height1, width1) = results[1]
@@ -778,7 +783,7 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None,
 def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
                     nbit=16, minmax=None, skip=None, rotate=0.0, chunk=16,
                     mode="constant", crop=(0, 0, 0, 0, 0, 0),
-                    ncore=None, show_progress=True):
+                    ncore=None, show_progress=True, overwrite=False):
     """
     Reslice a 3d dataset. Input can be a folder of tif files or a hdf file.
 
@@ -816,6 +821,8 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
         Number of cpu-cores. Automatically selected if None.
     show_progress : bool
         Show the progress of reslicing data if True.
+    overwrite : bool
+        Overwrite an existing file/folder if True.
 
     Returns
     -------
@@ -828,7 +835,8 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
         raise ValueError("Only two options for axis: 1 or 2")
     else:
         axis = int(axis)
-    __check_output(output)
+    if not overwrite:
+        __check_output(output)
     in_type = __get_input_type(input_)
     if in_type != "tif" and in_type != "hdf":
         raise ValueError("Wrong input type !!!")

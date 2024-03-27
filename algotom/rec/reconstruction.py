@@ -41,6 +41,8 @@ from scipy import signal
 from numba import jit, cuda, prange
 from joblib import Parallel, delayed
 import algotom.util.utility as util
+from numba.core.errors import NumbaPerformanceWarning
+warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
 
 def make_smoothing_window(filter_name, width):
@@ -691,7 +693,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
 
 def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
                            filter_name="shepp", apply_log=True, pad=100,
-                           ncore=1):  # pragma: no cover
+                           filter_par=0.9, ncore=1):  # pragma: no cover
     """
     Apply the gridrec method to a sinogram-image or a chunk of sinogram-images.
     Angular axis is 0. If input is 3D array, the slicing axis of sinograms
@@ -777,7 +779,7 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
                       mode='edge')
     recon = tomopy.recon(sinogram, angles, center=center + pad_left,
                          algorithm='gridrec', filter_name=filter_name,
-                         ncore=ncore)
+                         filter_par=filter_par, ncore=ncore)
     num_slice = len(recon)
     recon = recon[:, pad_left: pad_left + ncol, pad_left: pad_left + ncol]
     if ratio is not None:

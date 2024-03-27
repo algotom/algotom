@@ -671,20 +671,20 @@ def __get_ref_sam_stacks_dls(proj_idx, list_data_obj, list_sam_idx,
                 ref_ave = (ref_ave - dark_ave) / flat_dark
             else:
                 ref_ave = ref_ave - dark_ave
-            ref_stack.append(ref_ave)
+            ref_stack.append(np.float32(ref_ave))
         idx = list_sam_idx[i][proj_idx]
         proj = list_data_obj[i][idx, top:bot, left:right]
         if flat_field is not None:
             proj = (proj - dark_ave) / flat_dark
         else:
             proj = (proj - dark_ave)
-        sam_stack.append(proj)
-    sam_stack = np.asarray(sam_stack)
+        sam_stack.append(np.float32(proj))
+    sam_stack = np.asarray(sam_stack, dtype=np.float32)
     if fix_zero_div:
         nmean = np.mean(sam_stack)
         sam_stack[sam_stack == 0.0] = nmean
     if ref_stack:
-        ref_stack = np.asarray(ref_stack)
+        ref_stack = np.asarray(ref_stack, dtype=np.float32)
         if fix_zero_div:
             nmean = np.mean(ref_stack)
             ref_stack[ref_stack == 0.0] = nmean
@@ -947,10 +947,10 @@ def get_reference_sample_stacks(proj_idx, ref_path, sam_path, ref_key, sam_key,
         else:
             ref_ave = ref_ave - dark_field
             proj = (proj - dark_field)
-        ref_stack.append(ref_ave)
-        sam_stack.append(proj)
-    ref_stack = np.asarray(ref_stack)
-    sam_stack = np.asarray(sam_stack)
+        ref_stack.append(np.float32(ref_ave))
+        sam_stack.append(np.float32(proj))
+    ref_stack = np.asarray(ref_stack, dtype=np.float32)
+    sam_stack = np.asarray(sam_stack, dtype=np.float32)
     if fix_zero_div:
         nmean = np.mean(ref_stack)
         ref_stack[ref_stack == 0.0] = nmean
