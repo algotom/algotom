@@ -30,8 +30,11 @@ import shutil
 import unittest
 import numpy as np
 import scipy.ndimage as ndi
-import algotom.util.utility as util
 import algotom.io.loadersaver as losa
+import algotom.prep.filtering as filt
+import algotom.prep.removal as remo
+import algotom.rec.reconstruction as rec
+import algotom.util.utility as util
 
 
 class UtilityMethods(unittest.TestCase):
@@ -72,32 +75,33 @@ class UtilityMethods(unittest.TestCase):
              [[299, 0], [299, 0], [299, 0]]])
 
     def test_apply_method_to_multiple_sinograms(self):
-        f_alias = util.apply_method_to_multiple_sinograms
+        self.assertRaises(NotImplementedError,
+                          util.apply_method_to_multiple_sinograms)
+
+    def test_parallel_process_slices(self):
+        f_alias = util.parallel_process_slices
         data = np.random.rand(32, self.size, self.size)
-        method = 'remove_stripe_based_sorting'
+        method = remo.remove_stripe_based_sorting
         data_after = f_alias(data, method, [11, 1], ncore=1)
         num = np.mean(np.abs(data - data_after))
         self.assertTrue(num > self.eps and data_after.shape == data.shape)
 
-        method = 'remove_stripe_based_sorting'
+        method = remo.remove_stripe_based_sorting
         data_after = f_alias(data, method, 11, ncore=None)
         num = np.mean(np.abs(data - data_after))
         self.assertTrue(num > self.eps and data_after.shape == data.shape)
 
-        method = 'fresnel_filter'
+        method = filt.fresnel_filter
         data_after = f_alias(data, method, [30, 1])
         num = np.mean(np.abs(data - data_after))
         self.assertTrue(num > self.eps and data_after.shape == data.shape)
 
-        method = 'dfi_reconstruction'
+        method = rec.dfi_reconstruction
         data = np.random.rand(self.size, self.size, self.size)
         data_after = f_alias(data, method, [self.size // 2, None, None,
                                             "hann", 0.1, "edge", False])
         num = np.mean(np.abs(data - data_after))
         self.assertTrue(num > self.eps and data_after.shape == data.shape)
-
-        self.assertRaises(ValueError, f_alias, data,
-                          'move_stripe_based_sorting', [11, 1])
 
     def test_sort_forward(self):
         mat = np.transpose(np.tile(np.arange(self.size - 1, -1, -1),
@@ -482,15 +486,4 @@ class UtilityMethods(unittest.TestCase):
         self.assertTrue(len(files) == num_img and hei2 == 2 * hei)
 
     def test_find_center_visual_slices(self):
-        output_base = "./tmp"
-        (hei, wid) = self.mat_sino.shape
-        start, stop = wid // 2 - 3, wid // 2 + 3
-        num_img = stop - start + 1
-        output_folder = util.find_center_visual_slices(self.mat_sino,
-                                                       output_base, start,
-                                                       stop, step=1, zoom=0.5,
-                                                       apply_log=False)
-        files = losa.find_file(output_folder + "/*.tif*")
-        img = losa.load_image(files[0])
-        hei2 = img.shape[0]
-        self.assertTrue(len(files) == num_img and hei2 == hei // 2)
+        self.assertRaises(ImportError, util.find_center_visual_slices)

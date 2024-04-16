@@ -116,8 +116,7 @@ def __get_shape(input_, key_path=None):
         (height, width) = np.shape(losa.load_image(list_file[0]))
     elif in_type == "hdf":
         if key_path is None:
-            raise ValueError(
-                "Please provide the key path to the dataset!!!")
+            raise ValueError("Please provide the key path to the dataset!!!")
         else:
             hdf_object = h5py.File(input_, 'r')
             check = key_path in hdf_object
@@ -782,8 +781,8 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None,
 
 def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
                     nbit=16, minmax=None, skip=None, rotate=0.0, chunk=16,
-                    mode="constant", crop=(0, 0, 0, 0, 0, 0),
-                    ncore=None, show_progress=True, overwrite=False):
+                    mode="constant", crop=(0, 0, 0, 0, 0, 0), ncore=None,
+                    show_progress=True, overwrite=False):
     """
     Reslice a 3d dataset. Input can be a folder of tif files or a hdf file.
 

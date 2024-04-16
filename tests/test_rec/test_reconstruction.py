@@ -24,17 +24,28 @@
 Tests for the methods in rec/reconstruction.py
 
 """
-
+import os, shutil
 import unittest
 import warnings
 import numba
 import numpy as np
 from numba import cuda
 import scipy.ndimage as ndi
+import algotom.io.loadersaver as losa
 import algotom.rec.reconstruction as reco
 
 
 class ReconstructionMethods(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        if not os.path.isdir("./tmp"):
+            os.makedirs("./tmp")
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.isdir("./tmp"):
+            shutil.rmtree("./tmp")
 
     def setUp(self):
         warnings.filterwarnings('ignore',
@@ -195,3 +206,17 @@ class ReconstructionMethods(unittest.TestCase):
                              filter_name="hann", apply_log=False, ncore=None,
                              sigma=1, metric_function=self.get_negative, n=2)
         self.assertTrue(np.abs(center_cal - self.center) < 0.1)
+
+    def test_find_center_visual_slices(self):
+        output_base = "./tmp"
+        (hei, wid) = self.sino_180.shape
+        start, stop = wid // 2 - 3, wid // 2 + 3
+        num_img = stop - start + 1
+        output_folder = reco.find_center_visual_slices(self.sino_180,
+                                                       output_base, start,
+                                                       stop, step=1, zoom=0.5,
+                                                       apply_log=False)
+        files = losa.find_file(output_folder + "/*.tif*")
+        img = losa.load_image(files[0])
+        wid2 = img.shape[-1]
+        self.assertTrue(len(files) == num_img and wid2 == wid // 2)

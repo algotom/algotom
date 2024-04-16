@@ -64,7 +64,7 @@ except ValueError:
 if len(crop) != 6:
     raise ValueError(msg)
 else:
-    if not all(isinstance(cr, int) and cr > 0 for cr in crop):
+    if not all(isinstance(cr, int) and cr >= 0 for cr in crop):
         raise ValueError("Cropping parameters must be integer and >=0")
 
 # Check input path

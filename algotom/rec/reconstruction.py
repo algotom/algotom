@@ -38,9 +38,11 @@ import numpy as np
 import numpy.fft as fft
 import scipy
 from scipy import signal
+from scipy import ndimage as ndi
 from numba import jit, cuda, prange
 from joblib import Parallel, delayed
 import algotom.util.utility as util
+import algotom.io.loadersaver as losa
 from numba.core.errors import NumbaPerformanceWarning
 warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
@@ -516,8 +518,7 @@ def __dfi_handle_angles(sinogram, angles):
     step = np.mean(np.abs(np.diff(angles)))
     b_ang = angles[0] - (angles[0] // (2 * np.pi)) * (2 * np.pi)
     sino_360 = np.vstack((sinogram[: nrow - 1], np.fliplr(sinogram)))
-    sinogram = scipy.ndimage.shift(sino_360, (b_ang / step, 0), mode='wrap')[
-               :nrow]
+    sinogram = ndi.shift(sino_360, (b_ang / step, 0), mode='wrap')[:nrow]
     if angles[-1] < angles[0]:
         sinogram = np.flipud(np.fliplr(sinogram))
     return sinogram
@@ -542,8 +543,7 @@ def __dfi_handle_sinogram(sinogram0, angles, center, pad_rate, pad_mode):
     xshift = (ncol1 - 1) / 2.0 - center
     pad = int(pad_rate * ncol1)
     if num_sino > 1:
-        sinogram = scipy.ndimage.shift(sinogram, (0, 0, xshift),
-                                       mode='nearest')
+        sinogram = ndi.shift(sinogram, (0, 0, xshift), mode='nearest')
         if angles is not None:
             sino_tmp = []
             for i in range(num_sino):
@@ -552,7 +552,7 @@ def __dfi_handle_sinogram(sinogram0, angles, center, pad_rate, pad_mode):
         sinogram = np.pad(sinogram, ((0, 0), (0, 0), (pad, pad)),
                           mode=pad_mode)
     else:
-        sinogram = scipy.ndimage.shift(sinogram, (0, xshift), mode='nearest')
+        sinogram = ndi.shift(sinogram, (0, xshift), mode='nearest')
         if angles is not None:
             sinogram = __dfi_handle_angles(sinogram, angles)
         sinogram = np.pad(sinogram, ((0, 0), (pad, pad)), mode=pad_mode)
@@ -806,8 +806,8 @@ def __astra_recon_single(sinogram, center, angles, pad, method, filter_name,
     proj_geom = astra.create_proj_geom('parallel', 1, ncol, angles)
     vol_geom = astra.create_vol_geom(ncol, ncol)
     cen_col = (ncol - 1.0) / 2.0
-    sinogram = scipy.ndimage.shift(sinogram, (0, cen_col - (center + pad)),
-                                   mode='nearest')
+    sinogram = ndi.shift(sinogram, (0, cen_col - (center + pad)),
+                         mode='nearest')
     sino_id = astra.data2d.create('-sino', proj_geom, sinogram)
     rec_id = astra.data2d.create('-vol', vol_geom)
     proj_id = None
@@ -1000,7 +1000,7 @@ def __calculate_histogram_entropy(recon_img, window):
     calculate a metric based on the entropy of histogram.
     """
     recon = np.uint8(recon_img * 255)
-    hist = 1.0 + scipy.ndimage.histogram(recon, 0, 255, 256)
+    hist = 1.0 + ndi.histogram(recon, 0, 255, 256)
     hist = signal.convolve(hist, window, mode='valid')
     metric = -np.sum(hist * np.log2(hist))
     return metric
@@ -1081,7 +1081,7 @@ def _find_center_based_slice_metric(sinogram, start, stop, step, method="dfi",
     [1] : https://doi.org/10.1364/JOSAA.23.001048
     """
     if sigma > 0:
-        sinogram = scipy.ndimage.gaussian_filter1d(sinogram, sigma, axis=1)
+        sinogram = ndi.gaussian_filter1d(sinogram, sigma, axis=1)
     list_center = np.arange(start, stop, step)
     num_center = len(list_center)
     if num_center == 0:
@@ -1185,11 +1185,10 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
     angles_zoom = angles
     sino_zoom = np.copy(sinogram)
     if zoom < 1.0:
-        sino_zoom = scipy.ndimage.zoom(sinogram, zoom, order=1, mode="nearest")
+        sino_zoom = ndi.zoom(sinogram, zoom, order=1, mode="nearest")
         start, stop = start * zoom, stop * zoom
         if angles is not None:
-            angles_zoom = scipy.ndimage.zoom(
-                np.tile(angles, (1, 1)), (1.0, zoom))[0]
+            angles_zoom = ndi.zoom(np.tile(angles, (1, 1)), (1.0, zoom))[0]
     f_alias = _find_center_based_slice_metric
     if stop > start:
         coarse_center = f_alias(sino_zoom, start, stop + 1, 1.0, method=method,
@@ -1211,3 +1210,78 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
     else:
         center = coarse_center
     return center
+
+
+def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
+                              method="dfi", gpu=False, angles=None, ratio=1.0,
+                              filter_name="hann", apply_log=True, ncore=None,
+                              display=False):
+    """
+    For visually finding the center-of-rotation (COR) using reconstructed
+    slices at different CORs.
+
+    Parameters
+    ----------
+    sinogram : array_like
+        2D array. Sinogram image.
+    output : str
+        Base folder for saving reconstructed slices.
+    start : float
+        Starting point for searching CoR.
+    stop : float
+        Ending point for searching CoR.
+    step : float
+        Searching step.
+    zoom : float
+        To resize input and output images. For example, 0.5 <=> reduce the
+        size of images by half.
+    method : {"dfi", "gridrec", "fbp", "astra"}
+        To select a backend method for reconstruction.
+    gpu : bool, optional
+        Use GPU for computing if True.
+    angles : array_like, optional
+        1D array. List of angles (in radian) corresponding to the sinogram.
+    ratio : float, optional
+        To apply a circle mask to the reconstructed image.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+        Apply a smoothing filter.
+    apply_log : bool, optional
+        Apply the logarithm function to the sinogram before reconstruction.
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
+    display : bool
+        Print the output if True.
+
+    Returns
+    -------
+    str
+        Folder path to tif images.
+    """
+    output_name = losa.make_folder_name(output, name_prefix="Find_center",
+                                        zero_prefix=3)
+    output_base = output + "/" + output_name
+    (nrow, ncol) = sinogram.shape
+    step = np.clip(step, 0.05, ncol - 1)
+    start = np.clip(start, 0, ncol - 1)
+    stop = np.clip(stop + step, start + step, ncol - 1)
+    if zoom != 1.0:
+        sinogram = ndi.zoom(sinogram, zoom, order=1, mode="nearest")
+        start = start * zoom
+        stop = stop * zoom
+        step = step * zoom
+        list_center = np.arange(start, stop, step)
+        if angles is not None:
+            angles = ndi.zoom(np.tile(angles, (1, 1)), (1.0, zoom))[0]
+    else:
+        list_center = np.arange(start, stop, step)
+    if not cuda.is_available():
+        gpu = False
+    for center in list_center:
+        rec_img = _reconstruct_slice(sinogram, center, method, angles, ratio,
+                                     filter_name, apply_log, gpu, ncore)
+        file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
+        losa.save_image(output_base + "/" + file_name, rec_img)
+        if display:
+            print("Done: {}".format(output_base + "/" + file_name))
+    return output_base

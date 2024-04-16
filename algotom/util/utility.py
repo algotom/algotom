@@ -49,9 +49,8 @@ Module of utility methods:
             +   locate_slice_chunk
     -   Methods for speckle-based tomography
             +   generate_spiral_positions
-    -   Methods for finding the center of rotation by visual inspection.
+    -   Method for finding the center of rotation by visual inspection.
             +   find_center_visual_sinograms
-            +   find_center_visual_slices
  """
 
 import sys
@@ -66,58 +65,67 @@ import scipy.signal.windows as win
 from scipy.signal import savgol_filter
 from joblib import Parallel, delayed
 import algotom.io.loadersaver as losa
-import algotom.prep.removal as remo
-import algotom.prep.filtering as filt
-import algotom.rec.reconstruction as rec
 
 
-def apply_method_to_multiple_sinograms(data, method, para, ncore=None,
-                                       prefer="threads"):
+def parallel_process_slices(data, method, parameters, axis=1, ncore=None,
+                            prefer="threads", **kwargs):
     """
-    Apply a processing method (in "filtering", "removal", and "reconstruction"
-    module) to multiple sinograms or multiple slices in parallel.
+    Apply a processing method to slices of a 3D array in parallel.
 
     Parameters
     ----------
     data : array_like or hdf object
-        3D array data where sinograms/slices are extracted along axis 1,
-        e.g [:, i, :].
-    method : str
-        Name of a method. e.g. "remove_stripe_based_sorting".
-    para : list
-        Parameters of the method. e.g. [21, 1]
-    ncore: int or None
+        3D data array or HDF dataset.
+    method : callable
+        Function to apply to each slice.
+    parameters : list
+        List of positional parameters for the method.
+    axis : int
+        Axis along which the method is applied.
+    ncore : int, optional
         Number of cpu-cores used for computing. Automatically selected if None.
     prefer : {"threads", "processes"}
-        Prefer backend for parallel processing.
+        Preferred parallel backend ("threads" for I/O bound tasks or
+        "processes" for CPU-bound tasks).
+    **kwargs : dict
+        Additional keyword parameters to pass to the method.
 
     Returns
     -------
     array_like
         Same axis-definition as the input.
     """
+    (depth, height, width) = data.shape
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
     else:
         ncore = np.clip(ncore, 1, None)
-    if not isinstance(para, list):
-        para = tuple(list([para]))
+    if not isinstance(parameters, list):
+        parameters = list([parameters])
+    if axis == 2:
+        data_out = Parallel(n_jobs=ncore, prefer=prefer)(
+            delayed(method)(data[:, :, i], *parameters, **kwargs) for i in
+            range(width))
+        data_out = np.moveaxis(np.asarray(data_out), 0, 2)
+    elif axis == 1:
+        data_out = Parallel(n_jobs=ncore, prefer=prefer)(
+            delayed(method)(data[:, i, :], *parameters, **kwargs) for i in
+            range(height))
+        data_out = np.moveaxis(np.asarray(data_out), 0, 1)
     else:
-        para = tuple(para)
-    (depth, height, width) = data.shape
-    if method in dir(remo):
-        method_used = getattr(remo, method)
-    elif method in dir(filt):
-        method_used = getattr(filt, method)
-    elif method in dir(rec):
-        method_used = getattr(rec, method)
-    else:
-        raise ValueError("Can't find the method: '{}' in the namespace"
-                         "".format(method))
-    data_out = Parallel(n_jobs=ncore, prefer=prefer)(
-        delayed(method_used)(data[:, i, :], *para) for i in range(height))
-    data_out = np.moveaxis(np.asarray(data_out), 0, 1)
+        data_out = Parallel(n_jobs=ncore, prefer=prefer)(
+            delayed(method)(data[i, :, :], *parameters, **kwargs) for i in
+            range(depth))
+        data_out = np.asarray(data_out)
     return data_out
+
+
+def apply_method_to_multiple_sinograms(*args, **kwargs):
+    msg = "!!! 'apply_method_to_multiple_sinograms' has been removed after " \
+          "version 1.5.0. Please use 'parallel_process_slices' instead. " \
+          "Refer to the documentation for details on parameters and usage " \
+          "adjustments needed!!!"
+    raise NotImplementedError(msg)
 
 
 def mapping(mat, x_mat, y_mat, order=1, mode="reflect"):
@@ -1407,77 +1415,8 @@ def find_center_visual_sinograms(sino_180, output, start, stop, step=1,
     return output_base
 
 
-def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
-                              method="dfi", gpu=False, angles=None,
-                              ratio=1.0, filter_name="hann", apply_log=True,
-                              ncore=None, display=False):
-    """
-    For visually finding the center-of-rotation (COR) using reconstructed
-    slices at different CORs.
-
-    Parameters
-    ----------
-    sinogram : array_like
-        2D array. Sinogram image.
-    output : str
-        Base folder for saving reconstructed slices.
-    start : float
-        Starting point for searching CoR.
-    stop : float
-        Ending point for searching CoR.
-    step : float
-        Searching step.
-    zoom : float
-        To resize input and output images. For example, 0.5 <=> reduce the
-        size of images by half.
-    method : {"dfi", "gridrec", "fbp", "astra"}
-        To select a backend method for reconstruction.
-    gpu : bool, optional
-        Use GPU for computing if True.
-    angles : array_like, optional
-        1D array. List of angles (in radian) corresponding to the sinogram.
-    ratio : float, optional
-        To apply a circle mask to the reconstructed image.
-    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
-                  "nuttall", "parzen", "triang"}
-        Apply a smoothing filter.
-    apply_log : bool, optional
-        Apply the logarithm function to the sinogram before reconstruction.
-    ncore : int or None
-        Number of cpu-cores used for computing. Automatically selected if None.
-    display : bool
-        Print the output if True.
-
-    Returns
-    -------
-    str
-        Folder path to tif images.
-    """
-    output_name = losa.make_folder_name(output, name_prefix="Find_center",
-                                        zero_prefix=3)
-    output_base = output + "/" + output_name
-    (nrow, ncol) = sinogram.shape
-    step = np.clip(step, 0.05, ncol - 1)
-    start = np.clip(start, 0, ncol - 1)
-    stop = np.clip(stop + step, start + step, ncol - 1)
-    if zoom != 1.0:
-        sinogram = ndi.zoom(sinogram, zoom, order=1, mode="nearest")
-        start = start * zoom
-        stop = stop * zoom
-        step = step * zoom
-        list_center = np.arange(start, stop, step)
-        if angles is not None:
-            angles = ndi.zoom(np.tile(angles, (1, 1)), (1.0, zoom))[0]
-    else:
-        list_center = np.arange(start, stop, step)
-    if not cuda.is_available():
-        gpu = False
-    for center in list_center:
-        rec_img = rec._reconstruct_slice(sinogram, center, method, angles,
-                                         ratio, filter_name, apply_log, gpu,
-                                         ncore)
-        file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
-        losa.save_image(output_base + "/" + file_name, rec_img)
-        if display:
-            print("Done: {}".format(output_base + file_name))
-    return output_base
+def find_center_visual_slices(*args, **kwargs):
+    msg = "!!!'find_center_visual_slices' has been moved to the " \
+          "'reconstruction' module. Please update your import to use " \
+          "'reconstruction.find_center_visual_slices'.!!!"
+    raise ImportError(msg)
