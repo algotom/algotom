@@ -199,11 +199,11 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
     min_pos = np.argmin(list_metric)
     if min_pos == 0:
         msg = "Global minimum is out of the searching range. Please " \
-              "reduce the start-value !!!"
+              "reduce the starting value !!!"
         warnings.warn(msg)
     if min_pos == (num_metric - 1):
         msg = "Global minimum is out of the searching range. Please " \
-              "increase the stop-value !!!"
+              "increase the stopping value !!!"
         warnings.warn(msg)
     return list_cor[min_pos]
 

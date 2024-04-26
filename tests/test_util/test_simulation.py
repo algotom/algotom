@@ -26,7 +26,7 @@ Tests for methods in util/simulation.py
 import unittest
 import numpy as np
 import algotom.util.simulation as sim
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
 class SimulationMethods(unittest.TestCase):
@@ -64,8 +64,8 @@ class SimulationMethods(unittest.TestCase):
         self.assertTrue(0.96 < ratio < 0.985)
 
     def test_make_sinogram(self):
-        rec_image = reco.dfi_reconstruction(self.sinogram, self.size // 2,
-                                            apply_log=False)
+        rec_image = rec.dfi_reconstruction(self.sinogram, self.size // 2,
+                                           apply_log=False)
         mat_com = np.abs(self.phantom - rec_image)
         num1 = np.mean(mat_com[mat_com > 0.0])
         self.assertTrue(num1 < self.error)
