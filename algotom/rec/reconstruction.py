@@ -24,6 +24,7 @@
 Module of reconstruction methods:
 
     -   Filtered back-projection (FBP) method for GPU and CPU.
+    -   Back-projection filtering (BPF) method for GPU and CPU.
     -   Direct Fourier inversion (DFI) method.
     -   Wrapper for Astra-Toolbox reconstruction methods (optional)
     -   Wrapper for Tomopy-gridrec reconstruction method (optional)
@@ -1407,8 +1408,8 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5,
     invert_metric : bool
         Invert the metric scale, used with a custom metric-function.
     metric_function : obj
-        Custom function to calculate metric, accepts keyword
-        arguments (**kwargs).
+        Custom function to calculate metric, accepts keyword arguments
+        (** kwargs).
 
     Returns
     -------

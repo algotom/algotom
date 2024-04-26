@@ -12,7 +12,7 @@
 
     .. autosummary::
 
-        apply_method_to_multiple_sinograms
+        parallel_process_slices
         mapping
         make_circle_mask
         sort_forward
@@ -41,4 +41,3 @@
         locate_slice_chunk
         generate_spiral_positions
         find_center_visual_sinograms
-        find_center_visual_slices

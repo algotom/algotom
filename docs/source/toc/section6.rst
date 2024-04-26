@@ -49,3 +49,12 @@ Update notes
 
     + Add methods for loading and saving multiple tiff images in parallel.
     + Release version 1.4.
+
+- 24/03/2024:
+
+    + Add calibration methods for tomography alignment.
+    + Release version 1.5
+
+- 26/04/2024:
+
+    + Add back-projection filtering (BPF) method.
