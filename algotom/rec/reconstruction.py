@@ -21,14 +21,14 @@
 # ============================================================================
 
 """
-Module of FFT-based reconstruction methods in the reconstruction stage:
+Module of reconstruction methods:
 
-    -   Filtered back-projection (FBP) method for GPU (using numba and cuda)
-        and CPU.
+    -   Filtered back-projection (FBP) method for GPU and CPU.
     -   Direct Fourier inversion (DFI) method.
     -   Wrapper for Astra-Toolbox reconstruction methods (optional)
     -   Wrapper for Tomopy-gridrec reconstruction method (optional)
-    -   Center-of-rotation determination using slice metrics.
+    -   Automatic determination of the center of rotation.
+    -   Tool to assist in manual determination of the center of rotation.
 """
 
 import math
@@ -154,120 +154,159 @@ def apply_ramp_filter(sinogram, ramp_win=None, filter_name=None, pad=None,
 
 
 @cuda.jit
-def back_projection_gpu(recon, sinogram, angles, xlist, center, sino_height,
-                        sino_width):  # pragma: no cover
+def __back_projection_gpu_kernel(recon, sinogram, angles, center, sino_height,
+                                 sino_width, edge_pad):  # pragma: no cover
+    """
+    GPU-kernel function performing back-projection.
+    """
+    (x_index, y_index) = cuda.grid(2)
+    if (x_index < sino_width) and (y_index < sino_width):
+        sino_width1 = sino_width - 1
+        icenter = 0.5 * sino_width1
+        x_cor = (x_index - icenter)
+        y_cor = (y_index - icenter)
+        num = 0.0
+        for i in range(sino_height):
+            theta = -angles[i]
+            x_pos = x_cor * math.cos(theta) + y_cor * math.sin(theta)
+            f_pos = x_pos + center
+            if 0 <= f_pos <= sino_width1:
+                d_pos = int(math.floor(f_pos))
+                u_pos = int(math.ceil(f_pos))
+                if u_pos != d_pos:
+                    yd = sinogram[i, d_pos]
+                    yu = sinogram[i, u_pos]
+                    val = yd + (yu - yd) * (f_pos - d_pos)
+                else:
+                    val = sinogram[i, d_pos]
+                num += val
+            else:
+                if edge_pad:
+                    if f_pos < 0:
+                        val = sinogram[i, 0]
+                    else:
+                        val = sinogram[i, sino_width1]
+                    num += val
+        recon[y_index, x_index] = num
+
+
+def back_projection_gpu(sinogram, angles, center, block=(16, 16),
+                        edge_pad=False):  # pragma: no cover
     """
     Implement the back-projection algorithm using GPU.
 
     Parameters
     ----------
-    recon : array_like
-        Square array of zeros. Initialized reconstruction-image.
     sinogram : array_like
-        2D array. (Filtered) sinogram image.
+        2D array. Sinogram image.
     angles : array_like
         1D array. Angles (radian) corresponding to the sinogram.
-    xlist : array_like
-        1D array. Distances of the integration lines to the image center.
     center : float
         Center of rotation.
-    sino_height : int
-        Height of the sinogram image.
-    sino_width : int
-        Width of the sinogram image.
+    edge_pad : bool
+        Enable/disable edge padding.
+    block : tuple of int, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
 
     Returns
     -------
     recon : array_like
-        Note that this is the GPU kernel function, i.e. no need of "return".
+        Back-projected image.
     """
-    (x_index, y_index) = cuda.grid(2)
-    icenter = math.ceil((sino_width - 1.0) / 2.0)
-    x_cor = (x_index - icenter)
-    y_cor = (y_index - icenter)
-    x_min = max(-icenter, -center)
-    x_max = min(sino_width - icenter - 1, sino_width - center - 1)
-    if (x_index < sino_width) and (y_index < sino_width):
-        num = 0.0
-        for i in range(sino_height):
-            theta = - angles[i]
-            x_pos = x_cor * math.cos(theta) + y_cor * math.sin(theta)
-            if (x_pos > x_min) and (x_pos < x_max):
-                fpos = x_pos + center
-                dpos = int(math.floor(fpos))
-                upos = int(math.ceil(fpos))
-                if upos != dpos:
-                    xd = xlist[dpos]
-                    xu = xlist[upos]
-                    yd = sinogram[i, dpos]
-                    yu = sinogram[i, upos]
-                    val = yd + (yu - yd) * ((x_pos - xd) / (xu - xd))
-                else:
-                    val = sinogram[i, dpos]
-                num += val
-        recon[y_index, x_index] = num
+    (nrow, ncol) = sinogram.shape
+    sinogram = np.ascontiguousarray(sinogram)
+    grid = (int(np.ceil(1.0 * ncol / block[0])),
+            int(np.ceil(1.0 * ncol / block[1])))
+    recon = np.zeros((ncol, ncol), dtype=np.float32)
+    __back_projection_gpu_kernel[grid, block](recon, np.float32(sinogram),
+                                              np.float32(angles),
+                                              np.float32(center),
+                                              np.int32(nrow), np.int32(ncol),
+                                              edge_pad)
+    return recon
 
 
 @cuda.jit
-def back_projection_gpu_chunk(recons, sinograms, angles, xlist, center,
-                              sino_height, sino_width,
-                              num_sino):  # pragma: no cover
+def __back_projection_gpu_chunk_kernel(recons, sinograms, angles, center,
+                                       sino_height, sino_width,
+                                       num_sino, edge_pad):  # pragma: no cover
+    """
+    GPU-kernel function performing back-projection for a chunk of sinograms.
+    """
+    (x_index, y_index) = cuda.grid(2)
+    if (x_index < sino_width) and (y_index < sino_width):
+        sino_width1 = sino_width - 1
+        icenter = 0.5 * sino_width1
+        x_cor = (x_index - icenter)
+        y_cor = (y_index - icenter)
+        for i in range(sino_height):
+            theta = -angles[i]
+            x_pos = x_cor * math.cos(theta) + y_cor * math.sin(theta)
+            f_pos = x_pos + center
+            if 0 <= f_pos <= sino_width1:
+                d_pos = int(math.floor(f_pos))
+                u_pos = int(math.ceil(f_pos))
+                for j in range(num_sino):
+                    if u_pos != d_pos:
+                        yd = sinograms[i, j, d_pos]
+                        yu = sinograms[i, j, u_pos]
+                        val = yd + (yu - yd) * (f_pos - d_pos)
+                    else:
+                        val = sinograms[i, j, d_pos]
+                    recons[y_index, j, x_index] += val
+            else:
+                if edge_pad:
+                    for j in range(num_sino):
+                        if f_pos < 0:
+                            val = sinograms[i, j, 0]
+                        else:
+                            val = sinograms[i, j, sino_width1]
+                        recons[y_index, j, x_index] += val
+
+
+def back_projection_gpu_chunk(sinograms, angles, center, block=(16, 16),
+                              edge_pad=False):  # pragma: no cover
     """
     Implement the back-projection algorithm for a chunk of sinograms using GPU.
     Axis of a sinogram/slice in the 3D array is 1.
 
     Parameters
     ----------
-    recons : array_like
-        3D array of zeros. Initialized reconstruction-images.
     sinograms : array_like
-        3D array. (Filtered) sinogram images.
+        3D array. Sinogram images.
     angles : array_like
         1D array. Angles (radian) corresponding to a sinogram.
-    xlist : array_like
-        1D array. Distances of the integration lines to the image center.
     center : float
         Center of rotation.
-    sino_height : int
-        Height of the sinogram image.
-    sino_width : int
-        Width of the sinogram image.
-    num_sino : int
-        Number of sinograms.
+    edge_pad : bool
+        Enable/disable edge padding.
+    block : tuple of int, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
 
     Returns
     -------
     recons : array_like
-        Reconstructed images.
+        Back-projected images.
     """
-    (x_index, y_index) = cuda.grid(2)
-    icenter = math.ceil((sino_width - 1.0) / 2.0)
-    x_cor = (x_index - icenter)
-    y_cor = (y_index - icenter)
-    x_min = max(-icenter, -center)
-    x_max = min(sino_width - icenter - 1, sino_width - center - 1)
-    if (x_index < sino_width) and (y_index < sino_width):
-        for i in range(sino_height):
-            theta = - angles[i]
-            x_pos = x_cor * math.cos(theta) + y_cor * math.sin(theta)
-            if (x_pos > x_min) and (x_pos < x_max):
-                fpos = x_pos + center
-                dpos = int(math.floor(fpos))
-                upos = int(math.ceil(fpos))
-                xd = xlist[dpos]
-                xu = xlist[upos]
-                for j in range(num_sino):
-                    if upos != dpos:
-                        yd = sinograms[i, j, dpos]
-                        yu = sinograms[i, j, upos]
-                        val = yd + (yu - yd) * ((x_pos - xd) / (xu - xd))
-                    else:
-                        val = sinograms[i, j, dpos]
-                    recons[y_index, j, x_index] += val
+    (nrow, num_sino, ncol) = sinograms.shape
+    sinograms = np.ascontiguousarray(sinograms)
+    recons = np.zeros((ncol, num_sino, ncol), dtype=np.float32)
+    grid = (int(np.ceil(1.0 * ncol / block[0])),
+            int(np.ceil(1.0 * ncol / block[1])))
+    __back_projection_gpu_chunk_kernel[grid, block](recons,
+                                                    np.float32(sinograms),
+                                                    np.float32(angles),
+                                                    np.float32(center),
+                                                    np.int32(nrow),
+                                                    np.int32(ncol),
+                                                    np.int32(num_sino),
+                                                    edge_pad)
+    return recons
 
 
 @jit(nopython=True, parallel=True, cache=True)
-def back_projection_cpu(sinogram, angles, xlist, center):  # pragma: no cover
+def back_projection_cpu(sinogram, angles, center,
+                        edge_pad=False):  # pragma: no cover
     """
     Implement the back-projection algorithm using CPU.
 
@@ -277,20 +316,19 @@ def back_projection_cpu(sinogram, angles, xlist, center):  # pragma: no cover
         2D array. (Filtered) sinogram image.
     angles : array_like
         1D array. Angles (radian) corresponding to the sinogram.
-    xlist : array_like
-        1D array. Distances of the integration lines to the image center.
     center : float
         Center of rotation.
+    edge_pad : bool
+        Enable/disable edge padding.
 
     Returns
     -------
     recon : array_like
-        Square array. Reconstructed image.
+        Square array, back-projected image.
     """
     (sino_height, sino_width) = sinogram.shape
-    icenter = np.ceil((sino_width - 1.0) / 2.0)
-    x_min = max(-icenter, -center)
-    x_max = min(sino_width - icenter - 1, sino_width - center - 1)
+    sino_width1 = sino_width - 1
+    icenter = 0.5 * sino_width1
     recon = np.zeros((sino_width, sino_width), dtype=np.float32)
     for i in prange(sino_height):
         theta = - angles[i]
@@ -300,19 +338,24 @@ def back_projection_cpu(sinogram, angles, xlist, center):  # pragma: no cover
             y_cor = y_index - icenter
             for x_index in range(sino_width):
                 x_pos = (x_index - icenter) * cos_theta + y_cor * sin_theta
-                if (x_pos > x_min) and (x_pos < x_max):
-                    fpos = x_pos + center
-                    dpos = np.int32(np.floor(fpos))
-                    upos = np.int32(np.ceil(fpos))
-                    if upos != dpos:
-                        xd = xlist[dpos]
-                        xu = xlist[upos]
-                        yd = sinogram[i, dpos]
-                        yu = sinogram[i, upos]
-                        val = yd + (yu - yd) * ((x_pos - xd) / (xu - xd))
+                f_pos = x_pos + center
+                if 0 <= f_pos <= sino_width1:
+                    d_pos = np.int32(np.floor(f_pos))
+                    u_pos = np.int32(np.ceil(f_pos))
+                    if u_pos != d_pos:
+                        yd = sinogram[i, d_pos]
+                        yu = sinogram[i, u_pos]
+                        val = yd + (yu - yd) * (f_pos - d_pos)
                     else:
-                        val = sinogram[i, dpos]
+                        val = sinogram[i, d_pos]
                     recon[y_index, x_index] += val
+                else:
+                    if edge_pad:
+                        if f_pos < 0:
+                            val = sinogram[i, 0]
+                        else:
+                            val = sinogram[i, sino_width1]
+                        recon[y_index, x_index] += val
     return recon
 
 
@@ -372,34 +415,26 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
         angles = np.deg2rad(np.linspace(0.0, 180.0, nrow))
     else:
         if len(angles) != nrow:
-            raise ValueError("!!! Number of angles is not the same as the row "
-                             "number of the sinogram !!!")
+            raise ValueError("!!!Number of angles is not the same as the row "
+                             "number of the sinogram!!!")
     if gpu is True:
         if cuda.is_available() is False:
-            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
+            warnings.warn("!!!No Nvidia GPU found! Run with CPU instead!!!")
             gpu = False
+        else:
+            grid = (int(np.ceil(1.0 * ncol / block[0])),
+                    int(np.ceil(1.0 * ncol / block[1])))
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
     else:
         ncore = np.clip(ncore, 1, None)
     if apply_log is True:
         if np.any(sinogram <= 0.0):
-            warnings.warn("!!! Applying logarithm to sinogram is enabled but "
-                          "there are values <= 0.0 in the sinogram !!!")
-            nmean = np.mean(sinogram)
-            sino_tmp = np.copy(sinogram)
-            if nmean != 0.0:
-                sino_tmp[sinogram <= 0.0] = nmean
-            else:
-                sino_tmp[sinogram <= 0.0] = 1
-            sinogram = sino_tmp
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sinogram[sinogram <= 0.0] = np.float32(1.0)
         sinogram = -np.log(sinogram)
-    xlist = np.float32(np.arange(0.0, ncol) - center)
-    grid = (int(np.ceil(1.0 * ncol / block[0])),
-            int(np.ceil(1.0 * ncol / block[1])))
-    if ratio is None:
-        mask = np.ones((ncol, ncol), dtype=np.float32)
-    else:
+    if ratio is not None:
         if ratio == 0.0:
             ratio = min(center, ncol - center) / (0.5 * ncol)
         mask = util.make_circle_mask(ncol, ratio)
@@ -414,15 +449,14 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
         if gpu is True:
             sino_filtered = np.ascontiguousarray(sino_filtered)
             recon = np.zeros((ncol, ncol), dtype=np.float32)
-            back_projection_gpu[grid, block](recon, np.float32(sino_filtered),
-                                             np.float32(angles), xlist,
-                                             np.float32(center),
-                                             np.int32(nrow), np.int32(ncol))
+            __back_projection_gpu_kernel[grid, block](recon, np.float32(
+                sino_filtered), np.float32(angles), np.float32(center),
+                np.int32(nrow), np.int32(ncol), False)
         else:
             recon = back_projection_cpu(np.float32(sino_filtered),
-                                        np.float32(angles), np.float32(xlist),
-                                        np.float32(center))
-        recon = recon * mask
+                                        np.float32(angles), np.float32(center))
+        if ratio is not None:
+            recon = recon * mask
     else:
         if ncore == 1:
             sino_filtered = np.zeros_like(sinogram)
@@ -437,23 +471,211 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
                 delayed(apply_ramp_filter)(
                     sinogram[:, i, :], ramp_win, filter_name, pad,
                     pad_mode) for i in range(num_sino))
-            sino_filtered = np.moveaxis(np.asarray(sino_filtered), 0, 1)
+            sino_filtered = np.copy(
+                np.moveaxis(np.asarray(sino_filtered), 0, 1))
         if gpu is True:
             sino_filtered = np.ascontiguousarray(sino_filtered)
             recon = np.zeros((ncol, num_sino, ncol), dtype=np.float32)
-            back_projection_gpu_chunk[grid, block](recon,
-                                                   np.float32(sino_filtered),
-                                                   np.float32(angles), xlist,
-                                                   np.float32(center),
-                                                   np.int32(nrow),
-                                                   np.int32(ncol),
-                                                   np.int32(num_sino))
+            __back_projection_gpu_chunk_kernel[grid, block](recon, np.float32(
+                sino_filtered), np.float32(angles), np.float32(center),
+                np.int32(nrow), np.int32(ncol), np.int32(num_sino), False)
         else:
             recon = np.zeros((ncol, num_sino, ncol), dtype=np.float32)
             for i in range(num_sino):
                 recon[:, i, :] = back_projection_cpu(
                     np.float32(sino_filtered[:, i, :]), np.float32(angles),
-                    np.float32(xlist), np.float32(center))
+                    np.float32(center))
+        if ratio is not None:
+            for i in range(num_sino):
+                recon[:, i, :] = recon[:, i, :] * mask
+    if input_3d is True and num_sino == 1:
+        recon = np.expand_dims(recon, 1)
+    return recon * np.pi / (nrow - 1)
+
+
+def make_circular_ramp_window(width, filter_name=None):
+    """
+    Make a circular ramp window (2d) with the option of adding a smoothing
+    window.
+
+    Parameters
+    ----------
+    width : int
+        Width of the window.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+         Name of a smoothing window used.
+
+    Returns
+    -------
+    array_like
+        Square array, size of (width, width)
+    """
+    ramp_win = np.arange(0.0, width) - np.ceil((width - 1.0) / 2)
+    ramp_win[ramp_win == 0.0] = 0.25
+    ramp_win[ramp_win % 2 == 0.0] = 0.0
+    for i in range(width):
+        if ramp_win[i] % 2 == 1.0:
+            ramp_win[i] = - 1.0 / (ramp_win[i] * np.pi) ** 2
+    window = make_smoothing_window(filter_name, width)
+    ramp_1d = np.abs(fft.fftshift(fft.fft(ramp_win))) * window
+    circ_ramp = util.transform_1d_window_to_2d(ramp_1d, order=1,
+                                               mode="nearest")
+    return circ_ramp
+
+
+def apply_circular_ramp_filter(rec_img, ramp_win=None, filter_name=None,
+                               pad=None, pad_mode="edge"):
+    """
+    Apply the circular ramp filter to a back-projected image.
+
+    Parameters
+    ----------
+    rec_img : array_like
+        Square array. back-projected image.
+    ramp_win : array_like
+        2d circular ramp window, generated if None given.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+         Name of a smoothing window used.
+    pad : int or None
+        To apply padding before the FFT. The value is set to 10% of the image
+        width if None is given.
+    pad_mode : str
+        Padding method. Full list can be found at numpy_pad documentation.
+
+    Returns
+    -------
+    array_like
+        Square array.
+    """
+    ncol = rec_img.shape[0]
+    if pad is None:
+        pad = min(int(0.15 * ncol), 150)
+    img_pad = np.pad(rec_img, pad, mode=pad_mode)
+    if (ramp_win is None) or (ramp_win.shape != img_pad.shape):
+        ramp_win = make_circular_ramp_window(ncol + 2 * pad, filter_name)
+    filt_img = np.real(fft.ifft2(
+        fft.ifftshift(fft.fftshift(np.fft.fft2(img_pad)) * ramp_win)))
+    return filt_img[pad:ncol + pad, pad:ncol + pad]
+
+
+def bpf_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
+                       filter_name="hann", pad=None, pad_mode="edge",
+                       apply_log=True, gpu=True, block=(16, 16), ncore=None):
+    """
+    Apply the BPF (back-projection filtering) reconstruction method to a
+    sinogram-image or a chunk of sinogram-images. Angular axis is 0.
+    If input is 3D array, the slicing axis of sinograms must be 1,
+    e.g. data[:, index, :].
+
+    Parameters
+    ----------
+    sinogram : array_like
+        2D/3D array. Sinogram image.
+    center : float
+        Center of rotation.
+    angles : array_like, optional
+        1D array. List of angles (in radian) corresponding to the sinogram.
+    ratio : float, optional
+        Apply a circle mask to the reconstructed image.
+    ramp_win : complex ndarray, optional
+        Circular ramp window, generated if None.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+        Apply a smoothing filter.
+    pad : int, optional
+        Apply padding before the FFT. The value is set to 10% of the image
+        width if None is given.
+    pad_mode : str, optional
+        Padding method. Full list can be found at numpy_pad documentation.
+    apply_log : bool, optional
+        Apply logarithm to sinogram before reconstruction.
+    gpu : bool, optional
+        Use GPU for computing if True.
+    block : tuple of two integer-values, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
+
+    Returns
+    -------
+    array_like
+        Square array. Reconstructed image.
+    """
+    input_3d = False
+    if len(sinogram.shape) == 3:
+        (nrow, num_sino, ncol) = sinogram.shape
+        input_3d = True
+    else:
+        num_sino = 1
+        (nrow, ncol) = sinogram.shape
+    if center < 0 or center >= ncol:
+        raise ValueError("Center is out of the range [0, {}]".format(ncol - 1))
+    if angles is None:
+        angles = np.deg2rad(np.linspace(0.0, 180.0, nrow))
+    else:
+        if len(angles) != nrow:
+            raise ValueError("!!!Number of angles is not the same as the row "
+                             "number of the sinogram!!!")
+    if gpu is True:
+        if cuda.is_available() is False:
+            warnings.warn("!!!No Nvidia GPU found! Run with CPU instead!!!")
+            gpu = False
+        else:
+            grid = (int(np.ceil(1.0 * ncol / block[0])),
+                    int(np.ceil(1.0 * ncol / block[1])))
+    if ncore is None:
+        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+    else:
+        ncore = np.clip(ncore, 1, None)
+    if apply_log is True:
+        if np.any(sinogram <= 0.0):
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sinogram[sinogram <= 0.0] = np.float32(1.0)
+        sinogram = -np.log(sinogram)
+    if ratio is not None:
+        if ratio == 0.0:
+            ratio = min(center, ncol - center) / (0.5 * ncol)
+        mask = util.make_circle_mask(ncol, ratio)
+    if pad is None:
+        pad = min(int(0.15 * ncol), 150)
+    if ramp_win is None:
+        ramp_win = make_circular_ramp_window(ncol + 2 * pad, filter_name)
+    if num_sino == 1:
+        sinogram = np.squeeze(sinogram)
+        if gpu is True:
+            sinogram = np.ascontiguousarray(sinogram)
+            recon = np.zeros((ncol, ncol), dtype=np.float32)
+            __back_projection_gpu_kernel[grid, block](recon, np.float32(
+                sinogram), np.float32(angles), np.float32(center),
+                np.int32(nrow), np.int32(ncol), True)
+        else:
+            recon = back_projection_cpu(np.float32(sinogram),
+                                        np.float32(angles), np.float32(center),
+                                        edge_pad=True)
+        recon = apply_circular_ramp_filter(recon, ramp_win, pad=pad,
+                                           pad_mode=pad_mode)
+        if ratio is not None:
+            recon = recon * mask
+    else:
+        if gpu is True:
+            sinogram = np.ascontiguousarray(sinogram)
+            recon = np.zeros((ncol, num_sino, ncol), dtype=np.float32)
+            __back_projection_gpu_chunk_kernel[grid, block](recon, np.float32(
+                sinogram), np.float32(angles), np.float32(center),
+                np.int32(nrow), np.int32(ncol), np.int32(num_sino), True)
+        else:
+            recon = np.zeros((ncol, num_sino, ncol), dtype=np.float32)
+            for i in range(num_sino):
+                recon[:, i, :] = back_projection_cpu(
+                    np.float32(sinogram[:, i, :]), np.float32(angles),
+                    np.float32(center), edge_pad=True)
+        recon = util.parallel_process_slices(recon, apply_circular_ramp_filter,
+                                             [ramp_win, filter_name, pad,
+                                              pad_mode], axis=1, ncore=ncore,
+                                             prefer="threads")
         if ratio is not None:
             for i in range(num_sino):
                 recon[:, i, :] = recon[:, i, :] * mask
@@ -548,7 +770,7 @@ def __dfi_handle_sinogram(sinogram0, angles, center, pad_rate, pad_mode):
             sino_tmp = []
             for i in range(num_sino):
                 sino_tmp.append(__dfi_handle_angles(sinogram[:, i, :], angles))
-            sinogram = np.moveaxis(np.asarray(sino_tmp), 0, 1)
+            sinogram = np.copy(np.moveaxis(np.asarray(sino_tmp), 0, 1))
         sinogram = np.pad(sinogram, ((0, 0), (0, 0), (pad, pad)),
                           mode=pad_mode)
     else:
@@ -639,15 +861,9 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
                                                     pad_rate, pad_mode)
     if apply_log is True:
         if np.any(sinogram <= 0.0):
-            warnings.warn("!!! Applying logarithm to sinogram is enabled but "
-                          "there are values <= 0.0 in the sinogram !!!")
-            nmean = np.mean(sinogram)
-            sino_tmp = np.copy(sinogram)
-            if nmean != 0.0:
-                sino_tmp[sinogram <= 0.0] = nmean
-            else:
-                sino_tmp[sinogram <= 0.0] = 1
-            sinogram = sino_tmp
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sinogram[sinogram <= 0.0] = np.float32(1.0)
         sinogram = -np.log(sinogram)
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
@@ -672,7 +888,7 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
             for i in range(num_sino):
                 recon.append(__dfi_single_slice(sinogram[:, i, :], window,
                                                 mask, r_mat, theta_mat))
-        recon = np.moveaxis(np.asarray(recon), 0, 1)
+        recon = np.copy(np.moveaxis(np.asarray(recon), 0, 1))
         recon = recon[pad:ncol + pad, :, pad:ncol + pad]
     else:
         recon = __dfi_single_slice(sinogram, window, mask, r_mat, theta_mat)
@@ -715,6 +931,8 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
     filter_name : str or None
         Apply a smoothing filter. Full list is at:
         https://github.com/tomopy/tomopy/blob/master/source/tomopy/recon/algorithm.py
+    filter_par : float
+        Adjust the strength of the filter. Smaller is stronger.
     apply_log : bool
         Apply the logarithm function to the sinogram before reconstruction.
     pad : bool or int
@@ -742,15 +960,9 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
                              "number of the sinogram !!!")
     if apply_log is True:
         if np.any(sinogram <= 0.0):
-            warnings.warn("!!! Applying logarithm to sinogram is enabled but "
-                          "there are values <= 0.0 in the sinogram !!!")
-            nmean = np.mean(sinogram)
-            sino_tmp = np.copy(sinogram)
-            if nmean != 0.0:
-                sino_tmp[sinogram <= 0.0] = nmean
-            else:
-                sino_tmp[sinogram <= 0.0] = 1
-            sinogram = sino_tmp
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sinogram[sinogram <= 0.0] = np.float32(1.0)
         sinogram = -np.log(sinogram)
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
@@ -788,7 +1000,7 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
         mask = util.make_circle_mask(ncol, ratio)
         for i in range(num_slice):
             recon[i] = recon[i] * mask
-    recon = np.moveaxis(np.asarray(recon), 0, 1)
+    recon = np.copy(np.moveaxis(np.asarray(recon), 0, 1))
     if input_3d is False:
         recon = np.squeeze(recon)
     return recon
@@ -867,6 +1079,8 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
         Padding to reduce the side effect of FFT.
     apply_log : bool
         Apply the logarithm function to the sinogram before reconstruction.
+    ncore : int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -919,15 +1133,9 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
         raise ValueError("Center is out of the range [0, {}]".format(ncol - 1))
     if apply_log is True:
         if np.any(sinogram <= 0.0):
-            warnings.warn("!!! Applying logarithm to sinogram is enabled but "
-                          "there are values <= 0.0 in the sinogram !!!")
-            nmean = np.mean(sinogram)
-            sino_tmp = np.copy(sinogram)
-            if nmean != 0.0:
-                sino_tmp[sinogram <= 0.0] = nmean
-            else:
-                sino_tmp[sinogram <= 0.0] = 1
-            sinogram = sino_tmp
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sinogram[sinogram <= 0.0] = np.float32(1.0)
         sinogram = -np.log(sinogram)
     if filter_name is None:
         filter_name = "ram-lak"
@@ -951,7 +1159,7 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
                 __astra_recon_single)(sinogram[:, i, :], center, angles, pad,
                                       method, filter_name,
                                       num_iter) for i in range(num_sino))
-        recon = np.moveaxis(np.asarray(recon), 0, 1)
+        recon = np.copy(np.moveaxis(np.asarray(recon), 0, 1))
     if ratio is not None:
         if ratio == 0.0:
             ratio = min(center, ncol - center) / (0.5 * ncol)
@@ -994,11 +1202,12 @@ def _reconstruct_slice(sinogram, center, method, angles, ratio, filter_name,
     return recon
 
 
-def __calculate_histogram_entropy(recon_img, window):
+def __calculate_histogram_entropy(recon_img, window=None):
     """
-    Supplementary method for '_find_center_based_slice_metric'. Used to
-    calculate a metric based on the entropy of histogram.
+    Calculate a metric based on the entropy of histogram.
     """
+    if window is None:
+        window = signal.windows.boxcar(7)
     recon = np.uint8(recon_img * 255)
     hist = 1.0 + ndi.histogram(recon, 0, 255, 256)
     hist = signal.convolve(hist, window, mode='valid')
@@ -1006,9 +1215,17 @@ def __calculate_histogram_entropy(recon_img, window):
     return metric
 
 
+def __calculate_edge_sharpness(image):
+    """
+    Calculate a sharpness metric using gradient.
+    """
+    gx, gy = np.gradient(np.float32(image))
+    return np.mean(np.sqrt(gx**2 + gy**2))
+
+
 def __get_slice_metric(sinogram, center, method, angles, ratio, filter_name,
-                       apply_log, gpu, ncore, window, nmin=0, nmax=1,
-                       metric_function=None, **kwargs):
+                       apply_log, gpu, ncore, window, nmin=0.0, nmax=1.0,
+                       metric="entropy", metric_function=None, **kwargs):
     """
     Supplementary method for '_find_center_based_slice_metric'. Used to
     reconstruct a slice and calculate its metric.
@@ -1016,26 +1233,31 @@ def __get_slice_metric(sinogram, center, method, angles, ratio, filter_name,
     if metric_function is None:
         recon = _reconstruct_slice(sinogram, center, method, angles,
                                    ratio, filter_name, apply_log, gpu, ncore)
-        recon = (recon - nmin) / (nmax - nmin)
-        recon = np.clip(recon, 0.0, 1.0)
-        metric = __calculate_histogram_entropy(recon, window)
+        if metric == "entropy":
+            recon1 = (recon - nmin) / (nmax - nmin)
+            recon1 = np.clip(recon1, 0, 1)
+            value = __calculate_histogram_entropy(recon1, window)
+        else:
+            value = __calculate_edge_sharpness(recon)
     else:
         recon = _reconstruct_slice(sinogram, center, method, angles,
                                    ratio, filter_name, apply_log, gpu, ncore)
-        metric = metric_function(recon, **kwargs)
-    return metric
+        value = metric_function(recon, **kwargs)
+    return value
 
 
-def _find_center_based_slice_metric(sinogram, start, stop, step, method="dfi",
-                                    gpu=False, angles=None, ratio=1.0,
-                                    filter_name="hann", apply_log=True,
-                                    ncore=None, sigma=3, return_metric=True,
+def _find_center_based_slice_metric(sinogram, start, stop, step,
+                                    metric="entropy", method="fbp", gpu=True,
+                                    angles=None, ratio=1.0, filter_name="hann",
+                                    apply_log=True, ncore=None,
+                                    prefer="threads", sigma=0,
+                                    return_metric=True, invert_metric=False,
                                     metric_function=None, **kwargs):
     """
     Find the center-of-rotation (COR) using metrics of reconstructed slices
     at different CORs. The entropy of histogram (Ref. [1]) is used by default
-    if the metric-function is set to None. If customized metrics are used, the
-    minimum value must be corresponding to the best center.
+    if the metric-function is set to None. If customized metrics are used, 
+    not that the minimum value must be corresponding to the optimal center.
 
     Parameters
     ----------
@@ -1047,6 +1269,8 @@ def _find_center_based_slice_metric(sinogram, start, stop, step, method="dfi",
         Ending point for searching CoR.
     step : float
         Searching step.
+    metric : {"entropy", "sharpness"}
+        Which metric to use.
     method : {"dfi", "gridrec", "fbp", "astra"}
         To select a backend method for reconstruction.
     gpu : bool, optional
@@ -1062,51 +1286,58 @@ def _find_center_based_slice_metric(sinogram, start, stop, step, method="dfi",
         Apply the logarithm function to the sinogram before reconstruction.
     ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
+    prefer : {"threads", "processes"}
+        Preferred parallel backend.
     sigma : int
         Denoising the sinogram before reconstruction.
     return_metric : bool
         Return a list of centers and their metrics if True.
+    invert_metric : bool
+        Invert the metric scale, used with a custom metric-function.
     metric_function : obj
-        To apply a customized function for calculating metric going with
-        keyword arguments (**kwargs).
+        Custom function to calculate metric, accepts keyword
+        arguments (**kwargs).
 
     Returns
     -------
     float or ndarray
-        The best center or a list of centers and their metrics if
+        The optimal center or a list of centers and their metrics if
         return_metric=True.
-
-    References
-    ----------
-    [1] : https://doi.org/10.1364/JOSAA.23.001048
     """
-    if sigma > 0:
-        sinogram = ndi.gaussian_filter1d(sinogram, sigma, axis=1)
     list_center = np.arange(start, stop, step)
     num_center = len(list_center)
     if num_center == 0:
         raise ValueError("Invalid searching parameters: (start, stop, step)={}"
                          "!!!".format((start, stop, step)))
+    if sigma > 0:
+        sinogram = ndi.gaussian_filter1d(sinogram, sigma, axis=1)
+    if apply_log:
+        if np.any(sinogram <= 0.0):
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sinogram[sinogram <= 0.0] = np.float32(1.0)
+        sinogram = -np.log(sinogram)
+        apply_log = False
     if not cuda.is_available():
         gpu = False
-    if metric_function is None:
-        recon0 = _reconstruct_slice(sinogram, (start + stop - step) * 0.5,
-                                    method, angles, ratio, filter_name,
-                                    apply_log, gpu, ncore)
-        nmin, nmax = np.min(recon0), np.max(recon0)
+    nmin, nmax = 0.0, 1.0
+    window = signal.windows.boxcar(7)
+    if (metric_function is None) and (metric == "entropy"):
+        center = np.mean(list_center)
+        recon = _reconstruct_slice(sinogram, center, method, angles, ratio,
+                                   filter_name, apply_log, gpu, ncore)
+        nmin, nmax = np.min(recon), np.max(recon)
         if nmin == nmax:
             raise ValueError("Empty image!!!")
-    else:
-        nmin, nmax = 0.0, 1.0
-    window = signal.windows.boxcar(7)
     if ncore is None:
         ncore = np.clip(mp.cpu_count() - 1, 1, None)
-    ncore = np.clip(ncore, 1, num_center)
+    else:
+        ncore = np.clip(ncore, 1, None)
     if (ncore > 1) and (gpu is False) and (method != "fbp"):
-        list_metric = Parallel(n_jobs=ncore, prefer="threads")(delayed(
+        list_metric = Parallel(n_jobs=ncore, prefer=prefer)(delayed(
             __get_slice_metric)(sinogram, center, method, angles, ratio,
                                 filter_name, apply_log, gpu, 1, window, nmin,
-                                nmax, metric_function,
+                                nmax, metric, metric_function,
                                 **kwargs) for center in list_center)
         list_metric = np.asarray(list_metric)
     else:
@@ -1115,25 +1346,29 @@ def _find_center_based_slice_metric(sinogram, start, stop, step, method="dfi",
             list_metric[i] = __get_slice_metric(sinogram, center, method,
                                                 angles, ratio, filter_name,
                                                 apply_log, gpu, 1, window,
-                                                nmin, nmax, metric_function,
-                                                **kwargs)
-    best_center = list_center[np.argmin(list_metric)]
+                                                nmin, nmax, metric,
+                                                metric_function, **kwargs)
+    if invert_metric:
+        list_metric = np.max(list_metric) - list_metric
+    opt_center = list_center[np.argmin(list_metric)]
     if return_metric:
-        return np.asarray(list(zip(list_center, list_metric)))
+        return list_center, list_metric
     else:
-        return best_center
+        return opt_center
 
 
-def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
-                                   zoom=0.5, method="dfi", gpu=False,
-                                   angles=None, ratio=1.0, filter_name="hann",
-                                   apply_log=False, ncore=None, sigma=3,
-                                   metric_function=None, **kwargs):
+def find_center_based_slice_metric(sinogram, start, stop, step=0.5,
+                                   metric="entropy", radius=2, zoom=1.0,
+                                   method="fbp", gpu=True, angles=None,
+                                   ratio=1.0, filter_name="hann",
+                                   apply_log=True, ncore=None, sigma=0,
+                                   invert_metric=False, metric_function=None,
+                                   **kwargs):
     """
     Find the center-of-rotation (COR) using metrics of reconstructed slices
-    at different CORs. The entropy of histogram (Ref. [1]) is used by default
-    if the metric-function is set to None. If customized metrics are used, the
-    minimum value must be corresponding to the best center.
+    at different CORs. The entropy of histogram (Ref. [1]) is used by default.
+    If customized metrics are used, the minimum value must be corresponding to
+    the optimal center.
 
     Parameters
     ----------
@@ -1145,6 +1380,8 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
         Ending point for searching CoR.
     step : float
         Sub-pixel searching step.
+    metric : {"entropy", "sharpness"}
+        Which metric to use.
     radius : float
         Searching range with the sub-pixel step.
     zoom : float
@@ -1166,11 +1403,12 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
     ncore : int or None
         Number of cpu-cores used for computing. Automatically selected if None.
     sigma : int
-        Denoising the sinogram before reconstruction. Should be set to 0 for
-        noise-free data (simulation).
+        Denoising the sinogram before reconstruction.
+    invert_metric : bool
+        Invert the metric scale, used with a custom metric-function.
     metric_function : obj
-        To apply a customized function for calculating metric going with
-        keyword arguments (**kwargs).
+        Custom function to calculate metric, accepts keyword
+        arguments (**kwargs).
 
     Returns
     -------
@@ -1191,10 +1429,12 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
             angles_zoom = ndi.zoom(np.tile(angles, (1, 1)), (1.0, zoom))[0]
     f_alias = _find_center_based_slice_metric
     if stop > start:
-        coarse_center = f_alias(sino_zoom, start, stop + 1, 1.0, method=method,
-                                gpu=gpu, angles=angles_zoom, ratio=ratio,
-                                filter_name=filter_name, apply_log=apply_log,
-                                ncore=ncore, sigma=sigma, return_metric=False,
+        coarse_center = f_alias(sino_zoom, start, stop + 1, 1.0, metric=metric,
+                                method=method, gpu=gpu, angles=angles_zoom,
+                                ratio=ratio, filter_name=filter_name,
+                                apply_log=apply_log, ncore=ncore, sigma=sigma,
+                                return_metric=False,
+                                invert_metric=invert_metric,
                                 metric_function=metric_function, **kwargs)
         coarse_center = coarse_center / zoom
     else:
@@ -1202,18 +1442,19 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5, radius=2,
     if radius != 0.0:
         radius = max(radius, step + 1.0 / zoom)
         start, stop = coarse_center - radius, coarse_center + radius + step
-        center = f_alias(sinogram, start, stop, step, method=method,
-                         gpu=gpu, angles=angles, ratio=ratio,
+        center = f_alias(sinogram, start, stop, step, metric=metric,
+                         method=method, gpu=gpu, angles=angles, ratio=ratio,
                          filter_name=filter_name, apply_log=apply_log,
                          ncore=ncore, sigma=sigma, return_metric=False,
+                         invert_metric=invert_metric,
                          metric_function=metric_function, **kwargs)
     else:
         center = coarse_center
     return center
 
 
-def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
-                              method="dfi", gpu=False, angles=None, ratio=1.0,
+def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=0.5,
+                              method="fbp", gpu=False, angles=None, ratio=1.0,
                               filter_name="hann", apply_log=True, ncore=None,
                               display=False):
     """
@@ -1260,7 +1501,7 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
     """
     output_name = losa.make_folder_name(output, name_prefix="Find_center",
                                         zero_prefix=3)
-    output_base = output + "/" + output_name
+    output_base = output + "/" + output_name + "/"
     (nrow, ncol) = sinogram.shape
     step = np.clip(step, 0.05, ncol - 1)
     start = np.clip(start, 0, ncol - 1)
@@ -1281,7 +1522,7 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=1.0,
         rec_img = _reconstruct_slice(sinogram, center, method, angles, ratio,
                                      filter_name, apply_log, gpu, ncore)
         file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
-        losa.save_image(output_base + "/" + file_name, rec_img)
+        losa.save_image(output_base + file_name, rec_img)
         if display:
-            print("Done: {}".format(output_base + "/" + file_name))
+            print("Done: {}".format(output_base + file_name))
     return output_base

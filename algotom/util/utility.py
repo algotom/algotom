@@ -106,17 +106,17 @@ def parallel_process_slices(data, method, parameters, axis=1, ncore=None,
         data_out = Parallel(n_jobs=ncore, prefer=prefer)(
             delayed(method)(data[:, :, i], *parameters, **kwargs) for i in
             range(width))
-        data_out = np.moveaxis(np.asarray(data_out), 0, 2)
+        data_out = np.copy(np.moveaxis(np.float32(data_out), 0, 2))
     elif axis == 1:
         data_out = Parallel(n_jobs=ncore, prefer=prefer)(
             delayed(method)(data[:, i, :], *parameters, **kwargs) for i in
             range(height))
-        data_out = np.moveaxis(np.asarray(data_out), 0, 1)
+        data_out = np.copy(np.moveaxis(np.float32(data_out), 0, 1))
     else:
         data_out = Parallel(n_jobs=ncore, prefer=prefer)(
             delayed(method)(data[i, :, :], *parameters, **kwargs) for i in
             range(depth))
-        data_out = np.asarray(data_out)
+        data_out = np.float32(data_out)
     return data_out
 
 
@@ -922,7 +922,7 @@ def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
     return mat
 
 
-def transform_1d_window_to_2d(win_1d):
+def transform_1d_window_to_2d(win_1d, order=1, mode="reflect"):
     """
     Transform a 1d-window to 2d-window.
     Useful for designing a Fourier filter.
@@ -931,6 +931,12 @@ def transform_1d_window_to_2d(win_1d):
     ----------
     win_1d : array_like
         1D array.
+    order : int, optional
+        The order of the spline interpolation, default is 1.
+        The order has to be in the range 0-5.
+    mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
+        The mode parameter determines how the input array is extended beyond
+        its boundaries. Default is 'reflect'.
 
     Returns
     --------
@@ -953,7 +959,7 @@ def transform_1d_window_to_2d(win_1d):
     theta_mat = np.clip(np.float32(theta_mat * (width - 1.0) / np.pi), 0,
                         width - 1)
     mat = np.tile(win_1d, (width, 1))
-    win_2d = mapping(mat, r_mat, theta_mat)
+    win_2d = mapping(mat, r_mat, theta_mat, order=order, mode=mode)
     return win_2d[0:width0, 0:width0]
 
 

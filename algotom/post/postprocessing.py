@@ -899,7 +899,7 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
                         mat_tmp.append(mat)
                     mat_tmp = np.asarray(mat_tmp)
                 else:
-                    mat_tmp = np.moveaxis(mat_chunk, 1, 0)
+                    mat_tmp = np.copy(np.moveaxis(mat_chunk, 1, 0))
                 data_slice[i:i + chunk] = mat_tmp
                 if show_progress:
                     sys.stdout.write("\r" + " " * len_msg + "\r")
@@ -912,7 +912,7 @@ def reslice_dataset(input_, output, axis=1, key_path=None, rescaling=False,
                         mat_tmp.append(mat)
                     mat_tmp = np.asarray(mat_tmp)
                 else:
-                    mat_tmp = np.moveaxis(mat_chunk, 1, 0)
+                    mat_tmp = np.copy(np.moveaxis(mat_chunk, 1, 0))
                 data_slice[height1 - last_chunk: height1] = mat_tmp
         else:
             list_file, len_msg = None, None

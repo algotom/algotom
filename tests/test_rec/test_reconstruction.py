@@ -32,7 +32,7 @@ import numpy as np
 from numba import cuda
 import scipy.ndimage as ndi
 import algotom.io.loadersaver as losa
-import algotom.rec.reconstruction as reco
+import algotom.rec.reconstruction as rec
 
 
 class ReconstructionMethods(unittest.TestCase):
@@ -69,28 +69,85 @@ class ReconstructionMethods(unittest.TestCase):
                                 category=numba.NumbaPerformanceWarning)
 
     def test_make_smoothing_window(self):
-        win1 = reco.make_smoothing_window(None, self.size)
-        win2 = reco.make_smoothing_window("hann", self.size)
+        win1 = rec.make_smoothing_window(None, self.size)
+        win2 = rec.make_smoothing_window("hann", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
-        win2 = reco.make_smoothing_window("bartlett", self.size)
+        win2 = rec.make_smoothing_window("bartlett", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
-        win2 = reco.make_smoothing_window("blackman", self.size)
+        win2 = rec.make_smoothing_window("blackman", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
-        win2 = reco.make_smoothing_window("hamming", self.size)
+        win2 = rec.make_smoothing_window("hamming", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
-        win2 = reco.make_smoothing_window("nuttall", self.size)
+        win2 = rec.make_smoothing_window("nuttall", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
-        win2 = reco.make_smoothing_window("parzen", self.size)
+        win2 = rec.make_smoothing_window("parzen", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
-        win2 = reco.make_smoothing_window("triang", self.size)
+        win2 = rec.make_smoothing_window("triang", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
 
     def test_fbp_reconstruction(self):
-        f_alias = reco.fbp_reconstruction
+        f_alias = rec.fbp_reconstruction
         mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
-                           gpu=False, ratio=0.0)
+                           gpu=False)
         num1 = np.median(np.abs(self.mat - mat_rec1))
+        check = True
+        if cuda.is_available() is True:
+            mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
+                               gpu=True)
+            num3 = np.max(np.abs(self.mat - mat_rec1))
+            mat_rec2 = f_alias(self.sino_360, self.center,
+                               angles=np.deg2rad(self.angles), apply_log=False,
+                               gpu=True)
+            num4 = np.max(np.abs(self.mat - mat_rec2))
+            if num3 > 0.1 or num4 > 0.1:
+                check = False
+        self.assertTrue(num1 <= 0.2 and check)
 
+        gpu = False
+        sino_stack = np.pad(np.expand_dims(self.sino_180, 1), ((0, 0), (2, 2),
+                                                               (0, 0)),
+                            mode="edge")
+        rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                            gpu=gpu, angles=np.deg2rad(self.angles2),
+                            ratio=0.0, ncore=1)
+        num = np.median(np.abs(self.mat - rec_stack[:, 0, :]))
+        n_slice = rec_stack.shape[1]
+        self.assertTrue(num <= 0.2 and n_slice == 5)
+
+        rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                            gpu=gpu, ratio=0.0, ncore=None)
+        num = np.median(np.abs(self.mat - rec_stack[:, 0, :]))
+        self.assertTrue(num <= 0.2)
+
+        if cuda.is_available() is True:
+            gpu = True
+            sino_stack = np.pad(np.expand_dims(self.sino_180, 1),
+                                ((0, 0), (2, 2), (0, 0)), mode="edge")
+            rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                                gpu=gpu, ratio=0.0, ncore=1)
+            num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+            n_slice = rec_stack.shape[1]
+            self.assertTrue(num <= 0.1 and n_slice == 5)
+
+            rec_stack = f_alias(sino_stack, self.center, apply_log=False,
+                                gpu=gpu, ratio=1.0, ncore=None)
+            num = np.max(np.abs(self.mat - rec_stack[:, 0, :]))
+            self.assertTrue(num <= 0.1)
+
+        self.assertWarns(Warning, f_alias, self.sino_180, self.center,
+                         apply_log=True)
+
+        self.assertRaises(ValueError, f_alias, self.sino_180, self.center,
+                          np.deg2rad(self.angles), apply_log=False)
+
+        self.assertRaises(ValueError, f_alias, self.sino_180, -1,
+                          apply_log=False)
+
+    def test_bpf_reconstruction(self):
+        f_alias = rec.bpf_reconstruction
+        mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
+                           gpu=False)
+        num1 = np.median(np.abs(self.mat - mat_rec1))
         check = True
         if cuda.is_available() is True:
             mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
@@ -145,7 +202,7 @@ class ReconstructionMethods(unittest.TestCase):
                           apply_log=False)
 
     def test_dfi_reconstruction(self):
-        f_alias = reco.dfi_reconstruction
+        f_alias = rec.dfi_reconstruction
         mat_rec1 = f_alias(self.sino_180, self.center, ratio=0.0,
                            apply_log=False)
         num1 = np.max(np.abs(self.mat - mat_rec1))
@@ -183,13 +240,20 @@ class ReconstructionMethods(unittest.TestCase):
         return metric
 
     def test_find_center_based_slice_metric(self):
-        f_alias = reco.find_center_based_slice_metric
+        f_alias = rec.find_center_based_slice_metric
         center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
                              step=0.25, radius=2, zoom=0.8, method="dfi",
-                             gpu=False, angles=self.angles2, ratio=1.0,
-                             filter_name="hann", apply_log=False, ncore=1,
-                             sigma=1, metric_function=None)
+                             gpu=False, angles=np.deg2rad(self.angles2),
+                             ratio=1.0, filter_name="hann", apply_log=False,
+                             ncore=1, sigma=1, metric_function=None)
         self.assertTrue(np.abs(center_cal - self.center) < 0.1)
+
+        center_cal = f_alias(self.sino_180, self.center - 2, self.center + 2,
+                             step=0.25, metric="sharpness", radius=2, zoom=1.0,
+                             method="dfi", gpu=False, angles=None,
+                             ratio=1.0, filter_name="hann", apply_log=False,
+                             ncore=1, sigma=0, metric_function=None)
+        self.assertTrue(np.abs(center_cal - self.center) <= 0.25)
 
         if cuda.is_available() is True:
             center_cal = f_alias(self.sino_180, self.center - 2,
@@ -212,10 +276,10 @@ class ReconstructionMethods(unittest.TestCase):
         (hei, wid) = self.sino_180.shape
         start, stop = wid // 2 - 3, wid // 2 + 3
         num_img = stop - start + 1
-        output_folder = reco.find_center_visual_slices(self.sino_180,
-                                                       output_base, start,
-                                                       stop, step=1, zoom=0.5,
-                                                       apply_log=False)
+        output_folder = rec.find_center_visual_slices(self.sino_180,
+                                                      output_base, start,
+                                                      stop, step=1, zoom=0.5,
+                                                      apply_log=False)
         files = losa.find_file(output_folder + "/*.tif*")
         img = losa.load_image(files[0])
         wid2 = img.shape[-1]
