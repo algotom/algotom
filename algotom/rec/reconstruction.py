@@ -1522,7 +1522,7 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=0.5,
     for center in list_center:
         rec_img = _reconstruct_slice(sinogram, center, method, angles, ratio,
                                      filter_name, apply_log, gpu, ncore)
-        file_name = "center_{0:6.2f}".format(center / zoom) + ".tif"
+        file_name = "center_{0:.2f}".format(center / zoom) + ".tif"
         losa.save_image(output_base + file_name, rec_img)
         if display:
             print("Done: {}".format(output_base + file_name))

@@ -58,41 +58,42 @@ class CalibrationMethods(unittest.TestCase):
 
     def test_normalize_background_based_fft(self):
         mat_nor = calib.normalize_background_based_fft(self.bck, sigma=5,
-                                                      pad=10)
+                                                       pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
         bck_zero = np.copy(self.bck)
         bck_zero[6, 5:15] = 0.0
         mat_nor = calib.normalize_background_based_fft(bck_zero, sigma=5,
-                                                      pad=10)
+                                                       pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
         bck_zero = np.pad(bck_zero, ((2, 2), (0, 0)), mode="edge")
         mat_nor = calib.normalize_background_based_fft(bck_zero, sigma=5,
-                                                      pad=10)
+                                                       pad=10)
         std_val = np.std(mat_nor)
         self.assertTrue(std_val <= self.var)
 
     def test_binarize_image(self):
         bck = 0.5 * np.random.rand(self.hei, self.wid)
         mat_bin = calib.binarize_image(self.mat_dots + bck, bgr="dark",
-                                      denoise=False)
+                                       denoise=False)
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
 
         mat_bin = calib.binarize_image(1.5 - self.mat_dots + bck, bgr="bright",
-                                      denoise=True, norm=True)
+                                       denoise=True, norm=True)
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
 
         mat_bin = calib.binarize_image(self.mat_dots + bck, threshold=0.85,
-                                      bgr="dark")
+                                       bgr="dark")
         num_dots = ndi.label(mat_bin)[-1]
         self.assertTrue(self.num_dots == num_dots)
 
-        self.assertRaises(ValueError, calib.binarize_image, self.mat_dots + bck,
+        self.assertRaises(ValueError, calib.binarize_image,
+                          self.mat_dots + bck,
                           threshold=1.5, denoise=True, bgr="bright")
 
     def test_calculate_distance(self):
@@ -104,19 +105,19 @@ class CalibrationMethods(unittest.TestCase):
         mat2[5, 20] = 1.0
         mat2 = np.float32(ndi.binary_dilation(mat2, iterations=3))
         dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
-                                      denoise=False)
+                                       denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
         dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
-                                      size_opt="median", denoise=False)
+                                       size_opt="median", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
         dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
-                                      size_opt="mean", denoise=False)
+                                       size_opt="mean", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
         dis = calib.calculate_distance(mat1 + bck, mat2 + bck, bgr="dark",
-                                      size_opt="min", denoise=False)
+                                       size_opt="min", denoise=False)
         self.assertTrue(np.abs(dis - 10.0) <= self.eps)
 
     def test_find_tilt_roll(self):
@@ -137,7 +138,7 @@ class CalibrationMethods(unittest.TestCase):
         eps = 0.005
 
         roll1 = 0.05
-        tilt1 = 0.01
+        tilt1 = 0.08
         x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
         tilt1a, roll1a = calib.find_tilt_roll(x1, y1, method="ellipse")
         tilt1b, roll1b = calib.find_tilt_roll(x1, y1, method="linear")
@@ -147,7 +148,7 @@ class CalibrationMethods(unittest.TestCase):
             (abs(tilt1 - tilt1b) <= eps) and (abs(roll1 - roll1b) <= eps))
 
         roll1 = -0.05
-        tilt1 = 0.01
+        tilt1 = 0.08
         x1, y1 = __generate_ellipse_points(roll1, tilt1, 1500, noise=0.0)
         tilt1a, roll1a = calib.find_tilt_roll(x1, y1, method="ellipse")
         tilt1b, roll1b = calib.find_tilt_roll(x1, y1, method="linear")

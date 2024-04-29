@@ -149,7 +149,6 @@ class UtilityMethods(unittest.TestCase):
         self.assertRaises(ValueError, post.downsample_dataset, "./tmp/dsp1/",
                           "./tmp/dsp3", 1, overwrite=False)
 
-
         output = post.downsample_dataset(mat, None, (2, 2, 2),
                                          crop=(4, 4, 5, 5, 6, 6),
                                          rescaling=True, nbit=8)
@@ -201,7 +200,6 @@ class UtilityMethods(unittest.TestCase):
 
         self.assertRaises(ValueError, post.rescale_dataset, self.tif_folder,
                           "./tmp/rescale/", 8, overwrite=False)
-
 
     def test_reslice_dataset(self):
         post.reslice_dataset(self.tif_folder, "./tmp/reslice/", axis=1,
@@ -285,7 +283,6 @@ class UtilityMethods(unittest.TestCase):
 
         self.assertRaises(ValueError, post.reslice_dataset, self.tif_folder,
                           "./tmp/reslice1/", 1, overwrite=False)
-
 
     def test_remove_ring_based_wavelet_fft(self):
         mat_corr = post.remove_ring_based_wavelet_fft(self.mat, 3, 1)
