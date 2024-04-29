@@ -6,16 +6,20 @@
 
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
 
-**Algotom** is a Python package that implements data processing methods for tomography. 
-It offers a comprehensive pipeline for data processing; including reading and writing data, 
-pre-processing, tomographic reconstruction, post-processing, and data simulation. 
-The package provides numerous utility methods to assist users in rapidly developing 
-prototype methods or constructing a pipeline for processing their own data.
-The main standout features of Algotom are its wealth of pre-processing methods: 
-artifact removal, distortion correction, phase retrieval, processing automation,... 
-The software excels in readability, minimal dependencies, maintainability, 
-and rich documentation. Starting from version 1.1, methods for speckle-based 
-phase-contrast tomography have been incorporated into the package.
+**Algotom** is a Python package designed for tomography data processing. It 
+offers a complete pipeline for data processing; including reading and writing data, 
+pre-processing, tomographic reconstruction, post-processing, data simulation, 
+and calibration techniques. The package provides many utility methods to 
+assist users in constructing a pipeline for processing their own data or 
+developing prototype methods. The main features of Algotom include its wealth of 
+processing methods: artifact removal, distortion correction, phase retrieval, 
+automation, calibration, image transformation, speckle-based phase-contrast imaging, 
+data reduction; and the capability to process non-standard acquired tomography 
+such as grid scans or helical scans. The software stands out for its readability, 
+minimal dependencies, and rich documentation. Algotom has been developed for 
+synchrotron-based tomographic beamlines to maximize data quality, enhance 
+workflow throughput, exploit full beamline capabilities, and process data 
+from non-standard scans. 
 
 Features
 --------
@@ -46,17 +50,17 @@ tomographic data. Some featuring methods in Algotom are as follows:
   in half-acquisition scans (360-degree acquisition with the offset COR).
 
 - Some practical methods developed and implemented for the package:
-  zinger removal, tilted sinogram generation, sinogram distortion correction, 
-  beam hardening correction, DFI (direct Fourier inversion) reconstruction, FBP reconstruction,
-  and double-wedge filter for removing sample parts larger than the FOV in
-  a sinogram.
+  zinger removal, tilted sinogram generation, sinogram distortion correction, simplified form of Paganin's filter
+  beam hardening correction, DFI (direct Fourier inversion) reconstruction,
+  FBP (filtered back-projection) reconstruction, BPF (back-projection filtering) reconstruction, 
+  and double-wedge filter for removing sample parts larger than the FOV in a sinogram.
   
   ![pipe_line](https://github.com/algotom/algotom/raw/master/figs/readme/double_wedge_filter.jpg)
   
 - Utility methods for [customizing ring/stripe artifact removal methods](https://algotom.readthedocs.io/en/latest/toc/section4/section4_3.html) 
   and parallelizing computational work.
 
-- Calibration methods for determining pixel-size in helical scans.
+- Calibration methods for helical scans and tomography alignment.
 
 - Methods for generating simulation data: phantom creation, sinogram calculation
   based on the Fourier slice theorem, and artifact generation.
