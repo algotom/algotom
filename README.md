@@ -11,7 +11,7 @@ offers a complete pipeline for data processing; including reading and writing da
 pre-processing, tomographic reconstruction, post-processing, data simulation, 
 and calibration techniques. The package provides many utility methods to 
 assist users in constructing a pipeline for processing their own data or 
-developing prototype methods. The main features of Algotom include its wealth of 
+developing methods. The main features of Algotom include its wealth of 
 processing methods: artifact removal, distortion correction, phase retrieval, 
 automation, calibration, image transformation, speckle-based phase-contrast imaging, 
 data reduction; and the capability to process non-standard acquired tomography 
@@ -49,8 +49,8 @@ tomographic data. Some featuring methods in Algotom are as follows:
 - Methods for determining the center-of-rotation (COR) and auto-stitching images 
   in half-acquisition scans (360-degree acquisition with the offset COR).
 
-- Some practical methods developed and implemented for the package:
-  zinger removal, tilted sinogram generation, sinogram distortion correction, simplified form of Paganin's filter
+- Practical methods developed and implemented for the package: zinger removal, 
+  tilted sinogram generation, sinogram distortion correction, simplified form of Paganin's filter,
   beam hardening correction, DFI (direct Fourier inversion) reconstruction,
   FBP (filtered back-projection) reconstruction, BPF (back-projection filtering) reconstruction, 
   and double-wedge filter for removing sample parts larger than the FOV in a sinogram.
