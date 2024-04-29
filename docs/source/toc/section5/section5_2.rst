@@ -1,4 +1,4 @@
-.. _section5_1:
+.. _section5_2:
 
 Implementation of direct vertical slice reconstruction for tomography
 =====================================================================
@@ -11,7 +11,16 @@ across the height of the reconstructed volume. However, this approach is ineffic
 There are unused data volumes where no sample is present but are still retained on disk. It would be more effective to
 directly reconstruct vertical slices only around the volume containing the sample.
 
-    Figure 1: projection, full volume, reslicing
+.. figure:: section5_2/figs/fig_5_2_1.png
+    :name: fig_5_2_1
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    Demonstration of how to extract a vertical slice from a tomography dataset. Assume a tomography dataset consists
+    of 1800 projections, each sized 2560 (W) x 2160 (H) in 16-bit format, totaling approximately 20 GB. The size of
+    a full reconstruction in 32-bit format is about 52 GB. This volume needs to be stored temporarily before
+    extracting a vertical slice.
 
 Another important application of vertical slice reconstruction is for limited angle tomography, which is often the case
 for tilt-series electron tomography or cryo-soft X-ray tomography. For reconstructed data from this acquisition,
