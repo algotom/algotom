@@ -261,10 +261,10 @@ def __vertical_back_projection_gpu_chunk_kernel(recons, projections, angles,
     (i_index, j_index) = cuda.grid(2)
     if i_index >= height or j_index >= width:
         return
+    width1 = width - 1
     for s in range(num_slice):
         x_cor = x_mat[s, j_index]
         y_cor = y_mat[s, j_index]
-        width1 = width - 1
         val_acc = 0.0
         for n in range(depth):
             theta = angles[n]
@@ -333,7 +333,7 @@ def vertical_back_projection_gpu_chunk(projections, angles, x_mat, y_mat,
     return recons
 
 
-def get_points_single_line(slice_index, alpha, width):
+def _get_points_single_line(slice_index, alpha, width):
     """
     Computes x and y coordinates of points along a specified slice at an angle.
 
@@ -382,7 +382,7 @@ def get_points_single_line(slice_index, alpha, width):
     return xlist, ylist
 
 
-def get_points_multiple_lines(start_index, stop_index, alpha, width,
+def _get_points_multiple_lines(start_index, stop_index, alpha, width,
                               step_index=1):
     """
     Computes x and y coordinates of points on multiple parallel slices at
@@ -410,7 +410,37 @@ def get_points_multiple_lines(start_index, stop_index, alpha, width,
     x_mat = []
     y_mat = []
     for idx in np.arange(start_index, stop_index + 1, step_index):
-        xlist, ylist = get_points_single_line(idx, alpha, width)
+        xlist, ylist = _get_points_single_line(idx, alpha, width)
+        x_mat.append(xlist)
+        y_mat.append(ylist)
+    return np.float32(x_mat), np.float32(y_mat)
+
+
+def _get_points_multiple_lines_different_angles(list_index, list_alpha,
+                                                width):
+    """
+    Computes x and y coordinates of points on multiple slices at different
+    angles.
+
+    Parameters
+    ----------
+    list_index : list of int
+        Index list of the lines within image width.
+    list_alpha : list of float
+        List of angles in degree, between 0 and 180.
+    width : int
+        Width of the image area.
+
+    Returns
+    -------
+    tuple of 2d-array
+        x and y coordinates along the specified lines, with each row
+        corresponding to a line.
+    """
+    x_mat = []
+    y_mat = []
+    for i, index in enumerate(list_index):
+        xlist, ylist = _get_points_single_line(index, list_alpha[i], width)
         x_mat.append(xlist)
         y_mat.append(ylist)
     return np.float32(x_mat), np.float32(y_mat)
@@ -549,7 +579,7 @@ def vertical_reconstruction(projections, slice_index, center, alpha=0.0,
     num_iter = num_proj // chunk_size
     num_rest = num_proj - num_iter * chunk_size
     ver_slice = np.zeros((height, width), dtype=np.float32)
-    xlist, ylist = get_points_single_line(slice_index, alpha, width)
+    xlist, ylist = _get_points_single_line(slice_index, alpha, width)
 
     if pad is None:
         pad = min(int(0.15 * width), 150)
@@ -818,8 +848,283 @@ def vertical_reconstruction_multiple(projections, start_index, stop_index,
         chunk_size = num_proj
     num_iter = num_proj // chunk_size
     num_rest = num_proj - num_iter * chunk_size
-    x_mat, y_mat = get_points_multiple_lines(start_index, stop_index, alpha,
-                                             width, step_index)
+    x_mat, y_mat = _get_points_multiple_lines(start_index, stop_index, alpha,
+                                              width, step_index)
+    num_slice = len(x_mat)
+    ver_slices = np.zeros((num_slice, height, width), dtype=np.float32)
+    if pad is None:
+        pad = min(int(0.15 * width), 150)
+    edge_pad = True
+    if ramp_filter == "before":
+        ramp_win = rec.make_2d_ramp_window(height, width + 2 * pad,
+                                           filter_name=filter_name)
+        edge_pad = False
+
+    if show_progress:
+        t0 = time.time()
+    for i in range(num_iter):
+        start = i * chunk_size + proj_start
+        stop = start + chunk_size
+        img_chunk = projections[start:stop, top:bot, left:right]
+        if flat_correction:
+            img_chunk = (img_chunk - dark) / flat_dark
+        if apply_log:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=RuntimeWarning)
+                try:
+                    img_chunk = -np.log(img_chunk)
+                except RuntimeWarning:
+                    warnings.warn("!!! Applying logarithm is enabled but "
+                                  "there are values <= 0.0 in the data !!!")
+                    img_chunk[img_chunk <= 0.0] = np.float32(1.0)
+                    img_chunk = -np.log(img_chunk)
+        if ramp_filter == "before":
+            img_chunk = util.parallel_process_slices(img_chunk,
+                                                     rec.apply_ramp_filter,
+                                                     [ramp_win, filter_name,
+                                                      pad, pad_mode], axis=0,
+                                                     ncore=ncore,
+                                                     prefer=prefer)
+        sub_angles = angles[start - proj_start:stop - proj_start]
+        if gpu:
+            ver_slices += vertical_back_projection_gpu_chunk(img_chunk,
+                                                             sub_angles,
+                                                             x_mat, y_mat,
+                                                             center,
+                                                             block=block,
+                                                             edge_pad=edge_pad)
+        else:
+            ver_slices += vertical_back_projection_cpu_chunk(img_chunk,
+                                                             sub_angles,
+                                                             x_mat, y_mat,
+                                                             center,
+                                                             edge_pad=edge_pad)
+        if show_progress:
+            t1 = time.time()
+            elapsed_time = t1 - t0
+            percent_complete = 100.0 * (stop - proj_start) / num_proj
+            sys.stdout.write(f"\rProcessed {stop - proj_start}/{num_proj} "
+                             f"images ({percent_complete:.0f}%) - "
+                             f"Time elapsed: {elapsed_time:.2f} seconds")
+            sys.stdout.flush()
+    if num_rest != 0:
+        start = num_iter * chunk_size + proj_start
+        stop = start + num_rest
+        img_chunk = projections[start:stop, top:bot, left:right]
+        if flat_correction:
+            img_chunk = (img_chunk - dark) / flat_dark
+        if apply_log:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('error', category=RuntimeWarning)
+                try:
+                    img_chunk = -np.log(img_chunk)
+                except RuntimeWarning:
+                    warnings.warn("Applying logarithm is enabled but "
+                                  "there are values <= 0.0.")
+                    img_chunk[img_chunk <= 0.0] = np.float32(1.0)
+                    img_chunk = -np.log(img_chunk)
+        if ramp_filter == "before":
+            img_chunk = util.parallel_process_slices(img_chunk,
+                                                     rec.apply_ramp_filter,
+                                                     [ramp_win, filter_name,
+                                                      pad, pad_mode], axis=0,
+                                                     ncore=ncore,
+                                                     prefer=prefer)
+        sub_angles = angles[start - proj_start:stop - proj_start]
+        if gpu:
+            ver_slices += vertical_back_projection_gpu_chunk(img_chunk,
+                                                             sub_angles,
+                                                             x_mat, y_mat,
+                                                             center,
+                                                             block=block,
+                                                             edge_pad=edge_pad)
+        else:
+            ver_slices += vertical_back_projection_cpu_chunk(img_chunk,
+                                                             sub_angles,
+                                                             x_mat, y_mat,
+                                                             center,
+                                                             edge_pad=edge_pad)
+        if show_progress:
+            t1 = time.time()
+            elapsed_time = t1 - t0
+            percent_complete = 100.0 * (stop - proj_start) / num_proj
+            sys.stdout.write(f"\rProcessed {stop - proj_start}/{num_proj} "
+                             f"images ({percent_complete:.0f}%) - "
+                             f"Time elapsed: {elapsed_time:.2f} seconds")
+            sys.stdout.flush()
+    if ramp_filter == "after":
+        ramp_win = np.abs(rec.make_2d_ramp_window(height, width + 2 * pad,
+                                                  filter_name=filter_name))
+        slice_filtered = []
+        for i in range(num_slice):
+            slice_filtered.append(__apply_ver_ramp_filter(ver_slices[i],
+                                                          ramp_win, width, pad,
+                                                          pad_mode))
+        ver_slices = np.float32(slice_filtered)
+    if show_progress:
+        t1 = time.time()
+        print("\nDone! Total time elapsed: {0:.2f}".format(t1 - t0))
+    if masking:
+        rad = int(min(center, width - center))
+        pad_left = (width - 2 * rad) // 2
+        pad_right = width - 2 * rad - pad_left
+        list_tmp = np.pad(np.ones(2 * rad, dtype=np.float32),
+                          (pad_left, pad_right), mode="constant")
+        mask = np.tile(list_tmp, (height, 1))
+        for i in range(num_slice):
+            ver_slices[i] = ver_slices[i] * mask
+    return ver_slices * np.pi / (num_proj - 1)
+
+
+def vertical_reconstruction_different_angles(projections, slice_indices,
+                                             alphas, center, flat_field=None,
+                                             dark_field=None, angles=None,
+                                             crop=(0, 0, 0, 0), proj_start=0,
+                                             proj_stop=-1, chunk_size=30,
+                                             ramp_filter="after",
+                                             filter_name="hann", pad=None,
+                                             pad_mode="edge", apply_log=True,
+                                             gpu=True, block=(16, 16),
+                                             ncore=None, prefer="threads",
+                                             show_progress=True,
+                                             masking=False):
+    """
+    Reconstruct multiple vertical-slices at different slice-angles given a
+    stack of projection-images (num_projection, height, width) with optional
+    use of the ramp-filter.
+
+    Parameters
+    ----------
+    projections : array_like
+        3D array of projection data with shape (depth, height, width). Can be
+        a numpy array or HDF-dataset object.
+    slice_indices : list of int
+        List of reconstructing slice indices. Referred to the cropped image.
+    alphas : list of float
+        List of angles (degrees, between 0 and 180) corresponding to the slice
+        indices.
+    center : float
+        Center of rotation, x-coordinate of the rotation axis.
+    flat_field : array_like, optional
+        2D array for flat-field correction if not None.
+    dark_field : array_like, optional
+        2D array for dark-field correction if not None.
+    angles : array_like, optional
+        1D array. Angles corresponding to projections. The unit is radian
+        to be consistent with other reconstruction methods.
+    crop : tuple of int, optional
+        Edges to crop from the images (top, bottom, left, right).
+    proj_start : int, optional
+        Start index for processing projections.
+    proj_stop : int, optional
+        End index for processing projections.
+    chunk_size : int, optional
+        Chunk size to manage memory usage.
+    ramp_filter : {"after", "before", None}
+        When to apply the ramp filter or not apply.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+        Type of smoothing filter used with the ramp filter.
+    pad : int, optional
+        Padding before FFT (defaults to 10% of width if None).
+    pad_mode : str, optional
+        Padding method (see numpy.pad documentation).
+    apply_log : bool, optional
+        Apply logarithm to projections before reconstruction.
+    gpu : bool, optional
+        Use GPU for computing if True.
+    block : tuple of two integer-values, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
+    ncore : int or None
+        Number of CPU cores used (auto-selected if None).
+    prefer : {"threads", "processes"}
+        Preferred parallel backend.
+    show_progress : bool
+        Display reconstruction progress.
+    masking : bool
+        Mask non-reconstructable areas.
+
+    Returns
+    -------
+    array_like
+        3D array. Multiple-reconstructed image.
+    """
+    if not isinstance(slice_indices, list):
+        raise ValueError("Please provide a list of slice indices")
+    if not isinstance(alphas, list):
+        raise ValueError("Please provide a list of angles corresponding to"
+                         "the slice indices")
+    if len(slice_indices) != len(alphas):
+        raise ValueError("!!! Number of slice indices is not the same as the "
+                         "number of angles !!!")
+    if not (ramp_filter == "before" or ramp_filter == "after"
+            or ramp_filter is None):
+        raise ValueError("Must use one of these options: "
+                         "'before', 'after', None")
+    if ncore is None:
+        ncore = int(np.clip(mp.cpu_count() - 1, 1, None))
+    else:
+        ncore = int(np.clip(ncore, 1, None))
+    (num_proj0, height0, width0) = projections.shape
+    if proj_stop == -1:
+        proj_stop = num_proj0
+    num_proj = proj_stop - proj_start
+    if num_proj < 1:
+        raise ValueError("Wrong value of proj_start or proj_stop !!! Given "
+                         "the number of projections {}".format(num_proj0))
+    if angles is None:
+        angles = np.deg2rad(np.linspace(0.0, 180.0, num_proj))
+    else:
+        if len(angles) != num_proj:
+            raise ValueError("!!! Number of angles is not the same as the "
+                             "number of projections !!!")
+    (cr_top, cr_bottom, cr_left, cr_right) = crop
+    top, bot = cr_top, height0 - cr_bottom
+    left, right = cr_left, width0 - cr_right
+    width = right - left
+    height = bot - top
+    width1 = width - 1
+    if height < 1 or width < 1:
+        raise ValueError("Can't crop images with the given parameters !!!")
+    center = center - cr_left
+    if center < 0 or center > width1:
+        raise ValueError("Center (relative to the cropped image) is out of "
+                         "range {})".format((0, width1)))
+    if any(idx < 0 or idx > width1 for idx in slice_indices):
+        raise ValueError("Slice index (relative to the cropped image) is out "
+                         "of range {})".format((0, width1)))
+
+    flat_correction = True
+    if (flat_field is None) and (dark_field is None):
+        flat_correction = False
+    else:
+        if flat_field is None:
+            flat_field = np.ones((height0, width0), dtype=np.float32)
+        else:
+            if flat_field.shape != (height0, width0):
+                raise ValueError("!!! Shape of flat-field and projection-image"
+                                 " is not the same !!!")
+        if dark_field is None:
+            dark_field = np.zeros((height0, width0), dtype=np.float32)
+        else:
+            if dark_field.shape != (height0, width0):
+                raise ValueError("!!! Shape of dark-field and projection-image"
+                                 " is not the same !!!")
+    if flat_correction:
+        flat = flat_field[top:bot, left:right]
+        dark = dark_field[top:bot, left:right]
+        flat_dark = flat - dark
+        flat_dark[flat_dark == 0.0] = np.float32(1.0)
+        flat_dark = np.float32(flat_dark)
+
+    if chunk_size is None:
+        chunk_size = min(30, num_proj // 4 + 1)
+    if chunk_size > num_proj or chunk_size < 1:
+        chunk_size = num_proj
+    num_iter = num_proj // chunk_size
+    num_rest = num_proj - num_iter * chunk_size
+    x_mat, y_mat = _get_points_multiple_lines_different_angles(slice_indices,
+                                                               alphas, width)
     num_slice = len(x_mat)
     ver_slices = np.zeros((num_slice, height, width), dtype=np.float32)
     if pad is None:

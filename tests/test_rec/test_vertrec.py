@@ -57,6 +57,10 @@ class VerticalReconstructionMethods(unittest.TestCase):
         mat = util.make_circle_mask(self.width, 0.8)
         rad, i_s, j_s = 10, 30, 20
         mat[i_s:i_s + rad, j_s:j_s + rad] = 0
+        rad, i_s, j_s = 5, 20, 30
+        mat[i_s:i_s + rad, j_s:j_s + rad] = 0
+        rad, i_s, j_s = 5, 20, 50
+        mat[i_s:i_s + rad, j_s:j_s + rad] = 0
         mat = ndi.gaussian_filter(mat, 1)
         self.phantom_3d = np.zeros((self.height, self.width, self.width),
                                    dtype=np.float32)
@@ -85,8 +89,8 @@ class VerticalReconstructionMethods(unittest.TestCase):
         alpha = 0.0
         num_slice = 5
         slice_index = self.width // 2 - 20
-        xlist, ylist = vrec.get_points_single_line(slice_index, alpha,
-                                                   self.width)
+        xlist, ylist = vrec._get_points_single_line(slice_index, alpha,
+                                                    self.width)
         self.assertTrue(len(xlist) == self.width and len(ylist) == self.width)
 
         bp_img1 = f_alias(self.projs + 1, self.angles, xlist, ylist,
@@ -99,9 +103,9 @@ class VerticalReconstructionMethods(unittest.TestCase):
 
         start_index = slice_index
         stop_index = start_index + num_slice - 1
-        x_mat, y_mat = vrec.get_points_multiple_lines(start_index, stop_index,
-                                                      alpha, self.width,
-                                                      step_index=1)
+        x_mat, y_mat = vrec._get_points_multiple_lines(start_index, stop_index,
+                                                       alpha, self.width,
+                                                       step_index=1)
         self.assertTrue(len(x_mat) == num_slice and len(y_mat) == num_slice)
 
         f_alias1 = vrec.vertical_back_projection_cpu_chunk
@@ -188,8 +192,8 @@ class VerticalReconstructionMethods(unittest.TestCase):
                              chunk_size=10, ramp_filter=None,
                              filter_name="hann", apply_log=False, gpu=gpu,
                              ncore=1, prefer="threads", show_progress=False)
-        xlist, ylist = vrec.get_points_single_line(slice_index, alpha,
-                                                   self.width)
+        xlist, ylist = vrec._get_points_single_line(slice_index, alpha,
+                                                    self.width)
         bp_img6 = vrec.vertical_back_projection_cpu(self.projs, self.angles,
                                                     xlist, ylist, self.center,
                                                     edge_pad=False)
@@ -253,7 +257,7 @@ class VerticalReconstructionMethods(unittest.TestCase):
                               alpha=alpha, flat_field=None, dark_field=None,
                               angles=self.angles, ramp_filter="before",
                               apply_log=False, gpu=gpu, show_progress=False)
-        ref_slice = self.phantom_3d[:, :, slice_index]
+        ref_slice = np.fliplr(self.phantom_3d[:, :, slice_index])
         self.assertTrue(np.mean(np.abs(ref_slice - ver_slice13)) < fbp_eps)
 
         alpha = 40.0
@@ -344,8 +348,8 @@ class VerticalReconstructionMethods(unittest.TestCase):
                               filter_name="hann", apply_log=False, gpu=gpu,
                               ncore=1, show_progress=False)
 
-        x_mat, y_mat = vrec.get_points_multiple_lines(start_index, stop_index,
-                                                      alpha, self.width, 1)
+        x_mat, y_mat = vrec._get_points_multiple_lines(start_index, stop_index,
+                                                       alpha, self.width, 1)
         bp_imgs3 = vrec.vertical_back_projection_cpu_chunk(self.projs,
                                                            self.angles,
                                                            x_mat, y_mat,
@@ -425,6 +429,72 @@ class VerticalReconstructionMethods(unittest.TestCase):
                                    gpu=gpu, show_progress=False)
             self.assertTrue(gver_slices5.shape == ver_slices5.shape and
                             np.mean(np.abs(gver_slices5 - ver_slices5)) < eps2)
+
+    def test_vertical_reconstruction_different_angles(self):
+        f_alias = vrec.vertical_reconstruction_different_angles
+        gpu = False
+        fbp_eps, bpf_eps = 0.05, 0.35
+        eps = 1.0e-4
+        indices = [self.width // 2 - 10, self.width // 2, self.width // 2 + 15]
+        alphas = [0, 45, 90]
+        ref_slices = []
+        for i, alpha in enumerate(alphas):
+            phantom_rot = ndi.rotate(self.phantom_3d, -alpha, axes=(1, 2),
+                                     order=1, reshape=False)
+            ref_slice = phantom_rot[:, indices[i], :]
+            ref_slices.append(ref_slice)
+        ref_slices = np.asarray(ref_slices)
+        ver_slices1 = f_alias(self.projs, indices, alphas, self.center,
+                              chunk_size=10, ramp_filter="before",
+                              filter_name="hann", apply_log=False, gpu=gpu,
+                              ncore=None, prefer="threads",
+                              show_progress=False)
+        num = np.mean(np.abs(ref_slices - ver_slices1))
+        self.assertTrue(ver_slices1.shape[0] == len(indices)
+                        and num <fbp_eps)
+
+        f_alias2 = vrec.vertical_reconstruction
+        idx = 0
+        alpha = alphas[idx]
+        slice_index = indices[idx]
+        slice_1 = f_alias2(self.projs, slice_index, self.center,
+                               alpha=alpha, chunk_size=10,
+                               ramp_filter="before", filter_name="hann",
+                               apply_log=False, gpu=gpu, ncore=None,
+                               prefer="threads", show_progress=False)
+        self.assertTrue(np.mean(np.abs(slice_1 - ver_slices1[idx])) < eps)
+
+        idx = 1
+        alpha = alphas[idx]
+        slice_index = indices[idx]
+        slice_2 = f_alias2(self.projs, slice_index, self.center,
+                               alpha=alpha, chunk_size=10,
+                               ramp_filter="before", filter_name="hann",
+                               apply_log=False, gpu=gpu, ncore=None,
+                               prefer="threads", show_progress=False)
+        self.assertTrue(np.mean(np.abs(slice_2 - ver_slices1[idx])) < eps)
+
+        idx = -1
+        alpha = alphas[idx]
+        slice_index = indices[idx]
+        slice_3 = f_alias2(self.projs, slice_index, self.center,
+                               alpha=alpha, chunk_size=10,
+                               ramp_filter="before", filter_name="hann",
+                               apply_log=False, gpu=gpu, ncore=None,
+                               prefer="threads", show_progress=False)
+        self.assertTrue(np.mean(np.abs(slice_3 - ver_slices1[idx])) < eps)
+
+        if cuda.is_available() is True:
+            gpu = True
+            gver_slices1 = f_alias(self.projs, indices, alphas, self.center,
+                                   chunk_size=10, ramp_filter="before",
+                                   filter_name="hann", apply_log=False,
+                                   gpu=gpu, ncore=None, prefer="threads",
+                                   show_progress=False)
+            num = np.mean(np.abs(ver_slices1 - gver_slices1))
+            self.assertTrue(ver_slices1.shape == gver_slices1.shape
+                            and num < eps)
+
 
     def test_find_center_vertical_slice(self):
         gpu = False
