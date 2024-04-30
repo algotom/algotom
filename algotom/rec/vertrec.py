@@ -27,9 +27,10 @@ Module of methods for directly reconstructing vertical slices without the need
 for full reconstruction and reslicing of tomography data.
 
     -   Vertical back-projection methods for CPU and GPU that support single
-        and multiple slices.
-    -   Direct reconstruction of vertical slices using either filtered
-        back-projection (FBP) or back-projection filtering (BPF) approaches.
+        and multiple-slice reconstruction.
+    -   Direct vertical reconstruction of a single slice or multiple slices
+        (at the same or different angles) using Filtered Back-Projection (FBP)
+        or Back-Projection Filtering (BPF) methods.
     -   Automatic determination of the center of rotation.
     -   Tool to assist in manual determination of the center of rotation.
 """
@@ -1316,7 +1317,7 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
         Invert the metric scale.
     metric_function : obj
         Custom function to calculate metric, accepts keyword
-        arguments (**kwargs).
+        arguments (kwargs).
 
     Returns
     -------
