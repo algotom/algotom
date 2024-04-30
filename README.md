@@ -26,7 +26,7 @@ Features
 
 Algotom is a lightweight package. The software is built on top of a few core
 Python libraries to ensure its ease-of-installation. Methods distributed in 
-Algotom have been developed and tested at synchrotron beamlines where massive
+Algotom have been developed, used, and tested at synchrotron beamlines where massive
 datasets are produced. This factor drives the methods developed to be easy-to-use, 
 robust, and practical. Algotom can be used on a normal computer to process large 
 tomographic data. Some featuring methods in Algotom are as follows:

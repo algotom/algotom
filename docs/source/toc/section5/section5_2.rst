@@ -1,6 +1,6 @@
 .. _section5_2:
 
-Implementation of direct vertical slice reconstruction for tomography
+Implementation of direct vertical-slice reconstruction for tomography
 =====================================================================
 
 Introduction
@@ -27,20 +27,34 @@ for tilt-series electron tomography or cryo-soft X-ray tomography. For reconstru
 artifacts make it difficult to identify the center of rotation or segment the image. However, if the volume is resliced
 vertically, the sample features are complete, which simplifies segmentation or determining the center of rotation.
 
-    Figure 2: slice, vertical slice
+.. figure:: section5_2/figs/fig_5_2_2.png
+    :name: fig_5_2_2
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
 
-Last but not least, for samples with multilayer structures parallel to the beam, it is very challenging to find the
-center of rotation using conventional reconstructed slices. However, things are much easier when a vertical slice is used.
+    Vertical slicing is crucial for analyzing data acquired by limited-angle tomography. (a) Conventionally
+    reconstructed slice, showing artifacts caused by missing angles. (b) Same data, represented with a vertical slice.
 
-Given these reasons, it's important to implement this method and make it available to the community. Similar work was
-done in Recast3D, but the project is no longer continued; furthermore, its core is in C++ code, making it difficult to
-maintain. This section presents work done to enable vertical slice reconstruction. Methods can run on multi-core CPUs
-and GPUs using Numba. Two reconstruction methods have been implemented: FBP (Filtered back-projection) and BPF
-(Back-projection filtering). Data is processed chunk-by-chunk to fit available RAM or GPU memory. The methods allow
-the reconstruction of a single vertical slice or a chunk of vertical slices with selectable gaps between slices.
-Utilities for determining the center of rotation automatically and manually are provided.
+Last but not least, for certain types of samples and their features, e.g., multilayer structures parallel to the beam,
+it is challenging to find the center of rotation or preliminarily evaluate image quality using conventional reconstructed
+slices. However, things are much easier when a vertical slice is used.
 
-   Figure 3: projection, vertical slice.
+Given these reasons, it's important to implement this method and make it available to the community. Similar works have
+been done elsewhere but have either been discontinued, are not implemented in pure Python, or lack practical features.
+This section presents work done to enable vertical slice reconstruction. Methods can run on multi-core CPUs and GPUs
+using Numba. Two reconstruction methods have been implemented: FBP (Filtered back-projection) and BPF (Back-projection filtering).
+Data is processed chunk-by-chunk to fit available RAM or GPU memory. The methods allow the reconstruction of a single
+vertical slice, a chunk of vertical slices with selectable gaps between slices, or multiple vertical slices at different
+angles. Utilities for determining the center of rotation automatically and manually are provided.
+
+.. figure:: section5_2/figs/fig_5_2_3.png
+    :name: fig_5_2_3
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    Demonstration of direct vertical reconstruction.
 
 Implementation
 --------------
@@ -48,15 +62,20 @@ Implementation
 Requirements
 ++++++++++++
 
-- Methods can run across CPU and Gpu, small or large RAM, gpu memory.
-- Slice location can angle can be chosen arbitrary.
-- Users can choose to reconstruct single slice or multiple slices.
-- Input can by a hdf file, loaded as numpy array or emulate hdf object where data can be
-  loaded/ extracted subset into memory. For tif or orther format it can be converted to hdf
-  or wrapper into an hdf-emulator to extract subset of data
-- Filted backprojection and Backprojection filtering are implemented as they are standard
-  and straightforward to implement.
-- Users need methods to determine the center of rotation manually and automatically.
+-   Users don't need a high-specs computer to process data.
+-   Methods can run on both CPU and GPU.
+-   Input can be read and processed chunk-by-chunk to fit available RAM or GPU memory.
+-   Slice location and its angle (around the z-axis) can be chosen arbitrarily.
+-   Users can choose to reconstruct a single slice or multiple slices.
+-   Input is an hdf-object, numpy array, or emulated hdf-object; it can be an hdf file from which data can be loaded
+    or an extracted subset into memory. For tif or other formats, it can be converted to hdf or wrapped into an
+    hdf-emulator to extract a subset of data.
+-   FBP method and BPF method are implemented as they are feasible and practical.
+-   Users need methods to manually and automatically determine the center of rotation (rotation axis).
 
-Step by step implementations
-++++++++++++++++++++++++++++
+Geometry definition
++++++++++++++++++++
+
+
+
+

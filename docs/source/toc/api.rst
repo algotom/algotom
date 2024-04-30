@@ -32,6 +32,7 @@ Reconstruction
     :maxdepth: 1
 
     api/algotom.rec.reconstruction
+    api/algotom.rec.vertrec
 
 Post-processing
 ---------------
