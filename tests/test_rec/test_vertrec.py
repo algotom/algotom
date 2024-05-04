@@ -52,8 +52,8 @@ class VerticalReconstructionMethods(unittest.TestCase):
     def setUp(self):
         warnings.filterwarnings('ignore',
                                 category=numba.NumbaPerformanceWarning)
-        self.width = 71
-        self.height = 50
+        self.width = 61
+        self.height = 40
         mat = util.make_circle_mask(self.width, 0.8)
         rad, i_s, j_s = 10, 30, 20
         mat[i_s:i_s + rad, j_s:j_s + rad] = 0
@@ -178,7 +178,7 @@ class VerticalReconstructionMethods(unittest.TestCase):
         num_zero = len(np.where(ver_list4 == 0.0)[0])
         self.assertTrue(num_zero == (2 * xshift + 1))
 
-        ver_slice5 = f_alias(self.projs, slice_index, self.center - xshift,
+        ver_slice5 = f_alias(self.projs, slice_index, self.center - 10,
                              alpha=alpha, angles=None, crop=(10, 5, 6, 4),
                              chunk_size=10, ramp_filter="after",
                              filter_name="hann", apply_log=False, gpu=gpu,
@@ -242,7 +242,7 @@ class VerticalReconstructionMethods(unittest.TestCase):
         self.assertTrue(np.mean(np.abs(ref_slice - ver_slice11)) > 0.05)
 
         dark_field = np.zeros((self.height, self.width))
-        ver_slice12 = f_alias(self.projs, slice_index, self.center,
+        ver_slice12 = f_alias(self.projs, slice_index, self.center-10,
                               alpha=alpha, flat_field=flat_field,
                               dark_field=dark_field, angles=self.angles,
                               crop=(10, 5, 6, 4), ramp_filter="before",

@@ -273,6 +273,8 @@ higher resolution scans. This can be achieved by following these steps:
                 out_file = output_base + "/rec_" + ("00000" + str(idx))[-5:] + ".tif"
                 losa.save_image(out_file, rec_img)
 
+.. _find_center:
+
 Finding the center of rotation
 ------------------------------
 

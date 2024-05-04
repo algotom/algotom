@@ -48,7 +48,7 @@ import algotom.util.utility as util
 import algotom.io.loadersaver as losa
 import algotom.rec.reconstruction as rec
 from numba.core.errors import NumbaPerformanceWarning
-# warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
+warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
 
 @jit(nopython=True, parallel=True, cache=True)
@@ -469,7 +469,8 @@ def vertical_reconstruction(projections, slice_index, center, alpha=0.0,
     slice_index : int
         Index of the slice for reconstruction. Referred to the cropped image.
     center : float
-        Center of rotation, x-coordinate of the rotation axis.
+        Center of rotation, x-coordinate of the rotation axis. Referred to the
+        cropped image.
     alpha : float, optional
         Angle of the slice in degree, between 0 and 180.
     flat_field : array_like, optional
@@ -544,7 +545,6 @@ def vertical_reconstruction(projections, slice_index, center, alpha=0.0,
     height = bot - top
     if height < 1 or width < 1:
         raise ValueError("Can't crop images with the given parameters !!!")
-    center = center - cr_left
     if center < 0 or center > (width - 1):
         raise ValueError("Center (relative to the cropped image) is out of "
                          "range {})".format((0, width - 1)))
@@ -732,7 +732,8 @@ def vertical_reconstruction_multiple(projections, start_index, stop_index,
     stop_index : int
         End index of reconstructing slice. Referred to the cropped image.
     center : float
-        Center of rotation, x-coordinate of the rotation axis.
+        Center of rotation, x-coordinate of the rotation axis. Referred to the
+        cropped image.
     alpha : float, optional
         Angle of the slices in degree, between 0 and 180.
     step_index : int
@@ -809,7 +810,6 @@ def vertical_reconstruction_multiple(projections, start_index, stop_index,
     height = bot - top
     if height < 1 or width < 1:
         raise ValueError("Can't crop images with the given parameters !!!")
-    center = center - cr_left
     if center < 0 or center > (width - 1):
         raise ValueError("Center (relative to the cropped image) is out of "
                          "range {})".format((0, width - 1)))
@@ -1007,7 +1007,8 @@ def vertical_reconstruction_different_angles(projections, slice_indices,
         List of angles (degrees, between 0 and 180) corresponding to the slice
         indices.
     center : float
-        Center of rotation, x-coordinate of the rotation axis.
+        Center of rotation, x-coordinate of the rotation axis. Referred to the
+        cropped image
     flat_field : array_like, optional
         2D array for flat-field correction if not None.
     dark_field : array_like, optional
@@ -1089,7 +1090,6 @@ def vertical_reconstruction_different_angles(projections, slice_indices,
     width1 = width - 1
     if height < 1 or width < 1:
         raise ValueError("Can't crop images with the given parameters !!!")
-    center = center - cr_left
     if center < 0 or center > width1:
         raise ValueError("Center (relative to the cropped image) is out of "
                          "range {})".format((0, width1)))

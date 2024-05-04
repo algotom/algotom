@@ -1,7 +1,7 @@
 .. _section5_2:
 
-Implementation of direct vertical-slice reconstruction for tomography
-=====================================================================
+Implementations of direct vertical-slice reconstruction for tomography
+======================================================================
 
 Introduction
 ------------
@@ -62,19 +62,168 @@ Implementation
 Requirements
 ++++++++++++
 
--   Users don't need a high-specs computer to process data.
--   Methods can run on both CPU and GPU.
--   Input can be read and processed chunk-by-chunk to fit available RAM or GPU memory.
 -   Slice location and its angle (around the z-axis) can be chosen arbitrarily.
 -   Users can choose to reconstruct a single slice or multiple slices.
--   Input is an hdf-object, numpy array, or emulated hdf-object; it can be an hdf file from which data can be loaded
-    or an extracted subset into memory. For tif or other formats, it can be converted to hdf or wrapped into an
-    hdf-emulator to extract a subset of data.
+-   Users don't need a high-specs computer to process data.
+-   Methods can run on either multicore CPUs or a single GPU, depending on GPU availability..
+-   Data can be read and processed chunk-by-chunk to fit available RAM or GPU memory.
+-   Input is an hdf-object, numpy array, or emulated hdf-object; for a normal computer, input must be an hdf
+    file from which data can be loaded or an extracted subset into memory. For other formats, it can be converted to hdf
+    or wrapped into an hdf-emulator to extract a subset of data.
 -   FBP method and BPF method are implemented as they are feasible and practical.
 -   Users need methods to manually and automatically determine the center of rotation (rotation axis).
 
 Geometry definition
 +++++++++++++++++++
+
+Given a reconstruction space with the dimensions of *Width (W) x Width (W)*, users will input the slice index as an
+integer in the range of [0;  *W-1*], along with angle *alpha*. Based on this information, the coordinates of
+pixels belonging to a vertical slice can be calculated, as shown in :numref:`fig_5_2_4`. Note that in the vertical
+slice plane, the xy coordinates remain the same across the z-slice.
+
+.. figure:: section5_2/figs/fig_5_2_4.png
+    :name: fig_5_2_4
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    XY-coordinates of pixels in a vertical slice at different orientations.
+
+Back projection, the ramp filter, and reconstruction
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+From the coordinates of data points on the slice (in pixel units), we can determine the contributions from different
+sinograms to this slice, known as back-projection i.e, sinograms are projected onto the reconstructed line as
+demonstrated in  :numref:`fig_5_2_5`
+
+.. figure:: section5_2/figs/fig_5_2_5.png
+    :name: fig_5_2_5
+    :figwidth: 60 %
+    :align: center
+    :figclass: align-center
+
+    Contributions of different sinograms to the reconstructed line.
+
+The above routine is applied across the height of projection images.
+
+.. figure:: section5_2/figs/fig_5_2_6.png
+    :name: fig_5_2_6
+    :figwidth: 60 %
+    :align: center
+    :figclass: align-center
+
+    Contributions of different projections to the reconstructed slice.
+
+In direct tomographic reconstruction methods, the ramp filter is used to compensate for the non-uniform sampling
+rate of tomographic data. The closer a part of the sample is to the rotation axis, the higher the sampling rate; i.e.,
+its contribution to projection-images is greater. The ramp filter can be applied to projection images before the back-projection, as shown in
+:numref:`fig_5_2_7`. This is the  well-known `Filtered Back-Projection (FBP) method <http://engineering.purdue.edu/~malcolm/pct/CTI_Ch03.pdf>`__.
+
+.. figure:: section5_2/figs/fig_5_2_7.png
+    :name: fig_5_2_7
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    Projection image is filtered by the ramp filter before the back-projection.
+
+A problem with this approach is that the ramp filter is applied to every projection image, which means the
+computational cost is high. A more practical approach is to apply the ramp filter after the back-projection, known as
+the Back-Projection Filtering (BPF) method. In this method, the ramp filter is used only once after the back-projection
+of all projection images is complete.
+
+.. figure:: section5_2/figs/fig_5_2_8.png
+    :name: fig_5_2_8
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    Demonstration of the Back-Projection Filtering method.
+
+
+The advantage of BPF over FBP is that a reconstructed slice is less noisy because the summation of projections
+in the back-projection process cancels out random noise. In contrast, FBP enhances random noise
+(by the ramp filter) before back-projection, which makes the reconstructed slice noisier. The disadvantage of BPF is
+that it is not a quantifiable method (i.e., the reconstructed values are not linearly related to the attenuation
+coefficients of the sample). Moreover, there are shadow artifacts around strongly absorbing areas, as can be seen by
+comparing :numref:`fig_5_2_8` (b) and :numref:`fig_5_2_7` (d).
+
+Despite these disadvantages, BPF is practical due to its lower computational cost and less noisy results. It can be
+used for automatically finding the center of rotation. Most importantly, in real applications, users are more interested
+in segmenting different features of reconstructed slices rather than measuring attenuation coefficients. For these
+reasons, BPF is still considered useful in practice.
+
+Center of rotation determination
+++++++++++++++++++++++++++++++++
+
+For a standard tomographic dataset, the center of rotation can be found using a sinogram, 0-degree and 180-degree
+projection images, or reconstructed slices, as presented :ref:`here <find_center>`. However, for samples much larger
+than the field of view, data with low signal-to-noise ratios, or limited-angle tomography, these methods cannot be
+used or do not perform well. In such cases, using metrics from vertical reconstructed slices at different estimated
+centers to find the optimal center is handy. In Algotom (version>=1.6.0), three metrics are provided:
+`'entropy' <https://doi.org/10.1364/JOSAA.23.001048>`__ , 'sharpness', and 'autocorrelation'.
+
+.. figure:: section5_2/figs/fig_5_2_9.png
+    :name: fig_5_2_9
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    Finding the center of rotation using metrics of reconstructed slices: (a) Entropy; (b) Sharpness.
+
+The last two metrics make use of the double-edge artifacts in reconstructed vertical slices caused by an incorrect center
+to find the optimal value. The efficiency of each metric can depend on the sample. Finding a robust metric that works for
+most cases is still a work in progress. For cases where the provided metrics may not perform well, users have the option
+to provide a custom metric function. If none of the automated methods work, a manual method is provided by generating a
+series of reconstructed slices at different centers and saving them to disk for visual inspection.
+
+.. figure:: section5_2/figs/fig_5_2_10.png
+    :name: fig_5_2_10
+    :figwidth: 100 %
+    :align: center
+    :figclass: align-center
+
+    Finding the center of rotation by visual inspection: (a) Incorrect center; (b) optimal center
+
+Demonstrations
+--------------
+
+Practical insights
+++++++++++++++++++
+
+**Loading data in chunks**
+
+In vertical slice reconstruction, the entire dataset must be read and processed. To manage this without requiring a
+high-spec computer, data must be processed in chunks. When the input is in HDF format, this process is straightforward
+because subsets of the HDF file can be accessed directly. For other formats such as TIFF, TXRM, XRM, etc., we need
+wrappers to simulate the behavior of HDF files,  allowing subset data to be loaded using `NumPy indexing syntax <https://numpy.org/doc/stable/user/basics.indexing.html>`__,
+or by simply converting these file formats to HDF. As the I/O overhead for this reconstruction method is high, the
+overall performance depends on the performance of the storage system. A faster I/O system yields faster results.
+There is a significant difference in performance between SSD, HDD, and network storage systems.
+
+**Finding the center of rotation**
+
+If the tomographic data is complete, i.e., acquired over the full range of [0-180] degrees, other faster methods can
+be used to find the center of rotation. In limited-angle tomography, or where the aforementioned methods do not
+perform well, we can measure metrics of vertical slices at different centers. To reduce computational costs, it is
+sufficient to process only a small height of projection images.
+
+**Reconstructing multiple slices**
+
+As the time cost of data loading is the same for reconstructing a single slice or multiple slices, it's more
+efficient to reconstruct multiple slices at once. This feature is provided in Algotom, which allows users to
+reconstruct multiple parallel slices with a selectable step (in pixel units) between slices. Alternatively, users
+can choose to reconstruct different slices at different orientations around the z-axis.
+
+**Selecting slice orientation**
+
+Vertical slice reconstruction is most efficient for limited-angle tomography. To minimize artifacts from missing angles,
+the optimal orientation for reconstructed vertical slices is perpendicular to the midpoint of the missing angle range.
+For thin or rectangular-shaped samples, the slice should be parallel to the longest edge. To automate the determination
+of the angle, we can identify the row in a sinogram image giving the minimum intensity (absorption-contrast tomography).
+
+Workflows
++++++++++
 
 
 
