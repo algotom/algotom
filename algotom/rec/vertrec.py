@@ -1008,7 +1008,7 @@ def vertical_reconstruction_different_angles(projections, slice_indices,
         indices.
     center : float
         Center of rotation, x-coordinate of the rotation axis. Referred to the
-        cropped image
+        cropped image.
     flat_field : array_like, optional
         2D array for flat-field correction if not None.
     dark_field : array_like, optional
