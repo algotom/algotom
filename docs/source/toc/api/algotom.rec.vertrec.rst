@@ -1,6 +1,8 @@
 :mod:`algotom.rec.vertrec`
 =================================
 
+.. _vertrec_module:
+
 .. automodule:: algotom.rec.vertrec
     :members:
     :show-inheritance:

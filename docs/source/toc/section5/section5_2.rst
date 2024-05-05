@@ -225,6 +225,91 @@ of the angle, we can identify the row in a sinogram image giving the minimum int
 Workflows
 +++++++++
 
+The methods described in this technical note are implemented in the module *vertrec.py* within Algotom package. Details
+of the API are provided :ref:`here <vertrec_module>`.
 
+The following workflow reconstructs a few vertical slices from raw data under these conditions: the input consists of
+hdf files; the center of rotation is calculated using a sinogram-based method; the BPF reconstruction method is used;
+and the output is saved as tiff images.
 
+    .. code-block:: python
+
+        import time
+        import numpy as np
+        import algotom.io.loadersaver as losa
+        import algotom.prep.correction as corr
+        import algotom.prep.removal as remo
+        import algotom.prep.calculation as calc
+        import algotom.rec.vertrec as vrec
+
+        output_base = "E:/vertical_slices/"
+
+        proj_file = "E:/Tomo_data/projections.hdf"
+        flat_file = "E:/Tomo_data/flats.hdf"
+        dark_file = "E:/Tomo_data/darks.hdf"
+        key_path = "entry/data/data"
+
+        # Load projection data as a hdf object
+        proj_obj = losa.load_hdf(proj_file, key_path)
+        (depth, height, width) = proj_obj.shape
+        # Load dark-field and flat-field images, average each result
+        flat_field = np.mean(np.asarray(losa.load_hdf(flat_file, key_path)), axis=0)
+        dark_field = np.mean(np.asarray(losa.load_hdf(dark_file, key_path)), axis=0)
+        flat_dark = flat_field - dark_field
+        flat_dark[flat_dark == 0.0] = 1.0
+
+        crop = (0, 0, 0, 0)  # (crop_top, crop_bottom, crop_left, crop_right)
+        (depth, height0, width0) = proj_obj.shape
+        top = crop[0]
+        bot = height0 - crop[1]
+        left = crop[2]
+        right = width0 - crop[3]
+        width = right - left
+        height = bot - top
+
+        flat_crop = flat_field[top:bot, left:right]
+        dark_crop = dark_field[top:bot, left:right]
+        flat_dark_crop = flat_crop - dark_crop
+        flat_dark_crop[flat_dark_crop == 0.0] = 1.0
+
+        t0 = time.time()
+        # Find center of rotation using a sinogram-based method
+        mid_slice = height // 2 + top
+        sinogram = corr.flat_field_correction(proj_obj[:, mid_slice, left:right],
+                                              flat_field[mid_slice, left:right],
+                                              dark_field[mid_slice, left:right])
+        sinogram = remo.remove_all_stripe(sinogram, 2.0, 51, 21)
+        center = calc.find_center_vo(sinogram)
+        print(f"Center-of-rotation is: {center}")
+
+        start_index = width // 2 - 250
+        stop_index = width // 2 + 250
+        step_index = 20
+        alpha = 0.0  # Orientation of the slices, in degree.
+
+        # Note that raw data is flat-field corrected and cropped if these parameters
+        # are provided. The center referred to cropped image.
+        ver_slices = vrec.vertical_reconstruction_multiple(proj_obj, start_index,
+                                                           stop_index, center,
+                                                           alpha=alpha,
+                                                           step_index=step_index,
+                                                           flat_field=flat_field,
+                                                           dark_field=dark_field,
+                                                           angles=None,
+                                                           crop=crop, proj_start=0,
+                                                           proj_stop=-1,
+                                                           chunk_size=30,
+                                                           ramp_filter="after",
+                                                           filter_name="hann",
+                                                           apply_log=True,
+                                                           gpu=True, block=(16, 16),
+                                                           ncore=None,
+                                                           prefer="threads",
+                                                           show_progress=True,
+                                                           masking=False)
+        print("Save output ...")
+        for inc, idx in enumerate(np.arange(start_index, stop_index + 1, step_index)):
+            losa.save_image(output_base + f"/slice_{idx:05}.tif", ver_slices[inc])
+        t1 = time.time()
+        print("All done !!!")
 
