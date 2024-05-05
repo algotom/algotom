@@ -92,3 +92,19 @@ class ConverterMethods(unittest.TestCase):
                                  index=10)
         list_file = losa.find_file(out_base + "/*.tif")
         self.assertTrue(len(list_file) == 1)
+
+    def test_hdf_emulator_from_tif(self):
+        file_path = "./tmp/data.hdf"
+        ifile = h5py.File(file_path, "w")
+        shape = (10, 64, 64)
+        ifile.create_dataset("entry/data",
+                             data=np.float32(np.random.rand(*shape)))
+        ifile.close()
+        out_base = "./tmp/extract_tif5/"
+        con.extract_tif_from_hdf(file_path, out_base, "entry/data")
+        hdf_emulator = con.HdfEmulatorFromTif(out_base, ncore=1)
+        self.assertTrue(hdf_emulator.shape == shape)
+        self.assertTrue(hdf_emulator[0].shape == shape[-2:])
+        self.assertTrue(hdf_emulator[:, 0, :].shape == (shape[0], shape[-1]))
+        self.assertTrue(hdf_emulator[:, 0:2, :].shape == (shape[0], 2,
+                                                          shape[-1]))

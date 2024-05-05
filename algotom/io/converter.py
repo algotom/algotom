@@ -25,10 +25,14 @@ Module for converting data type:
 
     -   Convert a list of tif files to a hdf/nxs file.
     -   Extract tif images from a hdf/nxs file.
+    -   Emulate an HDF5-like interface for TIF files in a folder.
 """
 
 import os
+import glob
 import numpy as np
+from PIL import Image
+from joblib import Parallel, delayed
 import algotom.io.loadersaver as losa
 
 
@@ -145,3 +149,76 @@ def extract_tif_from_hdf(input_path, output_path, key_path, index=(0, -1, 1),
             losa.save_image(
                 output_path + "/" + prefix + "_" + out_name[-5:] + ".tif", mat)
     return output_path
+
+
+class HdfEmulatorFromTif:
+    """
+    Emulate an HDF5-like interface for TIF files in a folder, allowing
+    indexed and sliced data access.
+
+    Parameters
+    ----------
+    folder_path : str
+        Path to the folder containing TIFF files.
+    ncore : int, optional
+        Number of cores to use for parallel processing. The default is 1
+        (sequential processing).
+
+    Examples
+    --------
+    >>> hdf_emulator = HdfEmulatorFromTif('/path/to/tif/files', ncore=4)
+    >>> print(hdf_emulator.shape)
+    >>> last_image = hdf_emulator[-1]
+    >>> image_stack = hdf_emulator[:, 0:4, :]
+    """
+    def __init__(self, folder_path, ncore=1):
+        files = glob.glob(folder_path + "/*tif*")
+        if len(files) == 0:
+            files = glob.glob(folder_path + "/*TIF*")
+        if len(files) == 0:
+            raise ValueError(f"!!! No tif files found in: {folder_path}")
+        else:
+            for i in range(len(files)):
+                files[i] = files[i].replace("\\", "/")
+        self.files = sorted(files)
+        self.n_jobs = ncore
+        self._shape, self._dtype = self._get_shape_and_dtype()
+
+    def _get_shape_and_dtype(self):
+        img = np.asarray(Image.open(self.files[0]))
+        shape = (len(self.files), *img.shape)
+        dtype = img.dtype
+        return shape, dtype
+
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            return self._load_image(self.files[index])
+        elif isinstance(index, slice):
+            indices = range(*index.indices(len(self.files)))
+            return np.stack(Parallel(n_jobs=self.n_jobs)(
+                delayed(self._load_image)(self.files[i]) for i in indices))
+        elif isinstance(index, tuple):
+            z, y, x = index
+            if isinstance(z, slice):
+                images = Parallel(n_jobs=self.n_jobs)(
+                    delayed(self._load_image)(self.files[i]) for i in
+                    range(*z.indices(self.shape[0])))
+                return np.stack([img[y, x] for img in images])
+            else:
+                return self._load_image(self.files[z])[y, x]
+        else:
+            raise TypeError("Invalid index type")
+
+    def _load_image(self, file_path):
+        return np.array(Image.open(file_path))
+
+    @property
+    def shape(self):
+        return self._shape
+
+    @property
+    def dtype(self):
+        return self._dtype
+
+    def __len__(self):
+        return len(self.files)

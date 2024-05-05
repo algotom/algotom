@@ -386,7 +386,7 @@ def _get_points_single_line(slice_index, alpha, width):
 
 
 def _get_points_multiple_lines(start_index, stop_index, alpha, width,
-                              step_index=1):
+                               step_index=1):
     """
     Computes x and y coordinates of points on multiple parallel slices at
     an angle.
@@ -419,8 +419,7 @@ def _get_points_multiple_lines(start_index, stop_index, alpha, width,
     return np.float32(x_mat), np.float32(y_mat)
 
 
-def _get_points_multiple_lines_different_angles(list_index, list_alpha,
-                                                width):
+def _get_points_multiple_lines_different_angles(list_index, list_alpha, width):
     """
     Computes x and y coordinates of points on multiple slices at different
     angles.
