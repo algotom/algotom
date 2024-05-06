@@ -48,7 +48,7 @@ import algotom.util.utility as util
 import algotom.io.loadersaver as losa
 import algotom.rec.reconstruction as rec
 from numba.core.errors import NumbaPerformanceWarning
-warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
+# warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
 
 @jit(nopython=True, parallel=True, cache=True)

@@ -35,6 +35,7 @@ vertically, the sample features are complete, which simplifies segmentation or d
 
     Vertical slicing is crucial for analyzing data acquired by limited-angle tomography. (a) Conventionally
     reconstructed slice, showing artifacts caused by missing angles. (b) Same data, represented with a vertical slice.
+    Raw data provided by Matthew Spink, Diamond Light Source.
 
 Last but not least, for certain types of samples and their features, e.g., multilayer structures parallel to the beam,
 it is challenging to find the center of rotation or preliminarily evaluate image quality using conventional reconstructed
@@ -67,9 +68,9 @@ Requirements
 -   Users don't need a high-specs computer to process data.
 -   Methods can run on either multicore CPUs or a single GPU, depending on GPU availability..
 -   Data can be read and processed chunk-by-chunk to fit available RAM or GPU memory.
--   Input is an hdf-object, numpy array, or emulated hdf-object; for a normal computer, input must be an hdf
-    file from which data can be loaded or an extracted subset into memory. For other formats, it can be converted to hdf
-    or wrapped into an hdf-emulator to extract a subset of data.
+-   Input is an HDF-object, numpy array, or emulated HDF-object; for a normal computer, input must be an HDF
+    file from which data can be loaded or an extracted subset into memory. For other formats, it can be converted to HDF
+    or wrapped into an HDF-emulator to extract a subset of data.
 -   FBP method and BPF method are implemented as they are feasible and practical.
 -   Users need methods to manually and automatically determine the center of rotation (rotation axis).
 
@@ -225,22 +226,27 @@ of the angle, we can identify the row in a sinogram image giving the minimum int
 Workflows
 +++++++++
 
-The methods described in this technical note are implemented in the module *vertrec.py* within Algotom package. Details
+The methods described in this technical note are implemented in the module **vertrec.py** within Algotom package. Details
 of the API are provided :ref:`here <vertrec_module>`.
 
 The following workflow reconstructs a few vertical slices from raw data under these conditions: the input consists of
-hdf files; the center of rotation is calculated using a sinogram-based method; the BPF reconstruction method is used;
+HDF files; the center of rotation is calculated using a sinogram-based method; the BPF reconstruction method is used;
 and the output is saved as tiff images.
 
     .. code-block:: python
 
+        import os
         import time
+        import h5py
+        import shutil
         import numpy as np
         import algotom.io.loadersaver as losa
         import algotom.prep.correction as corr
         import algotom.prep.removal as remo
+        import algotom.prep.filtering as filt
         import algotom.prep.calculation as calc
         import algotom.rec.vertrec as vrec
+        import algotom.util.utility as util
 
         output_base = "E:/vertical_slices/"
 
@@ -255,8 +261,6 @@ and the output is saved as tiff images.
         # Load dark-field and flat-field images, average each result
         flat_field = np.mean(np.asarray(losa.load_hdf(flat_file, key_path)), axis=0)
         dark_field = np.mean(np.asarray(losa.load_hdf(dark_file, key_path)), axis=0)
-        flat_dark = flat_field - dark_field
-        flat_dark[flat_dark == 0.0] = 1.0
 
         crop = (0, 0, 0, 0)  # (crop_top, crop_bottom, crop_left, crop_right)
         (depth, height0, width0) = proj_obj.shape
@@ -266,11 +270,6 @@ and the output is saved as tiff images.
         right = width0 - crop[3]
         width = right - left
         height = bot - top
-
-        flat_crop = flat_field[top:bot, left:right]
-        dark_crop = dark_field[top:bot, left:right]
-        flat_dark_crop = flat_crop - dark_crop
-        flat_dark_crop[flat_dark_crop == 0.0] = 1.0
 
         t0 = time.time()
         # Find center of rotation using a sinogram-based method
@@ -289,27 +288,309 @@ and the output is saved as tiff images.
 
         # Note that raw data is flat-field corrected and cropped if these parameters
         # are provided. The center referred to cropped image.
-        ver_slices = vrec.vertical_reconstruction_multiple(proj_obj, start_index,
-                                                           stop_index, center,
-                                                           alpha=alpha,
-                                                           step_index=step_index,
-                                                           flat_field=flat_field,
-                                                           dark_field=dark_field,
-                                                           angles=None,
-                                                           crop=crop, proj_start=0,
-                                                           proj_stop=-1,
-                                                           chunk_size=30,
-                                                           ramp_filter="after",
-                                                           filter_name="hann",
-                                                           apply_log=True,
-                                                           gpu=True, block=(16, 16),
-                                                           ncore=None,
-                                                           prefer="threads",
-                                                           show_progress=True,
-                                                           masking=False)
+        ver_slices = vrec.vertical_reconstruction_multiple(proj_obj, start_index, stop_index, center,
+                                                           alpha=alpha, step_index=step_index,
+                                                           flat_field=flat_field, dark_field=dark_field,
+                                                           angles=None, crop=crop, proj_start=0,
+                                                           proj_stop=-1, chunk_size=30,
+                                                           ramp_filter="after", filter_name="hann",
+                                                           apply_log=True, gpu=True, block=(16, 16),
+                                                           ncore=None, prefer="threads",
+                                                           show_progress=True, masking=False)
         print("Save output ...")
-        for inc, idx in enumerate(np.arange(start_index, stop_index + 1, step_index)):
-            losa.save_image(output_base + f"/slice_{idx:05}.tif", ver_slices[inc])
+        for i, idx in enumerate(np.arange(start_index, stop_index + 1, step_index)):
+            losa.save_image(output_base + f"/slice_{idx:05}.tif", ver_slices[i])
+        t1 = time.time()
+        print(f"All done in {t1 - t0}s!")
+
+If the input consists of TIF files, Algotom (>=1.6.0) provides a method for emulating an HDF-object, which allows
+to extract sub-data from TIF files in the same way as to an HDF file.
+
+    .. code-block:: python
+
+        # .......
+
+        proj_path = "E:/Tomo_data/projections/"
+        flat_path = "E:/Tomo_data/flats/"
+        dark_path = "E:/Tomo_data/darks/"
+
+        # Create hdf-emulator
+        proj_obj = cvt.HdfEmulatorFromTif(proj_path)
+        (depth, height, width) = proj_obj.shape
+        # Load dark-field and flat-field images, average each result
+        flat_field = np.mean(np.asarray(
+            [losa.load_image(file) for file in losa.find_file(flat_path + "/*tif*")]), axis=0)
+        dark_field = np.mean(np.asarray(
+            [losa.load_image(file) for file in losa.find_file(dark_path + "/*tif*")]), axis=0)
+
+        # ......
+
+Users can reconstruct multiple slices at different orientations as follows
+
+    .. code-block:: python
+
+        # .......
+        slice_indices = [width // 2, width // 3, width // 4, width // 2]
+        alphas = [0.0, 30.0, 60.0, 90.0]  # Orientation of the slices, in degree.
+        # Note that raw data is flat-field corrected and cropped if these parameters
+        # are provided. The center referred to cropped image.
+        ver_slices = vrec.vertical_reconstruction_different_angles(proj_obj, slice_indices, alphas,
+                                                                   center, flat_field=flat_field,
+                                                                   dark_field=dark_field, angles=None,
+                                                                   crop=crop, proj_start=0, proj_stop=-1,
+                                                                   chunk_size=30, ramp_filter='after',
+                                                                   filter_name='hann', apply_log=True,
+                                                                   gpu=True, block=(16, 16),
+                                                                   ncore=None, prefer='threads',
+                                                                   show_progress=True, masking=False)
+        print("Save output ...")
+        for i, idx in enumerate(slice_indices):
+            losa.save_image(output_base + f"/slice_{idx:05}_angle_{alphas[i]:3.2f}.tif", ver_slices[i])
         t1 = time.time()
         print("All done !!!")
+
+    .. figure:: section5_2/figs/fig_5_2_11.png
+        :name: fig_5_2_11
+        :figwidth: 100 %
+        :align: center
+        :figclass: align-center
+
+        Reconstruction of multiple slices at different orientations at once.
+
+Depending on samples and data, if other methods such as sinogram-based, projection-based, or horizontal-slice-based
+approaches are not applicable, users can determine the center automatically or manually using vertical slices,
+as demonstrated below.
+
+    .. code-block:: python
+
+        # Crop data to fit the memory and for fast calculation
+        crop = (1000, 1000, 0, 0)  # (crop_top, crop_bottom, crop_left, crop_right)
+        (depth, height0, width0) = proj_obj.shape
+        top = crop[0]
+        bot = height0 - crop[1]
+        left = crop[2]
+        right = width0 - crop[3]
+        width = right - left
+        height = bot - top
+
+        t0 = time.time()
+        flat = flat_field[top:bot, left:right]
+        dark = dark_field[top:bot, left:right]
+        flat_dark = flat - dark
+        flat_dark[flat_dark == 0.0] = 1.0
+        # Load data to memory and perform flat-field correction
+        projs_corrected = (proj_obj[:, top:bot, left:right] - dark) / flat_dark
+
+        auto_finding = False
+        slice_use = width // 2 - 50  # Avoid the middle slice due to ring artifacts
+        start_center = width // 2 - 20
+        stop_center = width // 2 + 20
+        step = 1.0
+
+        if auto_finding:
+            return_metric = True
+            metric = "entropy"
+            invert_metric = True  # Depending on samples, may need to invert the metrics.
+            if return_metric:
+                centers, metrics = vrec.find_center_vertical_slice(projs_corrected, slice_use,
+                                                                   start_center, stop_center, step=step,
+                                                                   metric=metric, alpha=0.0, angles=None,
+                                                                   chunk_size=30, apply_log=True,
+                                                                   gpu=True, block=(32, 32),
+                                                                   ncore=None, prefer="threads",
+                                                                   show_progress=True,
+                                                                   invert_metric=invert_metric,
+                                                                   return_metric=return_metric)
+                plt.xlabel("Center")
+                plt.ylabel("Metric")
+                plt.plot(centers, metrics, "-o")
+                center = centers[np.argmin(metrics)]
+            else:
+                center = vrec.find_center_vertical_slice(projs_corrected, slice_use, start_center,
+                                                         stop_center, step=step, metric=metric,
+                                                         alpha=0.0, angles=None, chunk_size=30,
+                                                         apply_log=True, gpu=True, block=(32, 32),
+                                                         ncore=None, prefer="threads",
+                                                         show_progress=True,
+                                                         invert_metric=invert_metric,
+                                                         return_metric=return_metric)
+            print(f"Center of rotation {center}")
+            if return_metric:
+                plt.show()
+        else:
+            vrec.find_center_visual_vertical_slices(projs_corrected, output_base, slice_use,
+                                                    start_center, stop_center, step=step,
+                                                    alpha=0.0, angles=None, chunk_size=30,
+                                                    apply_log=True, gpu=True, block=(16, 16),
+                                                    ncore=None, prefer="processes",
+                                                    display=True, masking=True)
+        t1 = time.time()
+        print(f"All done in {t1 - t0}s!")
+
+In X-ray tomography, pre-processing methods such as ring artifact removal and contrast enhancement are key to achieving
+high-quality data, not just the reconstruction method. Below, we show how to include these methods into the workflow.
+
+    .. code-block:: python
+
+        # ...
+        # Apply preprocessing methods along the sinogram direction and save intermediate
+        # results to disk
+        chunk_size = 30  # Number of sinograms to be processed at once
+        file_tmp = output_base + "/tmp_/preprocessed.hdf"
+        hdf_prep = losa.open_hdf_stream(file_tmp, (depth, height, width),
+                                        data_type="float32", key_path=key_path)
+        last_chunk = height - chunk_size * (height // chunk_size)
+        flat = flat_field[top:bot, left:right]
+        dark = dark_field[top:bot, left:right]
+        flat_dark = flat - dark
+        flat_dark[flat_dark == 0.0] = 1.0
+
+        # ring_removal_method = remo.remove_all_stripe
+        # ring_removal_paras = [2.5, 51, 21]
+        ring_removal_method = remo.remove_stripe_based_normalization
+        ring_removal_paras = [15, 1, False]
+
+        for i in range(0, height - last_chunk, chunk_size):
+            start = i + top
+            stop = start + chunk_size
+            # Flat-field correction
+            proj_chunk = (proj_obj[:, start: stop, left:right] -
+                          dark[i:i + chunk_size]) / flat_dark[i:i + chunk_size]
+            # Apply ring artifact removal
+            proj_chunk = util.parallel_process_slices(proj_chunk, ring_removal_method,
+                                                      ring_removal_paras, axis=1,
+                                                      ncore=None, prefer="threads")
+            # Apply contrast enhancement
+            proj_chunk = util.parallel_process_slices(proj_chunk, filt.fresnel_filter,
+                                                      [300.0, 1], axis=1,
+                                                      ncore=None, prefer="threads")
+            hdf_prep[:, i: i + chunk_size, :] = proj_chunk
+            t1 = time.time()
+            print(f" Done sinograms {i}-{i + chunk_size}. Time elapsed: {t1 - t0}")
+        if last_chunk != 0:
+            start = height - last_chunk
+            stop = height
+            # Flat-field correction
+            proj_chunk = (proj_obj[:, start: stop, left:right] -
+                          dark[-last_chunk:]) / flat_dark[-last_chunk:]
+            # Apply ring artifact removal
+            proj_chunk = util.parallel_process_slices(proj_chunk, ring_removal_method,
+                                                      ring_removal_paras, axis=1,
+                                                      ncore=None, prefer="threads")
+            # Apply contrast enhancement
+            proj_chunk = util.parallel_process_slices(proj_chunk, filt.fresnel_filter,
+                                                      [300.0, 1], axis=1,
+                                                      ncore=None, prefer="threads")
+            hdf_prep[:, -last_chunk:, :] = proj_chunk
+            t1 = time.time()
+            print(f" Done sinograms {start - top}-{stop - top}. Time elapsed: {t1 - t0}")
+        t1 = time.time()
+        print(f"\nDone preprocessing. Total time elapsed {t1 - t0}")
+
+        start_index = width // 2 - 250
+        stop_index = width // 2 + 250
+        step_index = 20
+        alpha = 0.0  # Orientation of the slices, in degree.
+        #  Load preprocessed projections and reconstruct
+        with h5py.File(file_tmp, 'r') as hdf_obj:
+            preprocessed_projs = hdf_obj[key_path]
+            ver_slices = vrec.vertical_reconstruction_multiple(preprocessed_projs, start_index,
+                                                               stop_index, center, alpha=alpha,
+                                                               step_index=step_index,
+                                                               flat_field=None, dark_field=None,
+                                                               angles=None, crop=(0, 0, 0, 0),
+                                                               proj_start=0, proj_stop=-1,
+                                                               chunk_size=30, ramp_filter="after",
+                                                               filter_name="hann", apply_log=True,
+                                                               gpu=True, block=(16, 16),
+                                                               ncore=None, prefer="threads",
+                                                               show_progress=True,
+                                                               masking=False)
+        # Save output
+        print("Save output ...")
+        for i, idx in enumerate(np.arange(start_index, stop_index + 1, step_index)):
+            losa.save_image(output_base + f"/slice_{idx:05}.tif", ver_slices[i])
+        t1 = time.time()
+        print(f"All done in {t1 - t0}s!")
+
+        # Delete the intermediate file
+        folder_tmp = os.path.dirname(file_tmp)
+        try:
+            shutil.rmtree(folder_tmp)
+        except PermissionError as e:
+            print(f"Error deleting the file in folder: {e}. It may still be in use.")
+
+After tweaking parameters for ring artifact removal, contrast enhancement, and choice of reconstruction methods, we can
+proceed to the next step of performing a full reconstruction.
+
+    .. code-block:: python
+
+        # ....
+
+        # Full reconstruction data has a size of (height, width, width)
+        # We can select number of slices to be reconstructed
+        slice_chunk = 30  # To select number of slices to be reconstructed at once.
+        start_slice = 0
+        stop_slice = width - 1
+        total_slice = stop_slice - start_slice + 1
+        last_chunk = total_slice - slice_chunk * (total_slice // slice_chunk)
+        alpha = 0.0  # Orientation of the slices, in degree.
+        #  Load preprocessed projections and reconstruct chunk-by-chunk
+        print("========================================================")
+        print("Perform full reconstruction\n")
+        with h5py.File(file_tmp, 'r') as hdf_obj:
+            preprocessed_projs = hdf_obj[key_path]
+            for ii in range(0, total_slice - last_chunk, slice_chunk):
+                start = ii + start_slice
+                stop = start + slice_chunk - 1  # Reconstruction method counts the last index
+                ver_slices = vrec.vertical_reconstruction_multiple(preprocessed_projs, start,
+                                                                   stop, center, alpha=alpha,
+                                                                   step_index=1, flat_field=None,
+                                                                   dark_field=None, angles=None,
+                                                                   crop=(0, 0, 0, 0), proj_start=0,
+                                                                   proj_stop=-1, chunk_size=30,
+                                                                   ramp_filter="after",
+                                                                   filter_name="hann", apply_log=True,
+                                                                   gpu=True, block=(16, 16), ncore=None,
+                                                                   prefer="threads", show_progress=False,
+                                                                   masking=False)
+                # Save output
+                for i, idx in enumerate(np.arange(start, stop + 1)):
+                    losa.save_image(output_base + f"/slice_{idx:05}.tif", ver_slices[i])
+                t1 = time.time()
+                print(f" Reconstructed slices: {start}-{stop}. Time elapsed {t1 - t0}")
+            if last_chunk != 0:
+                start = total_slice - last_chunk + start_slice
+                stop = start + last_chunk - 1  # Reconstruction method counts the last index
+                ver_slices = vrec.vertical_reconstruction_multiple(preprocessed_projs, start,
+                                                                   stop, center, alpha=alpha,
+                                                                   step_index=1, flat_field=None,
+                                                                   dark_field=None, angles=None,
+                                                                   crop=(0, 0, 0, 0), proj_start=0,
+                                                                   proj_stop=-1, chunk_size=30,
+                                                                   ramp_filter="after",
+                                                                   filter_name="hann", apply_log=True,
+                                                                   gpu=True, block=(16, 16), ncore=None,
+                                                                   prefer="threads", show_progress=False,
+                                                                   masking=False)
+                # Save output
+                for i, idx in enumerate(np.arange(start, stop + 1)):
+                    losa.save_image(output_base + f"/slice_{idx:05}.tif", ver_slices[i])
+                t1 = time.time()
+                print(f" Reconstructed slices: {start}-{stop}. Time elapsed {t1 - t0}")
+        t1 = time.time()
+        print(f"All done in {t1 - t0}s!")
+
+Complete Python scripts for the each of above workflow are available `here <https://github.com/algotom/algotom/tree/master/examples/vertical_reconstruction>`__.
+Last but not least, users should be aware that ring artifacts in vertical slices can resemble real features. As shown
+in the figure below, these artifacts appear as voids inside rock samples. A simple way to detect them is to check for
+mirror features across the middle line of the image.
+
+    .. figure:: section5_2/figs/fig_5_2_12.png
+        :name: fig_5_2_12
+        :figwidth: 100 %
+        :align: center
+        :figclass: align-center
+
+        Appearance of ring artifacts in a vertical slice.
 
