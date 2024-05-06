@@ -582,6 +582,17 @@ proceed to the next step of performing a full reconstruction.
         print(f"All done in {t1 - t0}s!")
 
 Complete Python scripts for the each of above workflow are available `here <https://github.com/algotom/algotom/tree/master/examples/vertical_reconstruction>`__.
+
+As the method processes data chunk-by-chunk and incurs significant I/O overhead, users can adjust the size of each chunk
+to optimize computing time. For context, below is the elapsed time for reconstructing vertical slices of a
+tomographic dataset with 1801 projections, where each image has a size of 2160 x 2560:
+
+-   For reconstructing 100 slices (2160 x 2560) at once using a GPU (NVIDIA RTX A4500) and the BPF method: 464 seconds, averaging 4.6 seconds per slice.
+-   Doing the same using a CPU (Intel Xeon 6230R, 26 cores): 1121 seconds, averaging 11.21 seconds per slice.
+
+As can be seen, the performance of using a multicore CPU is not far behind that of the GPU. The reason is the overhead
+of data transfer in GPU computing.
+
 Last but not least, users should be aware that ring artifacts in vertical slices can resemble real features. As shown
 in the figure below, these artifacts appear as voids inside rock samples. A simple way to detect them is to check for
 mirror features across the middle line of the image.
@@ -593,4 +604,5 @@ mirror features across the middle line of the image.
         :figclass: align-center
 
         Appearance of ring artifacts in a vertical slice.
+
 
