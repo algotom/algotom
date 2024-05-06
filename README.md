@@ -76,6 +76,16 @@ tomographic data. Some featuring methods in Algotom are as follows:
 
   ![reslicing](https://github.com/algotom/algotom/raw/master/figs/readme/reslicing.jpg)
 
+- Direct vertical reconstruction for single slice, multiple slices, and multiple slices at 
+  different orientations.
+  
+  ![vertical_slice1](figs/readme/direct_vertical_reconstruction.png)
+
+  ![vertical_slice1](figs/readme/limited_angle_tomography.png)
+  
+  
+   
+
 Installation
 ------------
 
