@@ -15,7 +15,7 @@ Update notes
 	+ Add correlation.py module.
 	+ Add methods for speckle-based phase-contrast tomography.
 	+ Add methods for image alignment.
-	+ Release version 1.1.
+	+ Release version 1.1.0
 
 - 27/06/2022:
 
@@ -27,7 +27,7 @@ Update notes
 
 - 24/10/2022:
 
-    + Release version 1.2.
+    + Release version 1.2.0
 
 - 03/02/2023:
 
@@ -43,17 +43,17 @@ Update notes
 - 30/03/2023:
 
     + Improve the performance of the reslicing method.
-    + Release version 1.3.
+    + Release version 1.3.0
 
 - 19/11/2023:
 
     + Add methods for loading and saving multiple tiff images in parallel.
-    + Release version 1.4.
+    + Release version 1.4.0
 
 - 24/03/2024:
 
     + Add calibration methods for tomography alignment.
-    + Release version 1.5
+    + Release version 1.5.0
 
 - 26/04/2024:
 
@@ -70,3 +70,4 @@ Update notes
     + Add technical note on implementations of direct vertical-slice reconstruction for tomography.
     + Enable parallel computing for image-stitching-related methods in calculation.py module
     + Add "sharpness" metric to "find_center_based_slice_metric" method.
+    + Release version 1.6.0
