@@ -104,9 +104,9 @@ Usage
 Development principles
 ----------------------
 
-- While Algotom offers a complete set of tools for tomographic data processing covering  
-  pre-processing, reconstruction, post-processing, data simulation, and calibration techniques; 
-  its development strongly focuses on pre-processing techniques. This distinction makes it a 
+- While Algotom offers a complete set of tools for tomographic data processing covering 
+  pre-processing, reconstruction, post-processing, data simulation, and calibration techniques;
+  its development strongly focuses on pre-processing techniques. This distinction makes it a
   prominent feature among other tomographic software.   
 
 - To ensure that the software can work across platforms and is easy-to-install; dependencies are minimized, and only 
