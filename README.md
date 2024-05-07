@@ -78,9 +78,9 @@ tomographic data. Some featuring methods in Algotom are as follows:
 - Direct vertical reconstruction for single slice, multiple slices, and multiple slices at 
   different orientations.
   
-  ![vertical_slice1](figs/readme/direct_vertical_reconstruction.png)
+  ![vertical_slice1](https://github.com/algotom/algotom/raw/master/figs/readme/direct_vertical_reconstruction.png)
 
-  ![vertical_slice1](figs/readme/limited_angle_tomography.png)
+  ![vertical_slice1](https://github.com/algotom/algotom/raw/master/figs/readme/limited_angle_tomography.png)
   
    
 
