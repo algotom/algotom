@@ -85,7 +85,9 @@ Some featuring methods in Algotom are as follows:
        :width: 100%
        :name: fig_2_8
        :align: center
-|
+
+    |
+
     .. image:: section2/figs/fig_2_9.png
        :width: 100%
        :name: fig_2_9
