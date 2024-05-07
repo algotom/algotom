@@ -12,7 +12,7 @@ pre-processing, tomographic reconstruction, post-processing, data simulation,
 and calibration techniques. The package provides many utility methods to 
 assist users in constructing a pipeline for processing their own data or 
 developing new methods. Key features of Algotom include a wide range of 
-processing methods such as artifact removal, distortion correction,  
+processing methods such as artifact removal, distortion correction, 
 speckle-based phase-contrast imaging, data reduction; and the capability of 
 processing non-standard tomography acquisitions such as grid scans or helical scans. 
 The software stands out for its readability, minimal dependencies, and rich documentation. 
