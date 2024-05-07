@@ -7,19 +7,18 @@
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
 
 **Algotom** is a Python package designed for tomography data processing. It 
-offers a complete pipeline for data processing; including reading and writing data, 
+offers a complete data processing pipeline; including reading and writing data, 
 pre-processing, tomographic reconstruction, post-processing, data simulation, 
 and calibration techniques. The package provides many utility methods to 
 assist users in constructing a pipeline for processing their own data or 
-developing methods. The main features of Algotom include its wealth of 
-processing methods: artifact removal, distortion correction, phase retrieval, 
-automation, calibration, image transformation, speckle-based phase-contrast imaging, 
-data reduction; and the capability to process non-standard acquired tomography 
-such as grid scans or helical scans. The software stands out for its readability, 
-minimal dependencies, and rich documentation. Algotom has been developed for 
-synchrotron-based tomographic beamlines to maximize data quality, enhance 
-workflow throughput, exploit full beamline capabilities, and process data 
-from non-standard scans. 
+developing new methods. Key features of Algotom include a wide range of 
+processing methods such as artifact removal, distortion correction,  
+speckle-based phase-contrast imaging, data reduction; and the capability of 
+processing non-standard tomography acquisitions such as grid scans or helical scans. 
+The software stands out for its readability, minimal dependencies, and rich documentation. 
+Developed specifically for synchrotron-based tomographic beamlines, Algotom aims to 
+maximize data quality, enhance workflow throughput, and exploit full beamline 
+capabilities.
 
 Features
 --------
@@ -83,7 +82,6 @@ tomographic data. Some featuring methods in Algotom are as follows:
 
   ![vertical_slice1](figs/readme/limited_angle_tomography.png)
   
-  
    
 
 Installation
@@ -106,9 +104,10 @@ Usage
 Development principles
 ----------------------
 
-- While Algotom offers a comprehensive range of tools for tomographic data processing covering raw-data reading, 
-  pre-processing, reconstruction, post-processing, and data saving; its development primarily focuses on 
-  pre-processing techniques. This distinction makes it a prominent feature among other tomographic software.   
+- While Algotom offers a complete set of tools for tomographic data processing covering  
+  pre-processing, reconstruction, post-processing, data simulation, and calibration techniques; 
+  its development strongly focuses on pre-processing techniques. This distinction makes it a 
+  prominent feature among other tomographic software.   
 
 - To ensure that the software can work across platforms and is easy-to-install; dependencies are minimized, and only 
   well-maintained [Python libraries](https://github.com/algotom/algotom/blob/master/requirements.txt) are used.

@@ -49,13 +49,13 @@ step = 1.0
 
 if auto_finding:
     return_metric = True
-    metric = "entropy"
-    invert_metric = True  # Depending on samples, may need to invert the metrics.
+    metric = "sharpness"
+    invert_metric = False  # Depending on samples, may need to invert the metrics.
     if return_metric:
         centers, metrics = vrec.find_center_vertical_slice(projs_corrected, slice_use,
                                                            start_center, stop_center,
                                                            step=step, metric=metric,
-                                                           alpha=0.0, angles=None,
+                                                           alpha=0.0, angles=None, sigma=2,
                                                            chunk_size=30, apply_log=True,
                                                            gpu=True, block=(32, 32),
                                                            ncore=None, prefer="threads",
@@ -70,7 +70,7 @@ if auto_finding:
         center = vrec.find_center_vertical_slice(projs_corrected, slice_use,
                                                  start_center, stop_center,
                                                  step=step, metric=metric,
-                                                 alpha=0.0, angles=None,
+                                                 alpha=0.0, angles=None, sigma=2,
                                                  chunk_size=30, apply_log=True,
                                                  gpu=True, block=(32, 32),
                                                  ncore=None, prefer="threads",

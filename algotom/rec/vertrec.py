@@ -43,6 +43,7 @@ import multiprocessing as mp
 import numpy as np
 import numpy.fft as fft
 from scipy import signal
+from scipy import ndimage as ndi
 from numba import jit, cuda, prange
 import algotom.util.utility as util
 import algotom.io.loadersaver as losa
@@ -1262,7 +1263,7 @@ def __calculate_autocorrelation_coefficient(image):
 
 def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
                                metric="entropy", alpha=0.0, angles=None,
-                               chunk_size=30, ramp_filter="after",
+                               chunk_size=30, ramp_filter="after", sigma=3,
                                apply_log=True, gpu=True, block=(16, 16),
                                ncore=None, prefer="threads",
                                show_progress=True, masking=True,
@@ -1296,6 +1297,8 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
         Chunk size to manage memory usage.
     ramp_filter : {"after", "before"}
         When to apply the ramp filter.
+    sigma : int
+        Denoising the projections using Gaussian filter before reconstruction.
     apply_log : bool, optional
         Apply logarithm to projections before reconstruction.
     gpu : bool, optional
@@ -1337,7 +1340,8 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
     (num_proj, height, width) = projections.shape
     if angles is None:
         angles = np.deg2rad(np.linspace(0.0, 180.0, num_proj))
-
+    if sigma > 0:
+        projections = ndi.gaussian_filter(projections, (0, sigma, sigma))
     if apply_log:
         with warnings.catch_warnings():
             warnings.filterwarnings('error', category=RuntimeWarning)

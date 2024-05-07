@@ -1182,6 +1182,10 @@ def _reconstruct_slice(sinogram, center, method, angles, ratio, filter_name,
         recon = fbp_reconstruction(sinogram, center, angles=angles,
                                    ratio=ratio, filter_name=filter_name,
                                    apply_log=apply_log, gpu=gpu, ncore=ncore)
+    elif method == "bpf":
+        recon = bpf_reconstruction(sinogram, center, angles=angles,
+                                   ratio=ratio, filter_name=filter_name,
+                                   apply_log=apply_log, gpu=gpu, ncore=ncore)
     elif method == "astra":  # pragma: no cover
         if gpu is True:
             rec_method = "FBP_CUDA"
@@ -1211,8 +1215,7 @@ def __calculate_histogram_entropy(recon_img, window=None):
     recon = np.uint8(recon_img * 255)
     hist = 1.0 + ndi.histogram(recon, 0, 255, 256)
     hist = signal.convolve(hist, window, mode='valid')
-    metric = -np.sum(hist * np.log2(hist))
-    return metric
+    return -np.sum(hist * np.log2(hist))
 
 
 def __calculate_edge_sharpness(image):
@@ -1246,11 +1249,11 @@ def __get_slice_metric(sinogram, center, method, angles, ratio, filter_name,
     return value
 
 
-def _find_center_based_slice_metric(sinogram, start, stop, step,
+def _find_center_based_slice_metric(sinogram, start, stop, step=1,
                                     metric="entropy", method="fbp", gpu=True,
                                     angles=None, ratio=1.0, filter_name="hann",
                                     apply_log=True, ncore=None,
-                                    prefer="threads", sigma=0,
+                                    prefer="threads", sigma=2,
                                     return_metric=True, invert_metric=False,
                                     metric_function=None, **kwargs):
     """
@@ -1271,7 +1274,7 @@ def _find_center_based_slice_metric(sinogram, start, stop, step,
         Searching step.
     metric : {"entropy", "sharpness"}
         Which metric to use.
-    method : {"dfi", "gridrec", "fbp", "astra"}
+    method : {"bpf", "dfi", "gridrec", "fbp", "astra"}
         To select a backend method for reconstruction.
     gpu : bool, optional
         Use GPU for computing if True.
@@ -1339,9 +1342,9 @@ def _find_center_based_slice_metric(sinogram, start, stop, step,
                                 filter_name, apply_log, gpu, 1, window, nmin,
                                 nmax, metric, metric_function,
                                 **kwargs) for center in list_center)
-        list_metric = np.asarray(list_metric)
+        list_metric = np.array(list_metric)
     else:
-        list_metric = np.ones_like(list_center)
+        list_metric = np.ones(len(list_center))
         for i, center in enumerate(list_center):
             list_metric[i] = __get_slice_metric(sinogram, center, method,
                                                 angles, ratio, filter_name,
@@ -1361,7 +1364,7 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5,
                                    metric="entropy", radius=2, zoom=1.0,
                                    method="fbp", gpu=True, angles=None,
                                    ratio=1.0, filter_name="hann",
-                                   apply_log=True, ncore=None, sigma=0,
+                                   apply_log=True, ncore=None, sigma=2,
                                    invert_metric=False, metric_function=None,
                                    **kwargs):
     """
@@ -1387,7 +1390,7 @@ def find_center_based_slice_metric(sinogram, start, stop, step=0.5,
     zoom : float
         To resize the sinogram for fast coarse-searching. For example, 0.5 <=>
         reduce the size of the image by half.
-    method : {"dfi", "gridrec", "fbp", "astra"}
+    method : {"bpf", "dfi", "gridrec", "fbp", "astra"}
         To select a backend method for reconstruction.
     gpu : bool, optional
         Use GPU for computing if True.
@@ -1476,7 +1479,7 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=0.5,
     zoom : float
         To resize input and output images. For example, 0.5 <=> reduce the
         size of images by half.
-    method : {"dfi", "gridrec", "fbp", "astra"}
+    method : {"bpf", "dfi", "gridrec", "fbp", "astra"}
         To select a backend method for reconstruction.
     gpu : bool, optional
         Use GPU for computing if True.

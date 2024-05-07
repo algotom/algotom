@@ -422,8 +422,34 @@ def correlation_metric(mat1, mat2):
     return metric
 
 
+def __calc_overlap_metric(mat1, pos, offset, use_overlap, side, norm, wei_down,
+                          wei_up, win_width, mat2_roi, mat2_roi_wei,
+                          list_mean2):
+    mat1_roi = mat1[:, pos - offset:pos + offset]
+    if use_overlap is True:
+        if side == 1:
+            mat1_roi_wei = mat1_roi * wei_down
+        else:
+            mat1_roi_wei = mat1_roi * wei_up
+    if norm is True:
+        list_mean1 = np.mean(np.abs(mat1_roi), axis=1)
+        list_fact = list_mean2 / list_mean1
+        mat_fact = np.transpose(np.tile(list_fact, (win_width, 1)))
+        mat1_roi = mat1_roi * mat_fact
+        if use_overlap is True:
+            mat1_roi_wei = mat1_roi_wei * mat_fact
+    if use_overlap is True:
+        mat_comb = mat1_roi_wei + mat2_roi_wei
+        metric_val = (correlation_metric(mat1_roi, mat2_roi) +
+                      correlation_metric(mat1_roi, mat_comb) +
+                      correlation_metric(mat2_roi, mat_comb)) / 3.0
+    else:
+        metric_val = correlation_metric(mat1_roi, mat2_roi)
+    return metric_val
+
+
 def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
-                   use_overlap=False):
+                   use_overlap=False, ncore=None):
     """
     Calculate the correlation metrics between a rectangular region, defined
     by the window width, on the utmost left/right side of image 2 and the
@@ -448,6 +474,8 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
     use_overlap : bool, optional
         Use the combination of images in the overlap area for calculating
         correlation coefficients if True.
+    ncore: int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -457,6 +485,8 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
         Initial position of the searching window where the position
         corresponds to the center of the window.
     """
+    if ncore is None:
+        ncore = np.clip(mp.cpu_count() - 1, 1, None)
     if denoise is True:
         mat1 = ndi.gaussian_filter(mat1, (2, 2), mode='reflect')
         mat2 = ndi.gaussian_filter(mat2, (2, 2), mode='reflect')
@@ -479,29 +509,24 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
         mat2_roi_wei = mat2_roi * wei_down
     list_mean2 = np.mean(np.abs(mat2_roi), axis=1)
     list_pos = np.arange(offset, ncol1 - offset)
-    num_metric = len(list_pos)
-    list_metric = np.ones(num_metric, dtype=np.float32)
-    for i, pos in enumerate(list_pos):
-        mat1_roi = mat1[:, pos - offset:pos + offset]
-        if use_overlap is True:
-            if side == 1:
-                mat1_roi_wei = mat1_roi * wei_down
-            else:
-                mat1_roi_wei = mat1_roi * wei_up
-        if norm is True:
-            list_mean1 = np.mean(np.abs(mat1_roi), axis=1)
-            list_fact = list_mean2 / list_mean1
-            mat_fact = np.transpose(np.tile(list_fact, (win_width, 1)))
-            mat1_roi = mat1_roi * mat_fact
-            if use_overlap is True:
-                mat1_roi_wei = mat1_roi_wei * mat_fact
-        if use_overlap is True:
-            mat_comb = mat1_roi_wei + mat2_roi_wei
-            list_metric[i] = (correlation_metric(mat1_roi, mat2_roi)
-                              + correlation_metric(mat1_roi, mat_comb)
-                              + correlation_metric(mat2_roi, mat_comb)) / 3.0
-        else:
-            list_metric[i] = correlation_metric(mat1_roi, mat2_roi)
+    nump = len(list_pos)
+    if ncore == 1:
+        list_metric = np.ones(nump, dtype=np.float32)
+        for i, pos in enumerate(list_pos):
+            list_metric[i] = __calc_overlap_metric(mat1, pos, offset,
+                                                   use_overlap, side, norm,
+                                                   wei_down, wei_up,
+                                                   win_width, mat2_roi,
+                                                   mat2_roi_wei,
+                                                   list_mean2)
+    else:
+        list_metric = Parallel(n_jobs=ncore, prefer="threads")(
+            delayed(__calc_overlap_metric)(mat1, list_pos[i], offset,
+                                           use_overlap, side, norm,
+                                           wei_down, wei_up, win_width,
+                                           mat2_roi, mat2_roi_wei,
+                                           list_mean2) for i in range(nump))
+        list_metric = np.asarray(list_metric)
     min_metric = np.min(list_metric)
     if min_metric != 0.0:
         list_metric = list_metric / min_metric
@@ -509,7 +534,7 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
 
 
 def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
-                 use_overlap=False):
+                 use_overlap=False, ncore=None):
     """
     Find the overlap area and overlap side between two images (Ref. [1]) where
     the overlap side referring to the first image.
@@ -533,6 +558,8 @@ def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     use_overlap : bool, optional
         Use the combination of images in the overlap area for calculating
         correlation coefficients if True.
+    ncore: int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -553,21 +580,25 @@ def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     win_width = int(np.clip(win_width, 6, min(ncol1, ncol2) // 2))
     if side == 1:
         (list_metric, offset) = search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+                                               denoise, norm, use_overlap,
+                                               ncore)
         (_, overlap_position) = calculate_curvature(list_metric)
         overlap_position = overlap_position + offset
         overlap = ncol1 - overlap_position + win_width // 2
     elif side == 0:
         (list_metric, offset) = search_overlap(mat1, mat2, win_width, side,
-                                               denoise, norm, use_overlap)
+                                               denoise, norm, use_overlap,
+                                               ncore)
         (_, overlap_position) = calculate_curvature(list_metric)
         overlap_position = overlap_position + offset
         overlap = overlap_position + win_width // 2
     else:
         (list_metric1, offset1) = search_overlap(mat1, mat2, win_width, 1,
-                                                 norm, denoise, use_overlap)
+                                                 norm, denoise, use_overlap,
+                                                 ncore)
         (list_metric2, offset2) = search_overlap(mat1, mat2, win_width, 0,
-                                                 norm, denoise, use_overlap)
+                                                 norm, denoise, use_overlap,
+                                                 ncore)
         (curvature1, overlap_position1) = calculate_curvature(list_metric1)
         overlap_position1 = overlap_position1 + offset1
         (curvature2, overlap_position2) = calculate_curvature(list_metric2)
@@ -584,7 +615,7 @@ def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
 
 
 def find_overlap_multiple(list_mat, win_width, side=None, denoise=True,
-                          norm=False, use_overlap=False):
+                          norm=False, use_overlap=False, ncore=None):
     """
     Find the overlap-areas and overlap-sides of a list of images where the
     overlap side referring to the previous image.
@@ -606,6 +637,8 @@ def find_overlap_multiple(list_mat, win_width, side=None, denoise=True,
     use_overlap : bool, optional
         Use the combination of images in the overlap area for calculating
         correlation coefficients if True.
+    ncore: int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -621,7 +654,7 @@ def find_overlap_multiple(list_mat, win_width, side=None, denoise=True,
     if num_mat > 1:
         for i in range(num_mat-1):
             results = find_overlap(list_mat[i], list_mat[i + 1], win_width,
-                                   side, denoise, norm, use_overlap)
+                                   side, denoise, norm, use_overlap, ncore)
             list_overlap.append(results)
     else:
         raise ValueError("Need at least 2 images to work!!!")
@@ -629,7 +662,7 @@ def find_overlap_multiple(list_mat, win_width, side=None, denoise=True,
 
 
 def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
-                    use_overlap=False):
+                    use_overlap=False, ncore=None):
     """
     Find the center-of-rotation (COR) in a 360-degree scan with offset COR use
     the method presented in Ref. [1].
@@ -651,6 +684,8 @@ def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
     use_overlap : bool, optional
         Use the combination of images in the overlap area for calculating
         correlation coefficients if True.
+    ncore: int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -672,8 +707,9 @@ def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
     nrow_180 = nrow // 2 + 1
     sino_top = sino_360[0:nrow_180, :]
     sino_bot = np.fliplr(sino_360[-nrow_180:, :])
-    (overlap, side, overlap_position) = find_overlap(
-        sino_top, sino_bot, win_width, side, denoise, norm, use_overlap)
+    (overlap, side, overlap_position) = find_overlap(sino_top, sino_bot,
+                                                     win_width, side, denoise,
+                                                     norm, use_overlap, ncore)
     if side == 0:
         cor = overlap / 2.0 - 1.0
     else:
@@ -785,9 +821,9 @@ def find_center_based_phase_correlation(mat1, mat2, flip=True, gradient=True):
     return cor
 
 
-def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
-                           start_row=None, denoise=True, norm=False,
-                           use_overlap=False):
+def find_center_projection(mat1, mat2, flip=True, win_width=None,
+                           chunk_height=None, start_row=None, denoise=True,
+                           norm=False, use_overlap=False, ncore=None):
     """
     Find the center-of-rotation (COR) using projection images at 0-degree
     and 180-degree based on a method in Ref. [1].
@@ -800,6 +836,8 @@ def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
         2D array. Projection image at 180-degree.
     flip : bool, optional
         Flip the 180-degree projection in the left-right direction if True.
+    win_width : int, optional
+        Width of the searching window.
     chunk_height : int or float, optional
         Height of the sub-area of projection images. If a float is given, it
         must be in the range of [0.0, 1.0].
@@ -812,6 +850,8 @@ def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
     use_overlap : bool, optional
         Use the combination of images in the overlap area for calculating
         correlation coefficients if True.
+    ncore: int or None
+        Number of cpu-cores used for computing. Automatically selected if None.
 
     Returns
     -------
@@ -825,29 +865,28 @@ def find_center_projection(mat1, mat2, flip=True, chunk_height=None,
     (nrow, ncol) = mat1.shape
     if flip is True:
         mat2 = np.fliplr(mat2)
-    win_width = ncol // 2
+    if win_width is None:
+        win_width = min(250, int(0.2 * ncol))
     if chunk_height is None:
-        chunk_height = int(0.1 * nrow)
+        chunk_height = min(500, int(0.9 * nrow))
     if isinstance(chunk_height, float):
         if 0.0 < chunk_height <= 1.0:
             chunk_height = int(chunk_height * nrow)
         else:
-            chunk_height = int(0.1 * nrow)
+            chunk_height = min(500, int(0.5 * nrow))
     chunk_height = np.clip(chunk_height, 1, nrow - 1)
     if start_row is None:
         start = nrow // 2 - chunk_height // 2
-    elif start_row < 0:
-        start = nrow + start_row - chunk_height // 2
     else:
-        start = start_row - chunk_height // 2
+        start = np.clip(start_row, 0, nrow // 2 - chunk_height // 2)
     stop = start + chunk_height
     start = np.clip(start, 0, nrow - chunk_height - 1)
-    stop = np.clip(stop, chunk_height, nrow - 1)
+    stop = np.clip(stop, chunk_height, nrow)
     mat1_roi = mat1[start: stop]
     mat2_roi = mat2[start: stop]
     (overlap, side, _) = find_overlap(mat1_roi, mat2_roi, win_width, side=None,
                                       denoise=denoise, norm=norm,
-                                      use_overlap=use_overlap)
+                                      use_overlap=use_overlap, ncore=ncore)
     if side == 0:
         cor = overlap / 2.0 - 1.0
     else:
