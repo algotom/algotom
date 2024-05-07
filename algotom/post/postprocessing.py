@@ -660,7 +660,7 @@ def __save_intermediate_data(input_, output, axis, crop, key_path=None,
                 data_tmp = ofile.create_dataset(out_key,
                                                 (depth1, height1, width1),
                                                 dtype=data_type,
-                                                chunks = hdf_chunk)
+                                                chunks=hdf_chunk)
                 for i in np.arange(0, depth1 - last_chunk, chunk):
                     if show_progress:
                         t1 = timeit.default_timer()

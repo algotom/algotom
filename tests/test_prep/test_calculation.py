@@ -144,12 +144,12 @@ class CalculationMethods(unittest.TestCase):
         mat1 = ndi.shift(mat1, (0, shift))
         mat2 = ndi.shift(mat2, (0, shift))
         center0 = (self.size - 1) / 2.0 + shift
-        cor = calc.find_center_projection(mat1, mat2)
+        cor = calc.find_center_projection(mat1, mat2, win_width=self.size // 2)
         self.assertTrue(np.abs(cor - center0) < self.error)
 
-        cor = calc.find_center_projection(mat1, mat2, chunk_height=0.5,
-                                          start_row=1, norm=True,
-                                          use_overlap=True)
+        cor = calc.find_center_projection(mat1, mat2, win_width=self.size // 2,
+                                          chunk_height=1.0, start_row=1,
+                                          norm=True, use_overlap=True, ncore=1)
         self.assertTrue(np.abs(cor - center0) < self.error)
 
     def test_calculate_reconstructable_height(self):

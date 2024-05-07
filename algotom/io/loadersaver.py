@@ -38,7 +38,7 @@ import os
 import glob
 import warnings
 import multiprocessing as mp
-from joblib import Parallel, delayed, parallel_backend
+from joblib import Parallel, delayed
 from collections import OrderedDict, deque
 import h5py
 import numpy as np
@@ -1213,6 +1213,8 @@ def save_image_multiple(list_path, image_stack, axis=0, overwrite=True,
         List of output paths or a folder path
     image_stack : array_like
         3D array.
+    axis : int
+        Axis to slice data.
     overwrite : bool
         Overwrite an existing file if True.
     ncore : int or None
