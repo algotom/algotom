@@ -58,3 +58,15 @@ Update notes
 - 26/04/2024:
 
     + Add back-projection filtering (BPF) method.
+    + Update method for processing slices of 3D array in parallel.
+    + Move "find_center_based_slice_metric" and "find_center_based_slice_metric" from utility.py
+      to reconstruction.py
+
+- 06/05/2024:
+
+    + Add module **vertrec.py** for direct vertical slice reconstructions: single slice, multiple slices, and multiple
+      slices at different orientations; and methods for finding the center of rotation using vertical slices.
+    + Add demos for vertical reconstruction.
+    + Add technical note on implementations of direct vertical-slice reconstruction for tomography.
+    + Enable parallel computing for image-stitching-related methods in calculation.py module
+    + Add "sharpness" metric to "find_center_based_slice_metric" method.

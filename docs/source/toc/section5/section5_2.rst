@@ -581,7 +581,7 @@ proceed to the next step of performing a full reconstruction.
         t1 = time.time()
         print(f"All done in {t1 - t0}s!")
 
-Complete Python scripts for the each of above workflow are available `here <https://github.com/algotom/algotom/tree/master/examples/vertical_reconstruction>`__.
+Complete Python scripts for the each of above workflow are available `here <https://github.com/algotom/algotom/tree/master/examples/direct_vertical_slice_reconstruction>`__.
 
 As the method processes data chunk-by-chunk and incurs significant I/O overhead, users can adjust the size of each chunk
 to optimize computing time. For context, below is the elapsed time for reconstructing vertical slices of a
@@ -604,5 +604,3 @@ mirror features across the middle line of the image.
         :figclass: align-center
 
         Appearance of ring artifacts in a vertical slice.
-
-

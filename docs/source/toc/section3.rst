@@ -2,7 +2,7 @@ Installation
 ============
 
 Algotom is installable across operating systems (Windows, Linux, Mac) and
-works with Python >=3.7. It is a Python library not an app. Users have to
+works with Python >=3.8. It is a Python library not an app. Users have to
 write Python codes to process their data. For beginners, a quick way to get started with Python
 programming is to install `Anaconda <https://www.anaconda.com/products/individual>`__,
 then follow instructions `here <https://docs.anaconda.com/anaconda/user-guide/getting-started/>`__.
@@ -45,13 +45,13 @@ If install to an existing environment::
 
     conda install -c conda-forge algotom
 
-or::
+or:
 
 	conda install -c algotom algotom
 
 If install to a new environment::
 
-    conda create -n algotom python>=3.7
+    conda create -n algotom python=3.10
     conda activate algotom
     conda install -c conda-forge algotom
 
@@ -68,7 +68,7 @@ If install to an existing environment::
 
 If install to a new environment::
 
-    conda create -n algotom python>=3.7
+    conda create -n algotom python=3.10
     conda activate algotom
     pip install algotom
 
@@ -83,7 +83,7 @@ Download and install `Miniconda  <https://docs.conda.io/en/latest/miniconda.html
 
 Open Linux terminal or Miniconda/Anaconda Powershell prompt and run the following commands::
 
-    conda create -n algotom python>=3.7
+    conda create -n algotom python=3.10
     conda activate algotom
     cd algotom
     python setup.py install

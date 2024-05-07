@@ -78,13 +78,26 @@ Some featuring methods in Algotom are as follows:
        :name: fig_2_7
        :align: center
 
+-   Direct vertical reconstruction for single slice, multiple slices, and multiple slices at
+    different orientations.
+
+    .. image:: section2/figs/fig_2_8.png
+       :width: 100%
+       :name: fig_2_8
+       :align: center
+|
+    .. image:: section2/figs/fig_2_9.png
+       :width: 100%
+       :name: fig_2_9
+       :align: center
+
 Development principles
 ----------------------
 
--   While Algotom offers a comprehensive range of tools for tomographic data processing
-    covering raw-data reading, pre-processing, reconstruction, post-processing, and data
-    saving; its development primarily focuses on pre-processing techniques. This distinction
-    makes it a prominent feature among other tomographic software.
+-   While Algotom offers a complete set of tools for tomographic data processing covering
+    pre-processing, reconstruction, post-processing, data simulation, and calibration techniques;
+    its development strongly focuses on pre-processing techniques. This distinction makes it a
+    prominent feature among other tomographic software.
 
 -   To ensure that the software can work across platforms and is easy-to-install; dependencies
     are minimized, and only well-maintained `Python libraries <https://github.com/algotom/algotom/blob/master/requirements.txt>`__
