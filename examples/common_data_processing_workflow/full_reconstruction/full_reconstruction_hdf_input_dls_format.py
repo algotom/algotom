@@ -109,21 +109,37 @@ for i in np.arange(start_slice, start_slice + total_slice - last_chunk, chunk):
     # Perform pre-processing
     if preprocessing:
         t0 = timeit.default_timer()
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "remove_zinger",
-                                                            [0.08, 1],
-                                                            ncore=ncore,
-                                                            prefer="threads")
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "remove_all_stripe",
-                                                            [3.0, 51, 21],
-                                                            ncore=ncore,
-                                                            prefer="threads")
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "fresnel_filter",
-                                                            [200, 1],
-                                                            ncore=ncore,
-                                                            prefer="threads")
+
+        # Algotom < 1.6
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+        #                                                     "remove_zinger",
+        #                                                     [0.08, 1],
+        #                                                     ncore=ncore,
+        #                                                     prefer="threads")
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+        #                                                     "remove_all_stripe",
+        #                                                     [3.0, 51, 21],
+        #                                                     ncore=ncore,
+        #                                                     prefer="threads")
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+        #                                                     "fresnel_filter",
+        #                                                     [200, 1],
+        #                                                     ncore=ncore,
+        #                                                     prefer="threads")
+
+        # Algotom >= 1.6
+        sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                 [0.08, 1], ncore=ncore,
+                                                 prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms,
+                                                 remo.remove_all_stripe,
+                                                 [3.0, 51, 21], ncore=ncore,
+                                                 prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms,
+                                                 filt.fresnel_filter,
+                                                 [200, 1], ncore=ncore,
+                                                 prefer="threads")
+
         t1 = timeit.default_timer()
         t_prep = t_prep + t1 - t0
 
@@ -162,20 +178,36 @@ if last_chunk != 0:
     # Perform pre-processing
     if preprocessing:
         t0 = timeit.default_timer()
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "remove_zinger",
-                                                            [0.08, 1],
-                                                            ncore=ncore,
-                                                            prefer="threads")
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "remove_all_stripe",
-                                                            [3.0, 51, 21],
-                                                            ncore=ncore,
-                                                            prefer="threads")
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                            "fresnel_filter",
-                                                            [200, 1],
-                                                            ncore=ncore)
+
+        # Algotom < 1.6
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+        #                                                     "remove_zinger",
+        #                                                     [0.08, 1],
+        #                                                     ncore=ncore,
+        #                                                     prefer="threads")
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+        #                                                     "remove_all_stripe",
+        #                                                     [3.0, 51, 21],
+        #                                                     ncore=ncore,
+        #                                                     prefer="threads")
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+        #                                                     "fresnel_filter",
+        #                                                     [200, 1],
+        #                                                     ncore=ncore)
+
+        # Algotom >= 1.6
+        sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                 [0.08, 1], ncore=ncore,
+                                                 prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms,
+                                                 remo.remove_all_stripe,
+                                                 [3.0, 51, 21], ncore=ncore,
+                                                 prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms,
+                                                 filt.fresnel_filter,
+                                                 [200, 1], ncore=ncore,
+                                                 prefer="threads")
+
         t1 = timeit.default_timer()
         t_prep = t_prep + t1 - t0
 
