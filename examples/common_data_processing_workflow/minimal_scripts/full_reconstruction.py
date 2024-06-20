@@ -109,22 +109,38 @@ for i in range(num_iter):
     sinograms = corr.flat_field_correction(proj_obj[:, start_sino:stop_sino, left:right],
                                            flat_field[start_sino:stop_sino, left: right],
                                            dark_field[start_sino:stop_sino, left: right])
-    # # Apply zinger removal
-    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
-    #                                                     [0.08, 1], ncore=ncore, prefer="threads")
-    # Apply ring removal (Check API Reference to get the name of other methods)
-    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
-    #                                                     [21], ncore=ncore, prefer="threads")
-    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
-    #                                                     [15], ncore=ncore, prefer="threads")
-    sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
-                                                        [2.5, 71, 31],
-                                                        ncore=ncore, prefer="threads")
+    # Algotom < 1.6
+    # # # Apply zinger removal
+    # # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
+    # #                                                     [0.08, 1], ncore=ncore, prefer="threads")
+    # # Apply ring removal (Check API Reference to get the name of other methods)
+    # # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
+    # #                                                     [21], ncore=ncore, prefer="threads")
+    # # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
+    # #                                                     [15], ncore=ncore, prefer="threads")
+    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
+    #                                                     [2.5, 71, 31],
+    #                                                     ncore=ncore, prefer="threads")
+    # # Apply contrast enhancement/denoising
+    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
+    #                                                     [100, 1],
+    #                                                     ncore=ncore, prefer="threads")
 
+    # Algotom >= 1.6
+    # Apply zinger removal
+    sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                             [0.08, 1], ncore=ncore, prefer="threads")
+    # Apply ring removal (Check API Reference to get the name of other methods)
+    # sinograms = util.parallel_process_slices(sinograms, remo.remove_stripe_based_sorting,
+    #                                          [21], ncore=ncore, prefer="threads")
+    # sinograms = util.parallel_process_slices(sinograms, remo.remove_stripe_based_normalization,
+    #                                          [15], ncore=ncore, prefer="threads")
+    sinograms = util.parallel_process_slices(sinograms, remo.emove_all_stripe,
+                                             [2.5, 71, 31],
+                                             ncore=ncore, prefer="threads")
     # Apply contrast enhancement/denoising
-    sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
-                                                        [100, 1],
-                                                        ncore=ncore, prefer="threads")
+    sinograms = util.parallel_process_slices(sinograms, filt.fresnel_filter,
+                                             [100, 1], ncore=ncore, prefer="threads")
     t1 = timeit.default_timer()
     t_load_data_ffc += t1 - t0
 
@@ -166,22 +182,36 @@ if num_rest != 0:
     sinograms = corr.flat_field_correction(proj_obj[:, start_sino:stop_sino, left:right],
                                            flat_field[start_sino:stop_sino, left: right],
                                            dark_field[start_sino:stop_sino, left: right])
-    # # Apply zinger removal
-    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
-    #                                                     [0.08, 1], ncore=ncore, prefer="threads")
+    # # # Apply zinger removal
+    # # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
+    # #                                                     [0.08, 1], ncore=ncore, prefer="threads")
+    # # Apply ring removal (Check API Reference to get the name of other methods)
+    # # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
+    # #                                                     [21], ncore=ncore, prefer="threads")
+    # # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
+    # #                                                     [15], ncore=ncore, prefer="threads")
+    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
+    #                                                     [2.5, 71, 31],
+    #                                                     ncore=ncore, prefer="threads")
+    # # Apply contrast enhancement/denoising
+    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
+    #                                                     [100, 1],
+    #                                                     ncore=ncore, prefer="threads")
+    # Algotom >= 1.6
+    # Apply zinger removal
+    sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                             [0.08, 1], ncore=ncore, prefer="threads")
     # Apply ring removal (Check API Reference to get the name of other methods)
-    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
-    #                                                     [21], ncore=ncore, prefer="threads")
-    # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
-    #                                                     [15], ncore=ncore, prefer="threads")
-    sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
-                                                        [2.5, 71, 31],
-                                                        ncore=ncore, prefer="threads")
-
+    # sinograms = util.parallel_process_slices(sinograms, remo.remove_stripe_based_sorting,
+    #                                          [21], ncore=ncore, prefer="threads")
+    # sinograms = util.parallel_process_slices(sinograms, remo.remove_stripe_based_normalization,
+    #                                          [15], ncore=ncore, prefer="threads")
+    sinograms = util.parallel_process_slices(sinograms, remo.emove_all_stripe,
+                                             [2.5, 71, 31],
+                                             ncore=ncore, prefer="threads")
     # Apply contrast enhancement/denoising
-    sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
-                                                        [100, 1],
-                                                        ncore=ncore, prefer="threads")
+    sinograms = util.parallel_process_slices(sinograms, filt.fresnel_filter,
+                                             [100, 1], ncore=ncore, prefer="threads")
     t1 = timeit.default_timer()
     t_load_data_ffc += t1 - t0
 

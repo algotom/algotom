@@ -115,8 +115,12 @@ sinograms = corr.flat_field_correction(
     option1=opt1, option2=opt2)
 # Perform reconstruction
 print("9 -> Perform reconstruction on this chunk in parallel...")
-recon_img = util.apply_method_to_multiple_sinograms(sinograms, "dfi_reconstruction",
-                                                    [center])
+# # Algotom < 1.6
+# recon_img = util.apply_method_to_multiple_sinograms(sinograms, "dfi_reconstruction",
+#                                                     [center])
+# Algotom >= 1.6
+recon_img = util.parallel_process_slices(sinograms, rec.dfi_reconstruction,
+                                         [center])
 for i in range(start_slice, stop_slice):
     #img_rec = rec.dfi_reconstruction(sinograms[:,i - start_slice, :], center, apply_log=True)
     name = "0000" + str(i)

@@ -89,9 +89,13 @@ for i in range(num_iter):
         dark_field[start_sino:stop_sino, :],
         option1=opt1, option2=opt2, option3=opt3)
     # Reconstruct a chunk of slices in parallel if using CPU-based method.
-    recon_img = util.apply_method_to_multiple_sinograms(sinograms,
-                                                        "dfi_reconstruction",
-                                                        [center])
+    # Algotom < 1.6
+    # recon_img = util.apply_method_to_multiple_sinograms(sinograms,
+    #                                                     "dfi_reconstruction",
+    #                                                     [center])
+    # Algotom >= 1.6
+    recon_img = util.parallel_process_slices(sinograms, rec.dfi_reconstruction,
+                                             [center])
     # Save the results to tif images
     for j in range(start_sino, stop_sino):
         name = "0000" + str(j)
@@ -117,9 +121,14 @@ if num_rest != 0:
         dark_field[start_sino:stop_sino, :],
         option1=opt1, option2=opt2, option3=opt3)
     # Reconstruct a chunk of slices in parallel if using CPU-based method.
-    recon_img = util.apply_method_to_multiple_sinograms(sinograms,
-                                                        "dfi_reconstruction",
-                                                        [center])
+
+    # # Algotom < 1.6
+    # recon_img = util.apply_method_to_multiple_sinograms(sinograms,
+    #                                                     "dfi_reconstruction",
+    #                                                     [center])
+    # Algotom >= 1.6
+    recon_img = util.parallel_process_slices(sinograms, rec.dfi_reconstruction,
+                                             [center])
     # Save the results to tif images
     for j in range(start_sino, stop_sino):
         name = "0000" + str(j)

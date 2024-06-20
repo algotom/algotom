@@ -176,21 +176,37 @@ for i in range(num_iter):
                                            flat_field[start_sino:stop_sino, left: right],
                                            dark_field[start_sino:stop_sino, left: right])
     if zinger_removal != 0:
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
-                                                            [0.08, 1], ncore=ncore, prefer="threads")
+        # Algotom < 1.6
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
+        #                                                     [0.08, 1], ncore=ncore, prefer="threads")
+        # Algotom >= 1.6
+        sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                 [0.08, 1], ncore=ncore, prefer="threads")
+
     if ring_removal != "none":
         if ring_removal == "sort":
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
-                                                                [21], ncore=ncore, prefer="threads")
+            # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
+            #                                                     [21], ncore=ncore, prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms,
+                                                     remo.remove_stripe_based_sorting,
+                                                     [21], ncore=ncore, prefer="threads")
         elif ring_removal == "norm":
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
-                                                                [15], ncore=ncore, prefer="threads")
+            # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
+            #                                                     [15], ncore=ncore, prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms, remo.remove_stripe_based_normalization,
+                                                     [15], ncore=ncore, prefer="threads")
         else:
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
-                                                                [2.5, 71, 31], ncore=ncore, prefer="threads")
+            # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
+            #                                                     [2.5, 71, 31], ncore=ncore, prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms, remo.remove_all_stripe,
+                                                     [2.5, 71, 31], ncore=ncore, prefer="threads")
+
     if ratio > 0.0:
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
-                                                            [ratio, 1], ncore=ncore, prefer="threads")
+        # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
+        #                                                     [ratio, 1], ncore=ncore, prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms, filt.fresnel_filter,
+                                                 [ratio, 1], ncore=ncore, prefer="threads")
+
     t1 = timeit.default_timer()
     t_load_data_ffc += t1 - t0
 
@@ -234,22 +250,41 @@ if num_rest != 0:
     sinograms = corr.flat_field_correction(proj_obj[:, start_sino:stop_sino, left:right],
                                            flat_field[start_sino:stop_sino, left: right],
                                            dark_field[start_sino:stop_sino, left: right])
+    # if zinger_removal != 0:
+    #     sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
+    #                                                         [0.08, 1], ncore=ncore, prefer="threads")
+    # if ring_removal != "none":
+    #     if ring_removal == "sort":
+    #         sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
+    #                                                             [21], ncore=ncore, prefer="threads")
+    #     elif ring_removal == "norm":
+    #         sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
+    #                                                             [15], ncore=ncore, prefer="threads")
+    #     else:
+    #         sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
+    #                                                             [2.5, 71, 31], ncore=ncore, prefer="threads")
+    # if ratio > 0.0:
+    #     sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
+    #                                                         [ratio, 1], ncore=ncore, prefer="threads")
+
     if zinger_removal != 0:
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger",
-                                                            [0.08, 1], ncore=ncore, prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                 [0.08, 1], ncore=ncore, prefer="threads")
     if ring_removal != "none":
         if ring_removal == "sort":
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_sorting",
-                                                                [21], ncore=ncore, prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms,
+                                                     remo.remove_stripe_based_sorting,
+                                                     [21], ncore=ncore, prefer="threads")
         elif ring_removal == "norm":
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_stripe_based_normalization",
-                                                                [15], ncore=ncore, prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms, remo.remove_stripe_based_normalization,
+                                                     [15], ncore=ncore, prefer="threads")
         else:
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe",
-                                                                [2.5, 71, 31], ncore=ncore, prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms, remo.remove_all_stripe,
+                                                     [2.5, 71, 31], ncore=ncore, prefer="threads")
     if ratio > 0.0:
-        sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter",
-                                                            [ratio, 1], ncore=ncore, prefer="threads")
+        sinograms = util.parallel_process_slices(sinograms, filt.fresnel_filter,
+                                                 [ratio, 1], ncore=ncore, prefer="threads")
+
     t1 = timeit.default_timer()
     t_load_data_ffc += t1 - t0
 
