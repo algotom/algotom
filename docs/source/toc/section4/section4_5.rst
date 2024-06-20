@@ -754,21 +754,34 @@ for both tif and hdf input formats, but we can break down the workflow and provi
             # Perform pre-processing
             if preprocessing:
                 t0 = timeit.default_timer()
-                sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                                    "remove_zinger",
-                                                                    [0.08, 1],
-                                                                    ncore=ncore,
-                                                                    prefer="threads")
-                sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                                    "remove_all_stripe",
-                                                                    [3.0, 51, 21],
-                                                                    ncore=ncore,
-                                                                    prefer="threads")
-                sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                                    "fresnel_filter",
-                                                                    [200, 1],
-                                                                    ncore=ncore,
-                                                                    prefer="threads")
+                # Algotom < 1.6
+                # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+                #                                                     "remove_zinger",
+                #                                                     [0.08, 1],
+                #                                                     ncore=ncore,
+                #                                                     prefer="threads")
+                # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+                #                                                     "remove_all_stripe",
+                #                                                     [3.0, 51, 21],
+                #                                                     ncore=ncore,
+                #                                                     prefer="threads")
+                # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+                #                                                     "fresnel_filter",
+                #                                                     [200, 1],
+                #                                                     ncore=ncore,
+                #                                                     prefer="threads")
+                # Algotom >= 1.6
+                sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                         [0.08, 1], ncore=ncore,
+                                                         prefer="threads")
+                sinograms = util.parallel_process_slices(sinograms,
+                                                         remo.remove_all_stripe,
+                                                         [3.0, 51, 21], ncore=ncore,
+                                                         prefer="threads")
+                sinograms = util.parallel_process_slices(sinograms,
+                                                         filt.fresnel_filter,
+                                                         [200, 1], ncore=ncore,
+                                                         prefer="threads")
                 t1 = timeit.default_timer()
                 t_prep = t_prep + t1 - t0
 
@@ -807,20 +820,34 @@ for both tif and hdf input formats, but we can break down the workflow and provi
             # Perform pre-processing
             if preprocessing:
                 t0 = timeit.default_timer()
-                sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                                    "remove_zinger",
-                                                                    [0.08, 1],
-                                                                    ncore=ncore,
-                                                                    prefer="threads")
-                sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                                    "remove_all_stripe",
-                                                                    [3.0, 51, 21],
-                                                                    ncore=ncore,
-                                                                    prefer="threads")
-                sinograms = util.apply_method_to_multiple_sinograms(sinograms,
-                                                                    "fresnel_filter",
-                                                                    [200, 1],
-                                                                    ncore=ncore)
+                # Algotom < 1.6
+                # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+                #                                                     "remove_zinger",
+                #                                                     [0.08, 1],
+                #                                                     ncore=ncore,
+                #                                                     prefer="threads")
+                # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+                #                                                     "remove_all_stripe",
+                #                                                     [3.0, 51, 21],
+                #                                                     ncore=ncore,
+                #                                                     prefer="threads")
+                # sinograms = util.apply_method_to_multiple_sinograms(sinograms,
+                #                                                     "fresnel_filter",
+                #                                                     [200, 1],
+                #                                                     ncore=ncore,
+                #                                                     prefer="threads")
+                # Algotom >= 1.6
+                sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                         [0.08, 1], ncore=ncore,
+                                                         prefer="threads")
+                sinograms = util.parallel_process_slices(sinograms,
+                                                         remo.remove_all_stripe,
+                                                         [3.0, 51, 21], ncore=ncore,
+                                                         prefer="threads")
+                sinograms = util.parallel_process_slices(sinograms,
+                                                         filt.fresnel_filter,
+                                                         [200, 1], ncore=ncore,
+                                                         prefer="threads")
                 t1 = timeit.default_timer()
                 t_prep = t_prep + t1 - t0
 
@@ -1431,13 +1458,24 @@ Common mistakes and useful tips
 
         .. code-block:: python
 
-            sinograms = corr.flat_field_correction(proj_obj[:, 20:40, :], flat_field[20:40, :], dark_field[20:40, :])
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger", [0.08, 1],
+            # Algotom < 1.6
+            # sinograms = corr.flat_field_correction(proj_obj[:, 20:40, :], flat_field[20:40, :], dark_field[20:40, :])
+            # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_zinger", [0.08, 1],
+            #                                                     ncore=None, prefer="threads")
+            # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe", [3.0, 51, 17],
                                                                 ncore=None, prefer="threads")
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "remove_all_stripe", [3.0, 51, 17],
+            # sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter", [200, 1],
                                                                 ncore=None, prefer="threads")
-            sinograms = util.apply_method_to_multiple_sinograms(sinograms, "fresnel_filter", [200, 1],
-                                                                ncore=None, prefer="threads")
+            # Algotom >= 1.6
+            sinograms = util.parallel_process_slices(sinograms, remo.remove_zinger,
+                                                     [0.08, 1], ncore=None,
+                                                     prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms, remo.remove_all_stripe,
+                                                     [3.0, 51, 17], ncore=None,
+                                                     prefer="threads")
+            sinograms = util.parallel_process_slices(sinograms, filt.fresnel_filter,
+                                                     [200, 1], ncore=None,
+                                                     prefer="threads")
 
     Starting from version 1.3, Algotom's reconstruction methods support batch processing of multiple sinograms at once.
     It is important to note that the axis of the reconstructed slices is 1, which is similar to the axis used for
