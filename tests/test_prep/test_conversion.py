@@ -127,10 +127,10 @@ class ConversionMethods(unittest.TestCase):
     def test_extend_sinogram(self):
         sino_360 = np.pad(self.sino_360[:, 22:], ((0, 0), (0, 22)),
                           mode='constant')
-        sino_ext, _ = conv.extend_sinogram(sino_360, 9.5, apply_log=False)
+        sino_ext, _ = conv.extend_sinogram(sino_360, 10, apply_log=False)
         nrow = sino_ext.shape[0] // 2 + 1
         sino1 = sino_ext[:nrow] + np.fliplr(sino_ext[-nrow:])
-        sino2, _ = conv.convert_sinogram_360_to_180(sino_360, 9.5, norm=False)
+        sino2, _ = conv.convert_sinogram_360_to_180(sino_360, 10, norm=False)
         num = np.max(np.abs(sino1 - sino2))
         self.assertTrue(num < self.eps)
 
