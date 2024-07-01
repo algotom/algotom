@@ -432,10 +432,10 @@ def extend_sinogram(sino_360, cor, apply_log=True):
         (overlap, side) = cor
     else:
         if cor <= xcenter:
-            overlap = 2 * (cor + 1)
+            overlap = 2.0 * cor + 1.0
             side = 0
         else:
-            overlap = 2 * (ncol - cor - 1)
+            overlap = 2.0 * (ncol - cor) - 1.0
             side = 1
     overlap_int = int(np.floor(overlap))
     sub_pixel = overlap - overlap_int

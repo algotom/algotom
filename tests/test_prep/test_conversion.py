@@ -111,7 +111,7 @@ class ConversionMethods(unittest.TestCase):
         sino_180 = self.sino_360[0:37]
         sino_360 = np.pad(self.sino_360[:, 22:], ((0, 0), (0, 22)),
                           mode='constant')
-        sino_conv, center = conv.convert_sinogram_360_to_180(sino_360, 9.5)
+        sino_conv, center = conv.convert_sinogram_360_to_180(sino_360, 10.0)
         center = int(np.floor(center))
         radi = self.size // 2
         sino_conv = sino_conv[:, center - radi: center + self.size + 1 - radi]
