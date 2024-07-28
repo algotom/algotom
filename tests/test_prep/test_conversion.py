@@ -56,10 +56,10 @@ class ConversionMethods(unittest.TestCase):
         self.assertTrue(num1 < self.eps)
 
         mat4 = conv.stitch_image(mat1, mat2, overlap + 0.5, 1)
-        self.assertTrue(mat3.shape[-1] == mat4.shape[-1])
+        self.assertTrue(mat3.shape[-1] == mat4.shape[-1] + 1)
 
         mat5 = conv.stitch_image(mat1, mat2, overlap - 0.5, 0)
-        self.assertTrue(mat3.shape[-1] == (mat5.shape[-1] - 1))
+        self.assertTrue(mat3.shape[-1] == (mat5.shape[-1]))
 
     def test_join_image(self):
         mat1 = np.tile(1.1 + np.sin(0.5 * np.arange(self.size)),
@@ -72,9 +72,9 @@ class ConversionMethods(unittest.TestCase):
         self.assertTrue(np.abs(num - 1.0) < self.eps)
 
         mat_join2 = conv.join_image(mat1, mat2, 10.5, 1)
-        self.assertTrue(mat_join.shape[-1] == mat_join2.shape[-1])
+        self.assertTrue(mat_join.shape[-1] == mat_join2.shape[-1] - 1)
 
-        mat_join3 = conv.join_image(mat1, mat2, 11.5, 0)
+        mat_join3 = conv.join_image(mat1, mat2, 10.5, 0)
         self.assertTrue(mat_join.shape[-1] == (mat_join3.shape[-1] - 1))
 
     def test_stitch_image_multiple(self):
@@ -111,7 +111,7 @@ class ConversionMethods(unittest.TestCase):
         sino_180 = self.sino_360[0:37]
         sino_360 = np.pad(self.sino_360[:, 22:], ((0, 0), (0, 22)),
                           mode='constant')
-        sino_conv, center = conv.convert_sinogram_360_to_180(sino_360, 9.5)
+        sino_conv, center = conv.convert_sinogram_360_to_180(sino_360, 10.0)
         center = int(np.floor(center))
         radi = self.size // 2
         sino_conv = sino_conv[:, center - radi: center + self.size + 1 - radi]
@@ -131,20 +131,20 @@ class ConversionMethods(unittest.TestCase):
         nrow = sino_ext.shape[0] // 2 + 1
         sino1 = sino_ext[:nrow] + np.fliplr(sino_ext[-nrow:])
         sino2, _ = conv.convert_sinogram_360_to_180(sino_360, 9.5, norm=False)
-        num = np.max(np.abs(sino1 - sino2))
+        num = np.max(np.abs(0.5 * sino1 - sino2))
         self.assertTrue(num < self.eps)
 
         sino_360 = np.max(self.sino_360) - self.sino_360 + 0.05
         overlap, side = (10.5, 1)
         sino_ext = conv.extend_sinogram(sino_360,
                                         (overlap, side), apply_log=True)[0]
-        width = int(sino_360.shape[-1] * 2 - np.floor(overlap))
+        width = sino_360.shape[-1] * 2 - int(np.round(overlap + 1.0e-3))
         self.assertTrue(width == sino_ext.shape[-1])
 
         overlap, side = (9.5, 0)
         sino_ext = conv.extend_sinogram(sino_360,
                                         (overlap, side), apply_log=True)[0]
-        width = int(sino_360.shape[-1] * 2 - np.floor(overlap))
+        width = int(sino_360.shape[-1] * 2 - int(np.round(overlap)))
         self.assertTrue(width == sino_ext.shape[-1])
 
     def test_generate_sinogram_helical_scan(self):

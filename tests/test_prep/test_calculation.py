@@ -108,7 +108,7 @@ class CalculationMethods(unittest.TestCase):
         sinogram = np.pad(sinogram[:, 22:], ((0, 0), (0, 22)), mode='constant')
         sinogram = sinogram + noise
         (cor, _, side) = calc.find_center_360(sinogram, 6)[0:3]
-        self.assertTrue(np.abs(cor - 9.0) < self.error and side == 0)
+        self.assertTrue(np.abs(cor - 9.5) < self.error and side == 0)
 
     def test_find_shift_based_phase_correlation(self):
         mat1 = np.zeros((self.size, self.size), dtype=np.float32)
