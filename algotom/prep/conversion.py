@@ -15,7 +15,7 @@
 # limitations under the License.
 # ============================================================================
 # Author: Nghia T. Vo
-# E-mail:  
+# E-mail:
 # Description: Python module of conversion techniques.
 # Contributors:
 # ============================================================================
@@ -106,17 +106,15 @@ def stitch_image(mat1, mat2, overlap, side, wei_mat1=None, wei_mat2=None,
     """
     (nrow1, ncol1) = mat1.shape
     (nrow2, ncol2) = mat2.shape
-    overlap_int = int(np.floor(overlap))
+    overlap_int = int(np.round(overlap + 1.0e-3))
     sub_pixel = overlap - overlap_int
-    if sub_pixel > 0.0:
-        #For proper alignment each part is shifted by half of the sub-pixel overlap so that overlap is reduced to overlap_int
-        sub_pixel_shift = sub_pixel/2.0
+    if sub_pixel != 0.0:
         if side == 1:
-            mat1 = shift(mat1, (0, sub_pixel_shift), mode='nearest')
-            mat2 = shift(mat2, (0, -sub_pixel_shift), mode='nearest')
+            mat1 = shift(mat1, (0, sub_pixel), mode='nearest')
+            mat2 = shift(mat2, (0, -sub_pixel), mode='nearest')
         else:
-            mat1 = shift(mat1, (0, -sub_pixel_shift), mode='nearest')
-            mat2 = shift(mat2, (0, sub_pixel_shift), mode='nearest')
+            mat1 = shift(mat1, (0, -sub_pixel), mode='nearest')
+            mat2 = shift(mat2, (0, sub_pixel), mode='nearest')
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
     if (wei_mat1 is None) or (wei_mat2 is None):
@@ -175,18 +173,16 @@ def join_image(mat1, mat2, joint_width, side, norm=True, total_width=None):
     """
     (nrow1, ncol1) = mat1.shape
     (nrow2, ncol2) = mat2.shape
-    joint_int = int(np.floor(joint_width))
+    joint_int = int(np.round(joint_width + 1.0e-3))
     sub_pixel = joint_width - joint_int
     side = int(side)
-    if sub_pixel > 0.0:
-        #For proper alignment each part is shifted by half of the sub-pixel overlap so that overlap is reduced to overlap_int
-        sub_pixel_shift = sub_pixel/2.0
+    if sub_pixel != 0.0:
         if side == 1:
-            mat1 = shift(mat1, (0, sub_pixel_shift), mode='nearest')
-            mat2 = shift(mat2, (0, -sub_pixel_shift), mode='nearest')
+            mat1 = shift(mat1, (0, sub_pixel), mode='nearest')
+            mat2 = shift(mat2, (0, -sub_pixel), mode='nearest')
         else:
-            mat1 = shift(mat1, (0, -sub_pixel_shift), mode='nearest')
-            mat2 = shift(mat2, (0, sub_pixel_shift), mode='nearest')
+            mat1 = shift(mat1, (0, -sub_pixel), mode='nearest')
+            mat2 = shift(mat2, (0, sub_pixel), mode='nearest')
     if nrow1 != nrow2:
         raise ValueError("Two images are not at the same height!!!")
     total_width0 = ncol1 + ncol2 + joint_int
@@ -354,18 +350,17 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
     if isinstance(cor, tuple):
         (overlap, side) = cor
     else:
-        #Imagine detector is continuous and its coordinates go from [-0.5, ncol - 0.5] this way COR=0 is the center of ncol=1 pixel array
-        #Compute two times the distance from the closer edge of the detector to the COR
         if cor <= xcenter:
-            overlap = 2.0 * cor + 1.0
+            overlap = 2 * cor + 1
             side = 0
         else:
-            overlap = 2.0 * (ncol - cor) - 1.0
+            overlap = 2 * (ncol - cor) - 1
             side = 1
     sino_stitch = stitch_image(
         sino_top, sino_bot, overlap, side, wei_mat1=wei_mat1,
         wei_mat2=wei_mat2, norm=norm, total_width=total_width)
-    cor = (2 * ncol - np.floor(overlap) - 1.0) / 2.0
+    overlap_int = int(np.round(overlap + 1.0e-3))
+    cor = ncol - overlap_int / 2.0 - 0.5
     return sino_stitch, cor
 
 
@@ -432,15 +427,15 @@ def extend_sinogram(sino_360, cor, apply_log=True):
         (overlap, side) = cor
     else:
         if cor <= xcenter:
-            overlap = 2.0 * cor + 1.0
+            overlap = 2 * cor + 1
             side = 0
         else:
-            overlap = 2.0 * (ncol - cor) - 1.0
+            overlap = 2 * (ncol - cor) - 1
             side = 1
-    overlap_int = int(np.floor(overlap))
+    overlap_int = int(np.round(overlap + 1.0e-3))
     sub_pixel = overlap - overlap_int
     if side == 1:
-        if sub_pixel > 0.0:
+        if sub_pixel != 0.0:
             sino_360 = shift(sino_360, (0, sub_pixel), mode='nearest')
         wei_list = np.linspace(1.0, 0.0, overlap_int)
         wei_mat = np.tile(wei_list, (nrow, 1))
@@ -448,15 +443,15 @@ def extend_sinogram(sino_360, cor, apply_log=True):
         pad_wid = ncol - overlap_int
         sino_pad = np.pad(sino_360, ((0, 0), (0, pad_wid)), mode='edge')
     else:
-        if sub_pixel > 0.0:
+        if sub_pixel != 0.0:
             sino_360 = shift(sino_360, (0, -sub_pixel), mode='nearest')
         wei_list = np.linspace(0.0, 1.0, overlap_int)
         wei_mat = np.tile(wei_list, (nrow, 1))
         sino_360[:, :overlap_int] = sino_360[:, :overlap_int] * wei_mat
         pad_wid = ncol - overlap_int
         sino_pad = np.pad(sino_360, ((0, 0), (pad_wid, 0)), mode='edge')
-    cor = (sino_pad.shape[1] - 1.0) / 2.0
-    return sino_pad, cor
+    cor = ncol - overlap_int / 2.0 - 0.5
+    return 2 * sino_pad, cor
 
 
 def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
