@@ -110,25 +110,18 @@ if center == 0.0:
     print("Find center of rotation ...")
     t0 = time.time()
     idx = (stop_slice - start_slice) // 2 + start_slice
-    center_start = width1 // 2 - 250
-    center_stop = width1 // 2 + 250
     sinogram = corr.flat_field_correction(proj_obj[:, idx, left:right],
                                           flat_field[idx, left:right],
                                           dark_field[idx, left:right],
                                           use_dark=True)
-    center = calc.find_center_vo(sinogram, start=center_start,
-                                 stop=center_stop)
-
-    # center2 = calc.find_center_projection(proj_obj[0, :, left:right]/flat_field[:, left:right],
-    #                                       proj_obj[-1, :, left:right]/flat_field[:, left:right])
-
+    search_window = 100
+    center = calc.find_center_360(sinogram, search_window, side=None,
+                                  denoise=True, norm=False,
+                                  use_overlap=False, ncore=None)[0]
     t1 = time.time()
-    print(
-        "  -> Center of rotation: {0}. Time cost {1}".format(center, t1 - t0))
+    print("  -> Center of rotation: {0}. Time cost {1}".format(center, t1 - t0))
     print("-------------------------------------------\n")
-    # print("---> Center of rotation, using 0-180 projection (for check): {}".format(center2))
 t0 = time.time()
-total_width = 2 * width1
 for idx in range(start_slice, stop_slice + 1, step_slice):
     # Get a sinogram and perform flat-field correction
     sinogram = corr.flat_field_correction(proj_obj[:, idx, left:right],
@@ -153,8 +146,7 @@ for idx in range(start_slice, stop_slice + 1, step_slice):
         # Apply contrast enhancement
         sinogram = filt.fresnel_filter(sinogram, ratio)
 
-    sinogram, center1 = conv.convert_sinogram_360_to_180(sinogram, center,
-                                                         total_width=total_width)
+    sinogram, center1 = conv.convert_sinogram_360_to_180(sinogram, center)
 
     # Perform reconstruction
     if recon_method == "fbp":

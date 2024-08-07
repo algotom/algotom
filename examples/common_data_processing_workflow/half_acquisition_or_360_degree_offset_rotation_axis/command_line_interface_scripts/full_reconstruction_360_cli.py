@@ -156,7 +156,10 @@ if center <= 0.0:
     sinogram = corr.flat_field_correction(proj_obj[:, idx, left:right],
                                           flat_field[idx, left:right],
                                           dark_field[idx, left:right])
-    center = calc.find_center_vo(sinogram, cstart, cstop)
+    search_window = 100
+    center = calc.find_center_360(sinogram, search_window, side=None,
+                                  denoise=True, norm=False,
+                                  use_overlap=False, ncore=None)[0]
     print("\n     Center-of-rotation is: {}\n".format(center), flush=True)
 sys.stdout.flush()
 
