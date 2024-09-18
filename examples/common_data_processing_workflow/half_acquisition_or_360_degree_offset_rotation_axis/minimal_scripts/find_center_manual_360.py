@@ -112,7 +112,7 @@ for i, center in enumerate(list_center):
             center1 = width1 + abs(center) - 0.5
         else:
             join_width = 2 * (center - width1) - 1
-            sino_180 = conv.join_image(sino_top, sino_bot, join_width, 0,
+            sino_180 = conv.join_image(sino_top, sino_bot, join_width, 1,
                                        norm=True,
                                        total_width=total_width)
             center1 = center
