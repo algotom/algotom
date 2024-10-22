@@ -248,7 +248,7 @@ def make_folder(file_path):
         Path to a file.
     """
     file_base = os.path.dirname(file_path)
-    if not os.path.exists(file_base):
+    if len(file_base) > 0 and not os.path.exists(file_base):
         try:
             os.makedirs(file_base)
         except FileExistsError:
