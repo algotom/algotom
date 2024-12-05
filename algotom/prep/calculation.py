@@ -575,8 +575,8 @@ def find_overlap(mat1, mat2, win_width, side=None, denoise=True, norm=False,
     side : int
         Overlap side between two images.
     overlap_position : float
-        Position of the window in the first image giving the best
-        correlation metric.
+        Position of the horizontal middle of the window in the first image
+        giving the best correlation metric.
 
     References
     ----------
@@ -703,8 +703,8 @@ def find_center_360(sino_360, win_width, side=None, denoise=True, norm=False,
     side : int
         Overlap side between two halves of the sinogram.
     overlap_position : float
-        Position of the window in the first image giving the best
-        correlation metric.
+        Position of the horizontal middle of the window in the first image
+        giving the best correlation metric.
 
     References
     ----------
