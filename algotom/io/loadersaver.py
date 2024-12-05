@@ -35,8 +35,9 @@ Module for I/O tasks:
 """
 
 import os
-import glob
 import warnings
+import platform
+from pathlib import Path
 import multiprocessing as mp
 from joblib import Parallel, delayed
 from collections import OrderedDict, deque
@@ -52,9 +53,45 @@ PIPE_PREFIX = "│   "
 SPACE_PREFIX = "    "
 
 
+def __correct_path(file_path):
+    """
+    Correct escaped sequences in WinOS file path.
+    """
+    if isinstance(file_path, Path):
+        file_path = str(file_path)
+    escape_sequences = {
+        '\a': r'\a',
+        '\b': r'\b',
+        '\f': r'\f',
+        '\n': r'\n',
+        '\r': r'\r',
+        '\t': r'\t',
+        '\v': r'\v',
+    }
+    for char, escaped in escape_sequences.items():
+        if char in file_path:
+            file_path = file_path.replace(char, escaped)
+    file_path = file_path.replace('\\', '/')
+    return Path(file_path)
+
+
+def __get_path(file_path, check_exist=True):
+    """
+    Get/check a file path
+    """
+    if platform.system() == 'Windows':
+        file_path = __correct_path(file_path)
+    else:
+        file_path = Path(file_path)
+    if check_exist:
+        if not file_path.exists():
+            raise ValueError(f"No such file: {file_path}")
+    return file_path
+
+
 def load_image(file_path):
     """
-    Load data from an image.
+    Load an image and convert it to a 2D array
 
     Parameters
     ----------
@@ -66,12 +103,10 @@ def load_image(file_path):
     array_like
         2D array.
     """
-    if "\\" in file_path:
-        raise ValueError("Please use the forward slash in the file path")
     try:
-        mat = np.array(Image.open(file_path), dtype=np.float32)
-    except IOError:
-        raise ValueError("No such file or directory: {}".format(file_path))
+        mat = np.array(Image.open(__get_path(file_path)), dtype=np.float32)
+    except Exception as error:
+        raise ValueError(error)
     if len(mat.shape) > 2:
         axis_m = np.argmin(mat.shape)
         mat = np.mean(mat, axis=axis_m)
@@ -98,7 +133,7 @@ def get_hdf_information(file_path, display=False):
     list_type : str
         Types of the datasets.
     """
-    hdf_object = h5py.File(file_path, 'r')
+    hdf_object = h5py.File(__get_path(file_path), 'r')
     keys = []
     hdf_object.visit(keys.append)
     list_key, list_shape, list_type = [], [], []
@@ -162,7 +197,7 @@ def find_hdf_key(file_path, pattern, display=False):
     list_type : str
         Types of the datasets.
     """
-    hdf_object = h5py.File(file_path, 'r')
+    hdf_object = h5py.File(__get_path(file_path), 'r')
     list_key, keys = [], []
     hdf_object.visit(keys.append)
     for key in keys:
@@ -224,9 +259,9 @@ def load_hdf(file_path, key_path, return_file_obj=False):
         hdf-dataset object, and file-object if return_file_obj is True.
     """
     try:
-        hdf_object = h5py.File(file_path, 'r')
-    except IOError:
-        raise ValueError("Couldn't open file: {}".format(file_path))
+        hdf_object = h5py.File(__get_path(file_path), 'r')
+    except Exception as error:
+        raise ValueError(f"{error}")
     check = key_path in hdf_object
     if not check:
         raise ValueError(
@@ -247,41 +282,16 @@ def make_folder(file_path):
     file_path : str
         Path to a file.
     """
-    file_base = os.path.dirname(file_path)
-    if not os.path.exists(file_base):
+    path = Path(file_path).resolve()
+    if path.suffix:
+        folder_path = path.parent
+    else:
+        folder_path = path
+    if not folder_path.exists():
         try:
-            os.makedirs(file_base)
-        except FileExistsError:
-            pass
-        except OSError:
-            raise ValueError("Can't create the folder: {}".format(file_base))
-
-
-def make_file_name(file_path):
-    """
-    Create a new file name to avoid overwriting.
-
-    Parameters
-    ----------
-    file_path : str
-
-    Returns
-    -------
-    str
-        Updated file path.
-    """
-    file_base, file_ext = os.path.splitext(file_path)
-    if os.path.isfile(file_path):
-        nfile = 0
-        check = True
-        while check:
-            name_add = '0000' + str(nfile)
-            file_path = file_base + "_" + name_add[-4:] + file_ext
-            if os.path.isfile(file_path):
-                nfile = nfile + 1
-            else:
-                check = False
-    return file_path
+            folder_path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            raise ValueError(f"Can't create : {folder_path}. Error: {e}")
 
 
 def make_folder_name(folder_path, name_prefix="Output", zero_prefix=5):
@@ -302,17 +312,50 @@ def make_folder_name(folder_path, name_prefix="Output", zero_prefix=5):
     str
         Name of the folder.
     """
+    folder_path = Path(folder_path)
     scan_name_prefix = name_prefix + "_"
-    num_folder_exist = len(
-        glob.glob(folder_path + "/" + scan_name_prefix + "*"))
+    existing_folders = list(folder_path.glob(f"{scan_name_prefix}*"))
+    num_folder_exist = len(existing_folders)
     num_folder_new = num_folder_exist + 1
-    name_tmp = "00000" + str(num_folder_new)
-    scan_name = scan_name_prefix + name_tmp[-zero_prefix:]
-    while os.path.isdir(folder_path + "/" + scan_name):
-        num_folder_new = num_folder_new + 1
-        name_tmp = "00000" + str(num_folder_new)
-        scan_name = scan_name_prefix + name_tmp[-zero_prefix:]
+    name_tmp = f"{num_folder_new:0{zero_prefix}}"
+    scan_name = scan_name_prefix + name_tmp
+    while (folder_path / scan_name).is_dir():
+        num_folder_new += 1
+        name_tmp = f"{num_folder_new:0{zero_prefix}}"
+        scan_name = scan_name_prefix + name_tmp
     return scan_name
+
+
+def make_file_name(file_path):
+    """
+    Create a new file name to avoid overwriting.
+
+    Parameters
+    ----------
+    file_path : str or Path object
+        Path to the file.
+
+    Returns
+    -------
+    str
+        Updated file path.
+    """
+    file_path = Path(file_path)
+    file_base = file_path.stem
+    file_ext = file_path.suffix
+    parent_dir = file_path.parent
+    if file_path.exists():
+        nfile = 0
+        while True:
+            name_add = f"_{nfile:04d}"
+            new_file_name = f"{file_base}{name_add}{file_ext}"
+            new_file_path = parent_dir / new_file_name
+            if new_file_path.exists():
+                nfile += 1
+            else:
+                file_path = new_file_path
+                break
+    return str(file_path)
 
 
 def find_file(path):
@@ -329,12 +372,11 @@ def find_file(path):
     str or list of str
         List of files.
     """
-    file_path = glob.glob(path)
-    if len(file_path) == 0:
-        raise ValueError("!!! No files found in: {}".format(path))
-    for i in range(len(file_path)):
-        file_path[i] = file_path[i].replace("\\", "/")
-    return sorted(file_path)
+    path = __correct_path(path)
+    file_paths = list(path.parent.glob(path.name))
+    if not file_paths:
+        raise FileNotFoundError(f"No files found matching: {path}")
+    return sorted([file.as_posix() for file in file_paths])
 
 
 def save_image(file_path, mat, overwrite=True):
@@ -355,25 +397,24 @@ def save_image(file_path, mat, overwrite=True):
     str
         Updated file path.
     """
-    if "\\" in file_path:
-        raise ValueError("Please use the forward slash in the file path")
-    file_ext = os.path.splitext(file_path)[-1]
+    file_path = __get_path(file_path, check_exist=False)
+    file_path = file_path.resolve()
+    file_ext = file_path.suffix
     if not ((file_ext == ".tif") or (file_ext == ".tiff")):
         mat = np.uint8(
             255.0 * (mat - np.min(mat)) / (np.max(mat) - np.min(mat)))
     else:
         data_type = str(mat.dtype)
         if "complex" in data_type:
-            raise ValueError("Can't save to tiff with this format: "
-                             "{}".format(data_type))
+            raise ValueError(f"Can't save to tiff with format: {data_type}")
     image = Image.fromarray(mat)
     if not overwrite:
         file_path = make_file_name(file_path)
     make_folder(file_path)
     try:
         image.save(file_path)
-    except IOError:
-        raise ValueError("Couldn't write to file {}".format(file_path))
+    except Exception as error:
+        raise ValueError(f"Couldn't write to file: {file_path}. Error {error}")
     return file_path
 
 
@@ -402,17 +443,17 @@ def open_hdf_stream(file_path, data_shape, key_path='entry/data',
     object
         hdf object.
     """
-    file_base, file_ext = os.path.splitext(file_path)
-    if not (file_ext == '.hdf' or file_ext == '.h5' or file_ext == ".nxs"):
-        file_ext = '.hdf'
-    file_path = file_base + file_ext
-    make_folder(file_path)
+    file_path = __get_path(file_path, check_exist=False)
+    file_path = file_path.resolve()
+    if file_path.suffix.lower() not in {'.hdf', '.h5', '.nxs', '.hdf5'}:
+        file_path = file_path.with_suffix('.hdf')
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     if not overwrite:
-        file_path = make_file_name(file_path)
+        file_path = Path(make_file_name(file_path))
     try:
         ofile = h5py.File(file_path, 'w')
-    except IOError:
-        raise ValueError("Couldn't write to file: {}".format(file_path))
+    except Exception as error:
+        raise ValueError(f"Couldn't write to file: {file_path}. Error {error}")
     if len(options) != 0:
         for opt_name in options:
             opts = options[opt_name]
@@ -447,8 +488,7 @@ def load_distortion_coefficient(file_path):
     tuple of float and list
         Tuple of (xcenter, ycenter, list_fact).
     """
-    if "\\" in file_path:
-        raise ValueError("Please use the forward slash in the file path")
+    file_path = __get_path(file_path, check_exist=True)
     with open(file_path, 'r') as f:
         x = f.read().splitlines()
         list_data = []
@@ -483,13 +523,13 @@ def save_distortion_coefficient(file_path, xcenter, ycenter, list_fact,
     str
         Updated file path.
     """
-    file_base, file_ext = os.path.splitext(file_path)
-    if not ((file_ext == '.txt') or (file_ext == '.dat')):
-        file_ext = '.txt'
-    file_path = file_base + file_ext
-    make_folder(file_path)
+    file_path = __get_path(file_path, check_exist=False)
+    file_path = file_path.resolve()
+    if file_path.suffix.lower() not in {'.txt', '.dat'}:
+        file_path = file_path.with_suffix('.txt')
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     if not overwrite:
-        file_path = make_file_name(file_path)
+        file_path = Path(make_file_name(file_path))
     metadata = OrderedDict()
     metadata['xcenter'] = xcenter
     metadata['ycenter'] = ycenter
@@ -605,7 +645,7 @@ def get_hdf_tree(file_path, output=None, add_shape=True, display=True):
     -------
     list of string
     """
-    hdf_object = h5py.File(file_path, 'r')
+    hdf_object = h5py.File(__get_path(file_path), 'r')
     tree = deque()
     _make_tree_body(tree, hdf_object, add_shape=add_shape)
     if output is not None:

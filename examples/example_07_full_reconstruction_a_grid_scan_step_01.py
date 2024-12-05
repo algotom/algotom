@@ -156,7 +156,7 @@ if side_check > 0:
     print(" - Select other projection-indices to make sure there're samples in the FOV")
     print(" - Change the window-size in the overlap-determination method")
     print(" - Select norm=True  in the overlap-determination method")
-    print(" - Select overlap_area=True in the overlap-determination method")
+    print(" - Select use_overlap=True in the overlap-determination method")
 
 # Save the results
 np.save(output_base + "/Vertical_overlaps.npy", ver_overlap_mat)

@@ -25,6 +25,7 @@ Tests for methods in io/loadersaver.py
 """
 
 import os
+from pathlib import  Path
 import unittest
 import shutil
 import h5py
@@ -110,8 +111,9 @@ class LoaderSaverMethods(unittest.TestCase):
         self.assertTrue(num_file == 2)
 
         file_path = "./tmp\\img.tif"
-        self.assertRaises(ValueError, losa.save_image, file_path, np.float32(
-            np.random.rand(64, 64)))
+        losa.save_image(file_path, np.float32(np.random.rand(64, 64)))
+        file_path = Path(file_path)
+        self.assertTrue(file_path.exists())
 
         file_path = "./tmp/img.tif"
         self.assertRaises(ValueError, losa.save_image, file_path,
@@ -145,8 +147,6 @@ class LoaderSaverMethods(unittest.TestCase):
         losa.save_distortion_coefficient(file_path, 31.0, 32.0, [1.0, 0.0])
         (x, y, facts) = losa.load_distortion_coefficient(file_path)
         self.assertTrue(((x == 31.0) and (y == 32.0)) and facts == [1.0, 0.0])
-        self.assertRaises(ValueError, losa.load_distortion_coefficient,
-                          "./tmp\\coef.text")
 
     def test_get_hdf_tree(self):
         file_path = "./tmp/data.hdf"

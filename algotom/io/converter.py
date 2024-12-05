@@ -28,10 +28,8 @@ Module for converting data type:
     -   Emulate an HDF5-like interface for TIF files in a folder.
 """
 
-import os
-import glob
+from pathlib import Path
 import numpy as np
-from PIL import Image
 from joblib import Parallel, delayed
 import algotom.io.loadersaver as losa
 
@@ -68,10 +66,10 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
         list_file = losa.find_file(input_path + "/*" + pattern + "*.tif*")
     depth = len(list_file)
     (height, width) = np.shape(losa.load_image(list_file[0]))
-    file_base, file_ext = os.path.splitext(output_path)
-    if not (file_ext == '.hdf' or file_ext == '.h5' or file_ext == ".nxs"):
-        file_ext = '.hdf'
-    output_path = file_base + file_ext
+    output_path = Path(output_path)
+    output_path = output_path.resolve()
+    if output_path.suffix.lower() not in {'.hdf', '.h5', '.nxs', '.hdf5'}:
+        output_path = output_path.with_suffix('.hdf')
     cr_top, cr_bottom, cr_left, cr_right = crop
     cr_height = height - cr_top - cr_bottom
     cr_width = width - cr_left - cr_right
@@ -80,9 +78,9 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
     data_out = losa.open_hdf_stream(output_path, (depth, cr_height, cr_width),
                                     key_path=key_path, overwrite=True,
                                     **options)
-    for i, fname in enumerate(list_file):
-        data_out[i] = losa.load_image(fname)[cr_top:cr_height + cr_top,
-                                             cr_left:cr_width + cr_left]
+    for i, file_path in enumerate(list_file):
+        data_out[i] = losa.load_image(file_path)[cr_top:cr_height + cr_top,
+                      cr_left:cr_width + cr_left]
     return output_path
 
 
@@ -127,27 +125,24 @@ def extract_tif_from_hdf(input_path, output_path, key_path, index=(0, -1, 1),
         start = np.clip(start, 0, stop - 1)
         for i in range(start, stop, step):
             mat = data[cr_top:depth - cr_bottom, i, cr_left:width - cr_right]
-            out_name = "0000" + str(i)
-            losa.save_image(
-                output_path + "/" + prefix + "_" + out_name[-5:] + ".tif", mat)
+            out_name = f"{i:05}"
+            losa.save_image(f"{output_path}/{prefix}_{out_name}.tif", mat)
     elif axis == 2:
         if stop < 1 or stop > width:
             stop = width
         start = np.clip(start, 0, stop - 1)
         for i in range(start, stop, step):
             mat = data[cr_top:depth - cr_bottom, cr_left:height - cr_right, i]
-            out_name = "0000" + str(i)
-            losa.save_image(
-                output_path + "/" + prefix + "_" + out_name[-5:] + ".tif", mat)
+            out_name = f"{i:05}"
+            losa.save_image(f"{output_path}/{prefix}_{out_name}.tif", mat)
     else:
         if stop < 1 or stop > depth:
             stop = depth
         start = np.clip(start, 0, stop - 1)
         for i in range(start, stop, step):
             mat = data[i, cr_top:height - cr_bottom, cr_left:width - cr_right]
-            out_name = "0000" + str(i)
-            losa.save_image(
-                output_path + "/" + prefix + "_" + out_name[-5:] + ".tif", mat)
+            out_name = f"{i:05}"
+            losa.save_image(f"{output_path}/{prefix}_{out_name}.tif", mat)
     return output_path
 
 
@@ -166,51 +161,44 @@ class HdfEmulatorFromTif:
 
     Examples
     --------
-    >>> hdf_emulator = HdfEmulatorFromTif('/path/to/tif/files', ncore=4)
+    >>> hdf_emulator = HdfEmulatorFromTif('C:/path/to/tif/files', ncore=4)
     >>> print(hdf_emulator.shape)
     >>> last_image = hdf_emulator[-1]
     >>> image_stack = hdf_emulator[:, 0:4, :]
     """
     def __init__(self, folder_path, ncore=1):
-        files = glob.glob(folder_path + "/*tif*")
-        if len(files) == 0:
-            files = glob.glob(folder_path + "/*TIF*")
-        if len(files) == 0:
+        self.files = losa.find_file(folder_path + "/*tif*")
+        if len(self.files) == 0:
+            files = losa.find_file(folder_path + "/*TIF*")
+        if len(self.files) == 0:
             raise ValueError(f"!!! No tif files found in: {folder_path}")
-        else:
-            for i in range(len(files)):
-                files[i] = files[i].replace("\\", "/")
-        self.files = sorted(files)
         self.n_jobs = ncore
         self._shape, self._dtype = self._get_shape_and_dtype()
 
     def _get_shape_and_dtype(self):
-        img = np.asarray(Image.open(self.files[0]))
+        img = losa.load_image(self.files[0])
         shape = (len(self.files), *img.shape)
         dtype = img.dtype
         return shape, dtype
 
     def __getitem__(self, index):
         if isinstance(index, int):
-            return self._load_image(self.files[index])
+            return losa.load_image(self.files[index])
         elif isinstance(index, slice):
             indices = range(*index.indices(len(self.files)))
             return np.stack(Parallel(n_jobs=self.n_jobs)(
-                delayed(self._load_image)(self.files[i]) for i in indices))
+                delayed(losa.load_image)(self.files[i]) for i in indices))
         elif isinstance(index, tuple):
             z, y, x = index
             if isinstance(z, slice):
                 images = Parallel(n_jobs=self.n_jobs)(
-                    delayed(self._load_image)(self.files[i]) for i in
+                    delayed(losa.load_image)(self.files[i]) for i in
                     range(*z.indices(self.shape[0])))
                 return np.stack([img[y, x] for img in images])
             else:
-                return self._load_image(self.files[z])[y, x]
+                return losa.load_image(self.files[z])[y, x]
         else:
             raise TypeError("Invalid index type")
-
-    def _load_image(self, file_path):
-        return np.array(Image.open(file_path))
 
     @property
     def shape(self):
