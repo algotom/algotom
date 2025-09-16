@@ -74,7 +74,7 @@ def make_weight_matrix(mat1, mat2, overlap, side):
 
 
 def stitch_image(mat1, mat2, overlap, side, wei_mat1=None, wei_mat2=None,
-                 norm=True, total_width=None):
+                 norm=True, norm_per_row=False, total_width=None):
     """
     Stitch projection images or sinogram images using a linear ramp.
 
@@ -96,6 +96,8 @@ def stitch_image(mat1, mat2, overlap, side, wei_mat1=None, wei_mat2=None,
         Weighting matrix used for image 2.
     norm : bool, optional
         Enable/disable normalization before stitching.
+    norm_per_row : bool, optional
+        Enable/disable normalization row-by-row if norm is True.
     total_width : int, optional
         Final width of the stitched image.
 
@@ -126,16 +128,28 @@ def stitch_image(mat1, mat2, overlap, side, wei_mat1=None, wei_mat2=None,
     mat_comb = np.zeros((nrow1, total_width0), dtype=np.float32)
     if side == 1:
         if norm is True:
-            factor1 = np.mean(mat1[:, -overlap_int:])
-            factor2 = np.mean(mat2[:, :overlap_int])
-            mat2 = mat2 * factor1 / factor2
+            if norm_per_row is True:
+                for i in range(nrow1):
+                    factor1 = np.mean(mat1[i, -overlap_int:])
+                    factor2 = np.mean(mat2[i, :overlap_int])
+                    mat2[i] = mat2[i] * factor1 / factor2
+            else:
+                factor1 = np.mean(mat1[:, -overlap_int:])
+                factor2 = np.mean(mat2[:, :overlap_int])
+                mat2 = mat2 * factor1 / factor2
         mat_comb[:, 0:ncol1] = mat1 * wei_mat1
         mat_comb[:, (ncol1 - overlap_int):total_width0] += mat2 * wei_mat2
     else:
         if norm is True:
-            factor2 = np.mean(mat2[:, -overlap_int:])
-            factor1 = np.mean(mat1[:, :overlap_int])
-            mat2 = mat2 * factor1 / factor2
+            if norm_per_row is True:
+                for i in range(nrow1):
+                    factor2 = np.mean(mat2[i, -overlap_int:])
+                    factor1 = np.mean(mat1[i, :overlap_int])
+                    mat2[i] = mat2[i] * factor1 / factor2
+            else:
+                factor2 = np.mean(mat2[:, -overlap_int:])
+                factor1 = np.mean(mat1[:, :overlap_int])
+                mat2 = mat2 * factor1 / factor2
         mat_comb[:, 0:ncol2] = mat2 * wei_mat2
         mat_comb[:, (ncol2 - overlap_int):total_width0] += mat1 * wei_mat1
     if total_width > total_width0:
@@ -235,7 +249,8 @@ def join_image(mat1, mat2, joint_width, side, norm=True, total_width=None):
     return mat_comb
 
 
-def stitch_image_multiple(list_mat, list_overlap, norm=True, total_width=None):
+def stitch_image_multiple(list_mat, list_overlap, norm=True,
+                          norm_per_row=False, total_width=None):
     """
     Stitch list of projection images or sinogram images using a linear ramp.
 
@@ -249,6 +264,8 @@ def stitch_image_multiple(list_mat, list_overlap, norm=True, total_width=None):
         side : Overlap side between two images.
     norm : bool, optional
         Enable/disable normalization before stitching.
+    norm_per_row : bool, optional
+        Enable/disable normalization row-by-row if norm is True.
     total_width : int, optional
         Final width of the stitched image.
 
@@ -262,7 +279,8 @@ def stitch_image_multiple(list_mat, list_overlap, norm=True, total_width=None):
     if num_mat > 1:
         for i in range(1, num_mat):
             (overlap, side) = list_overlap[i - 1][0:2]
-            mat_comb = stitch_image(mat_comb, list_mat[i], overlap, side, norm)
+            mat_comb = stitch_image(mat_comb, list_mat[i], overlap, side,
+                                    norm=norm, norm_per_row=norm_per_row)
         width = mat_comb.shape[1]
         if total_width is None:
             total_width = width
@@ -316,7 +334,8 @@ def join_image_multiple(list_mat, list_joint, norm=True, total_width=None):
 
 
 def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
-                                norm=True, total_width=None):
+                                norm=True, norm_per_row=False,
+                                total_width=None):
     """
     Convert a 360-degree sinogram to a 180-degree sinogram.
 
@@ -332,6 +351,8 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
         Weighting matrix used for the 2nd haft of the sinogram.
     norm : bool, optional
         Enable/disable normalization before stitching.
+    norm_per_row : bool, optional
+        Enable/disable normalization row-by-row if norm is True.
     total_width : int, optional
         Final width of the stitched image.
 
@@ -358,7 +379,8 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
             side = 1
     sino_stitch = stitch_image(
         sino_top, sino_bot, overlap, side, wei_mat1=wei_mat1,
-        wei_mat2=wei_mat2, norm=norm, total_width=total_width)
+        wei_mat2=wei_mat2, norm=norm, norm_per_row=norm_per_row,
+        total_width=total_width)
     overlap_int = int(np.round(overlap + 1.0e-3))
     cor = ncol - overlap_int / 2.0 - 0.5
     return sino_stitch, cor
