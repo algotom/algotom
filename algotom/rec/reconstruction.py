@@ -1068,8 +1068,9 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
     ratio : float
         To apply a circle mask to the reconstructed image.
     method : str
-        Reconstruction algorithms. For CPU: 'FBP', 'SIRT', 'SART', 'ART', and
-        'CGLS'. For GPU: 'FBP_CUDA', 'SIRT_CUDA', 'SART_CUDA', and 'CGLS_CUDA'.
+        Reconstruction algorithms. For CPU: 'BP', 'FBP', 'SIRT', 'SART', 'ART',
+        and 'CGLS'. For GPU: 'BP_CUDA', 'FBP_CUDA', 'SIRT_CUDA', 'SART_CUDA',
+        and 'CGLS_CUDA'.
     num_iter : int
         Number of iterations if using iteration methods.
     filter_name : str or None
@@ -1105,8 +1106,9 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
         if len(angles) != nrow:
             raise ValueError("!!! Number of angles is not the same as the row "
                              "number of the sinogram !!!")
-    cpu_method = ["FBP", "SIRT", "SART", "ART", "CGLS"]
-    gpu_method = ["FBP_CUDA", "SIRT_CUDA", "SART_CUDA", "CGLS_CUDA", "EM_CUDA"]
+    cpu_method = ["BP", "FBP", "SIRT", "SART", "ART", "CGLS"]
+    gpu_method = ["BP_CUDA", "FBP_CUDA", "SIRT_CUDA", "SART_CUDA", "CGLS_CUDA",
+                  "EM_CUDA"]
     gpu = True
     if "CUDA" in method:
         if cuda.is_available() is False:
