@@ -339,13 +339,19 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
                                 total_width=None):
     """
     Convert a 360-degree sinogram to a 180-degree sinogram.
+    This method works well when the step angle between sinogram rows is uniform.
+    If there are fluctuations (e.g., in tomography fly-scan mode),
+    use `extend_sinogram` instead.
 
     Parameters
     ----------
     sino_360 : array_like
         2D array. 360-degree sinogram.
     cor : float or tuple of float
-        Center-of-rotation or (Overlap_area, overlap_side).
+        Center-of-rotation (CoR) or a tuple of (overlap_area, overlap_side).
+        The CoR can be outside the field of view (CoR<0 or CoR>sinogram-width).
+        In such cases, the `join_image` method will be used.
+        case 'join_image' method will be used
     wei_mat1 : array_like, optional
         Weighting matrix used for the 1st haft of the sinogram.
     wei_mat2 : array_like, optional
@@ -378,12 +384,18 @@ def convert_sinogram_360_to_180(sino_360, cor, wei_mat1=None, wei_mat2=None,
         else:
             overlap = 2 * (ncol - cor) - 1
             side = 1
-    sino_stitch = stitch_image(
-        sino_top, sino_bot, overlap, side, wei_mat1=wei_mat1,
-        wei_mat2=wei_mat2, norm=norm, norm_per_row=norm_per_row,
-        total_width=total_width)
-    overlap_int = int(np.round(overlap + 1.0e-3))
-    cor = ncol - overlap_int / 2.0 - 0.5
+    if overlap >= 0:
+        sino_stitch = stitch_image(
+            sino_top, sino_bot, overlap, side, wei_mat1=wei_mat1,
+            wei_mat2=wei_mat2, norm=norm, norm_per_row=norm_per_row,
+            total_width=total_width)
+        overlap_int = int(np.round(overlap + 1.0e-3))
+        cor = ncol - overlap_int / 2.0 - 0.5
+    else:
+        sino_stitch = join_image(sino_top, sino_bot, abs(overlap), side,
+                                 norm=norm, total_width=total_width)
+        overlap_int = int(np.round(abs(overlap) + 1.0e-3))
+        cor = ncol + overlap_int / 2.0 - 0.5
     return sino_stitch, cor
 
 
@@ -425,7 +437,8 @@ def extend_sinogram(sino_360, cor, apply_log=True):
     sino_360 : array_like
         2D array. 360-degree sinogram.
     cor : float or tuple of float
-        Center-of-rotation or (Overlap_area, overlap_side).
+        Center-of-rotation (CoR) or a tuple of (overlap_area, overlap_side).
+        The CoR can be outside the field of view (CoR<0 or CoR>sinogram-width).
     apply_log : bool, optional
         Apply the logarithm function if True.
 
@@ -459,8 +472,22 @@ def extend_sinogram(sino_360, cor, apply_log=True):
         else:
             overlap = 2 * (ncol - cor) - 1
             side = 1
-    overlap_int = int(np.round(overlap + 1.0e-3))
-    sub_pixel = overlap - overlap_int
+    if overlap >= 0:
+        overlap_int = int(np.round(overlap + 1.0e-3))
+        sub_pixel = overlap - overlap_int
+        cor_updated = ncol - overlap_int / 2.0 - 0.5
+    else:
+        overlap = abs(overlap)
+        overlap_int = int(np.round(overlap + 1.0e-3))
+        sub_pixel = overlap - overlap_int
+        cor_updated = ncol + overlap_int / 2.0 - 0.5
+        if side == 1:
+            sino_360 = np.pad(sino_360, ((0, 0), (0, overlap_int)),
+                              mode='edge')
+        else:
+            sino_360 = np.pad(sino_360, ((0, 0), (overlap_int, 0)),
+                              mode='edge')
+        ncol = sino_360.shape[-1]
     if side == 1:
         if sub_pixel != 0.0:
             sino_360 = shift(sino_360, (0, sub_pixel), mode='nearest')
@@ -477,8 +504,7 @@ def extend_sinogram(sino_360, cor, apply_log=True):
         sino_360[:, :overlap_int] = sino_360[:, :overlap_int] * wei_mat
         pad_wid = ncol - overlap_int
         sino_pad = np.pad(sino_360, ((0, 0), (pad_wid, 0)), mode='edge')
-    cor = ncol - overlap_int / 2.0 - 0.5
-    return 2 * sino_pad, cor
+    return 2 * sino_pad, cor_updated
 
 
 def generate_sinogram_helical_scan(index, tomo_data, num_proj, pixel_size,
