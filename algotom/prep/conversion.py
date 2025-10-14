@@ -33,6 +33,7 @@ Module of conversion methods in the preprocessing stage:
     -   Generating a sinogram from a helical data.
 """
 
+import warnings
 import numpy as np
 from scipy import interpolate
 from scipy.ndimage import shift
@@ -58,8 +59,8 @@ def make_weight_matrix(mat1, mat2, overlap, side):
         to the right side.
     """
     overlap = int(np.floor(overlap))
-    wei_mat1 = np.ones_like(mat1)
-    wei_mat2 = np.ones_like(mat2)
+    wei_mat1 = np.ones_like(mat1, dtype=np.float32)
+    wei_mat2 = np.ones_like(mat2, dtype=np.float32)
     if side == 1:
         list_down = np.linspace(1.0, 0.0, overlap)
         list_up = 1.0 - list_down
@@ -321,7 +322,7 @@ def join_image_multiple(list_mat, list_joint, norm=True, total_width=None):
         for i in range(1, num_mat):
             (joint_width, side) = list_joint[i - 1][0:2]
             mat_comb = join_image(mat_comb, list_mat[i], joint_width, side,
-                                  norm)
+                                  norm=norm)
         width = mat_comb.shape[1]
         if total_width is None:
             total_width = width
@@ -440,6 +441,10 @@ def extend_sinogram(sino_360, cor, apply_log=True):
     [1] : https://doi.org/10.1364/OE.418448
     """
     if apply_log is True:
+        if np.any(sino_360 <= 0.0):
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sino_360[sino_360 <= 0.0] = np.float32(1.0)
         sino_360 = -np.log(sino_360)
     else:
         sino_360 = np.copy(sino_360)

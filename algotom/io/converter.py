@@ -35,7 +35,8 @@ import algotom.io.loadersaver as losa
 
 
 def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
-                       crop=(0, 0, 0, 0), pattern=None, **options):
+                       data_type='float32', crop=(0, 0, 0, 0),
+                       pattern=None, **options):
     """
     Convert a folder of tif files to a hdf/nxs file.
 
@@ -47,11 +48,13 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
         Path to the hdf/nxs file.
     key_path : str, optional
         Key path to the dataset.
+    data_type: str
+        Type of data.
     crop : tuple of int, optional
         Crop the images from the edges, i.e.
         crop = (crop_top, crop_bottom, crop_left, crop_right).
     pattern : str, optional
-        Used to find tif files with names matching the pattern.
+        Used to find tif files with names matching the pattern.E.g "img"
     options : dict, optional
         Add metadata. E.g options={"entry/angles": angles, "entry/energy": 53}.
 
@@ -76,8 +79,8 @@ def convert_tif_to_hdf(input_path, output_path, key_path="entry/data",
     if cr_height < 1 or cr_width < 1:
         raise ValueError("Can't crop images with the given parameters !!!")
     data_out = losa.open_hdf_stream(output_path, (depth, cr_height, cr_width),
-                                    key_path=key_path, overwrite=True,
-                                    **options)
+                                    key_path=key_path, data_type=data_type,
+                                    overwrite=True, **options)
     for i, file_path in enumerate(list_file):
         data_out[i] = losa.load_image(file_path)[cr_top:cr_height + cr_top,
                       cr_left:cr_width + cr_left]
