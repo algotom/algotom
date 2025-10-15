@@ -1264,8 +1264,10 @@ def __calculate_autocorrelation_coefficient(image):
 
 
 def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
-                               metric="entropy", alpha=0.0, angles=None,
-                               chunk_size=30, ramp_filter="after", sigma=3,
+                               metric="entropy", alpha=0.0, flat_field=None,
+                               dark_field=None, angles=None, crop=(0, 0, 0, 0),
+                               proj_start=0, proj_stop=-1, chunk_size=30,
+                               ramp_filter="after", sigma=3,
                                apply_log=True, gpu=True, block=(16, 16),
                                ncore=None, prefer="threads",
                                show_progress=True, masking=True,
@@ -1292,9 +1294,19 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
         Which metric to use.
     alpha : float, optional
         Angle of the slice in degree, between 0 and 180.
+    flat_field : array_like, optional
+        2D array for flat-field correction if not None.
+    dark_field : array_like, optional
+        2D array for dark-field correction if not None.
     angles : array_like, optional
         1D array. Angles corresponding to projections. The unit is radian
         to be consistent with other reconstruction methods.
+    crop : tuple of int, optional
+        Edges to crop from the images (top, bottom, left, right).
+    proj_start : int, optional
+        Start index for processing projections.
+    proj_stop : int, optional
+        End index for processing projections.
     chunk_size : int, optional
         Chunk size to manage memory usage.
     ramp_filter : {"after", "before"}
@@ -1368,10 +1380,11 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
         if metric == "entropy":
             center = np.mean(list_center)
             recon = vertical_reconstruction(projections, slice_index, center,
-                                            alpha=alpha, flat_field=None,
-                                            dark_field=None, angles=angles,
-                                            crop=(0, 0, 0, 0), proj_start=0,
-                                            proj_stop=-1,
+                                            alpha=alpha, flat_field=flat_field,
+                                            dark_field=dark_field,
+                                            angles=angles, crop=crop,
+                                            proj_start=proj_start,
+                                            proj_stop=proj_stop,
                                             chunk_size=chunk_size,
                                             ramp_filter=ramp_filter, pad=pad,
                                             pad_mode="edge",
@@ -1387,10 +1400,11 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
         t0 = time.time()
     for i, center in enumerate(list_center):
         recon = vertical_reconstruction(projections, slice_index, center,
-                                        alpha=alpha, flat_field=None,
-                                        dark_field=None, angles=angles,
-                                        crop=(0, 0, 0, 0), proj_start=0,
-                                        proj_stop=-1, chunk_size=chunk_size,
+                                        alpha=alpha, flat_field=flat_field,
+                                        dark_field=dark_field, angles=angles,
+                                        crop=crop, proj_start=proj_start,
+                                        proj_stop=proj_stop,
+                                        chunk_size=chunk_size,
                                         ramp_filter=ramp_filter, pad=pad,
                                         pad_mode="edge", filter_name="hann",
                                         apply_log=False, gpu=gpu, block=block,
@@ -1432,9 +1446,12 @@ def find_center_vertical_slice(projections, slice_index, start, stop, step=1.0,
 
 def find_center_visual_vertical_slices(projections, output_folder, slice_index,
                                        start, stop, step=1.0, alpha=0.0,
-                                       angles=None, chunk_size=30,
-                                       ramp_filter="after", apply_log=True,
-                                       gpu=True, block=(16, 16), ncore=None,
+                                       flat_field=None, dark_field=None,
+                                       angles=None, crop=(0, 0, 0, 0),
+                                       proj_start=0, proj_stop=-1,
+                                       chunk_size=30, ramp_filter="after",
+                                       apply_log=True, gpu=True,
+                                       block=(16, 16), ncore=None,
                                        prefer="processes", display=True,
                                        masking=True):
     """
@@ -1457,9 +1474,19 @@ def find_center_visual_vertical_slices(projections, output_folder, slice_index,
         Searching step.
     alpha : float, optional
         Angle of the slice in degree, between 0 and 180.
+    flat_field : array_like, optional
+        2D array for flat-field correction if not None.
+    dark_field : array_like, optional
+        2D array for dark-field correction if not None.
     angles : array_like, optional
         1D array. Angles corresponding to projections. The unit is radian
         to be consistent with other reconstruction methods.
+    crop : tuple of int, optional
+        Edges to crop from the images (top, bottom, left, right).
+    proj_start : int, optional
+        Start index for processing projections.
+    proj_stop : int, optional
+        End index for processing projections.
     chunk_size : int, optional
         Chunk size to manage memory usage.
     ramp_filter : {"after", "before"}
@@ -1516,10 +1543,11 @@ def find_center_visual_vertical_slices(projections, output_folder, slice_index,
         t0 = time.time()
     for i, center in enumerate(list_center):
         recon = vertical_reconstruction(projections, slice_index, center,
-                                        alpha=alpha, flat_field=None,
-                                        dark_field=None, angles=angles,
-                                        crop=(0, 0, 0, 0), proj_start=0,
-                                        proj_stop=-1, chunk_size=chunk_size,
+                                        alpha=alpha, flat_field=flat_field,
+                                        dark_field=dark_field, angles=angles,
+                                        crop=crop, proj_start=proj_start,
+                                        proj_stop=proj_stop,
+                                        chunk_size=chunk_size,
                                         ramp_filter=ramp_filter, pad=pad,
                                         pad_mode="edge", filter_name="hann",
                                         apply_log=False, gpu=gpu,
