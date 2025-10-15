@@ -9,6 +9,7 @@ import algotom.prep.correction as corr
 import algotom.prep.removal as remo
 import algotom.prep.filtering as filt
 import algotom.util.utility as util
+import algotom.rec.reconstruction as rec
 
 usage = """
 This CLI script is used to find the center of rotation manually:
@@ -123,10 +124,16 @@ if view == "sino":
     util.find_center_visual_sinograms(sinogram, output_base, start_center,
                                       stop_center, step=step_center, zoom=1.0)
 else:
-    util.find_center_visual_slices(sinogram, output_base, start_center,
+    # Algotom < 1.6
+    # util.find_center_visual_slices(sinogram, output_base, start_center,
+    #                                stop_center, step_center, zoom=1.0, method=method,
+    #                                gpu=False, angles=angles, ratio=1.0,
+    #                                filter_name=None)
+    rec.find_center_visual_slices(sinogram, output_base, start_center,
                                    stop_center, step_center, zoom=1.0, method=method,
                                    gpu=False, angles=angles, ratio=1.0,
                                    filter_name=None)
+
 
 t_stop = timeit.default_timer()
 print("====================================================================\n")

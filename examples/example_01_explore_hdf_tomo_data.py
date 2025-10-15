@@ -71,8 +71,7 @@ print("4 -> Load projection images in a step of 250 and save to tiff: ")
 proj_idx = np.squeeze(np.where(ikey == 0))
 for i in range(0, len(proj_idx), 250):
     mat = data[proj_idx[i], :, :]
-    name = "0000" + str(proj_idx[i])
-    losa.save_image(output_base + "/projection/img_" + name[-5:] + ".tif", mat)
+    losa.save_image(output_base + "/projection/img_" + f"{proj_idx[i]:05}" + ".tif", mat)
 
 print("5 -> Same as 2 but using a built-in function: ")
 # The above example can be done using the "converter" module as follows:
