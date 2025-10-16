@@ -1,4 +1,4 @@
-#python>=3.8
+#python>=3.9
 numpy>=1.18
 scipy
 numba>=0.50.1
