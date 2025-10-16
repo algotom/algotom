@@ -34,12 +34,10 @@ output_base = "D:/output/"
 # To get scan names.
 proj_scan = np.arange(52,76)
 df_scan = 51
-prefix = "0000" + str(df_scan)
-df_name = "scan_" + prefix[-5:]
+df_name = "scan_" + f"{df_scan:05}"
 proj_name = []
 for i in proj_scan:
-    prefix = "0000" + str(i)
-    proj_name.append("scan_" + prefix[-5:])
+    proj_name.append("scan_" + f"{i:05}")
 # Separate scans to 8 rows x 3 columns
 num_scan_total = len(proj_scan)
 num_scan_col = 3

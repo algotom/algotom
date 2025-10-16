@@ -112,8 +112,7 @@ else:
             parent_path = os.path.dirname(output_path)
             last_folder = os.path.basename(output_path)
             while True:
-                name = ("0000" + str(num))[-5:]
-                new_path = parent_path + "/" + last_folder + "_" + name
+                new_path = parent_path + "/" + last_folder + "_" + f"{num:05}"
                 if os.path.isdir(new_path):
                     num = num + 1
                 else:

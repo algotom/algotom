@@ -21,17 +21,15 @@ last_chunk = depth - chunk_size * (depth // chunk_size)
 
 for i in np.arange(0, depth - last_chunk, chunk_size):
     mat_stack = data[:, i: i + chunk_size, :]
-    mat_stack = np.uint16(mat_stack)  # Convert to 16-bit data for tif-format
-    file_names = [(output_base + "/proj_" + ("0000" + str(j))[-5:] + ".tif") for j in range(i, i + chunk_size)]
-    # Save files in parallel
-    Parallel(n_jobs=ncore, prefer="processes")(delayed(losa.save_image)(file_names[j], mat_stack[:, j, :]) for j in range(chunk_size))
-
+    mat_stack = np.uint16(data[:, i: i + chunk_size, :])
+    losa.save_image_multiple(output_base, mat_stack, axis=1,
+                             overwrite=True, ncore=ncore,
+                             prefer='processes', start_idx=i)
 if last_chunk != 0:
-    mat_stack = data[:, depth - last_chunk:depth, :]
-    mat_stack = np.uint16(mat_stack)  # Convert to 16-bit data for tif-format
-    file_names = [(output_base + "/proj_" + ("0000" + str(j))[-5:] + ".tif") for j in range(depth - last_chunk, depth)]
-    # Save files in parallel
-    Parallel(n_jobs=ncore, prefer="processes")(delayed(losa.save_image)(file_names[j], mat_stack[:, j, :]) for j in range(last_chunk))
-
+    mat_stack = np.uint16(data[:, depth - last_chunk:depth,
+                          :])  # Convert to 16-bit data for tif-format
+    losa.save_image_multiple(output_base, mat_stack, axis=1,
+                             overwrite=True, ncore=ncore,
+                             prefer='processes', start_idx=depth - last_chunk)
 t1 = timeit.default_timer()
 print("Done!!!. Total time cost: {}".format(t1 - t0))

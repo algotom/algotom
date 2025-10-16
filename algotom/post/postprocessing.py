@@ -52,20 +52,18 @@ def __get_input_type(input_):
     in_type = None
     if isinstance(input_, np.ndarray):
         in_type = "numpy_array"
-    else:
-        if isinstance(input_, str):
-            file_ext = os.path.splitext(input_)[-1]
-            if file_ext == "":
-                list_file = losa.find_file(input_ + "/*.tif*")
-                if list_file:
-                    in_type = "tif"
-                else:
-                    raise ValueError(
-                        "No tif files in the folder: {}".format(input_))
+    if isinstance(input_, str):
+        file_ext = os.path.splitext(input_)[-1]
+        if file_ext == "":
+            list_file = losa.find_file(input_ + "/*.tif*")
+            if list_file:
+                in_type = "tif"
             else:
-                if (file_ext == '.hdf' or file_ext == '.h5'
-                        or file_ext == ".nxs"):
-                    in_type = "hdf"
+                raise ValueError(f"No tif files in the folder: {input_}")
+        else:
+            file_ext = file_ext.lower()
+            if file_ext in (".hdf", ".h5", ".nxs", ".hdf5"):
+                in_type = "hdf"
     return in_type
 
 

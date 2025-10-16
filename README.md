@@ -6,26 +6,25 @@
 
 ![logo](https://github.com/algotom/algotom/raw/master/figs/readme/logo2.png)
 
-**Algotom** is a Python package designed for tomography data processing. It 
-offers a complete data processing pipeline; including reading and writing data, 
-pre-processing, tomographic reconstruction, post-processing, data simulation, 
-and calibration techniques. The package provides many utility methods to 
-assist users in constructing a pipeline for processing their own data or 
-developing new methods. Key features of Algotom include a wide range of 
-processing methods such as artifact removal, distortion correction, 
-speckle-based phase-contrast imaging, data reduction; and the capability of 
-processing non-standard tomography acquisitions such as grid scans or helical scans. 
+**Algotom** is a Python package designed for processing tomographic data. It offers a 
+complete processing pipeline and workflow, including reading and writing data, pre-processing, 
+tomographic reconstruction, post-processing, data simulation, and calibration techniques. 
+The package provides numerous utility methods to assist users in constructing pipelines 
+for processing their own data or developing new methods.
+
+Key features of Algotom include a wide range of processing methods such as artifact removal, 
+distortion correction, speckle-based phase-contrast imaging, and data reduction, as well as 
+the capability to process non-standard tomography acquisitions such as grid or helical scans.
+
 The software stands out for its readability, minimal dependencies, and rich documentation. 
-Developed specifically for synchrotron-based tomographic beamlines, Algotom aims to 
-maximize data quality, enhance workflow throughput, and exploit full beamline 
-capabilities.
+Developed specifically for synchrotron-based tomographic beamlines, Algotom aims to maximize 
+data quality, enhance workflow throughput, and fully exploit beamline capabilities.
 
 Features
 --------
-
-Algotom is a lightweight package. The software is built on top of a few core
-Python libraries to ensure its ease-of-installation. Methods distributed in 
-Algotom have been developed, used, and tested at synchrotron beamlines where massive
+Algotom is a lightweight package with minimal dependencies. The software is built 
+on top of a few core Python libraries to ensure its ease-of-installation. Methods distributed in 
+Algotom have been developed and tested at synchrotron beamlines where massive
 datasets are produced. This factor drives the methods developed to be easy-to-use, 
 robust, and practical. Algotom can be used on a normal computer to process large 
 tomographic data. Some featuring methods in Algotom are as follows:

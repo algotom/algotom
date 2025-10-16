@@ -58,6 +58,7 @@ sino_360 = remo.remove_zinger(sino_360, 0.08)
 sino_360 = remo.remove_all_stripe(sino_360, 3, 51, 17)
 
 # 1st way: Convert the 360-degree sinogram to the 180-degree sinogram.
+# This works well if the step angle is uniform.
 sino_180, center1 = conv.convert_sinogram_360_to_180(sino_360, center0)
 losa.save_image(output_base + "/reconstruction/sino_180.tif", sino_180)
 ## Denoising
@@ -69,6 +70,7 @@ img_rec = rec.dfi_reconstruction(sino_180, center1, apply_log=True)
 losa.save_image(output_base + "/reconstruction/recon_image_1.tif", img_rec)
 
 # 2nd way: Extending the 360-degree sinogram (by weighting and padding).
+# This works well for tomographic fly-scanned data where the step angles may fluctuate
 (sino_ext, center2) = conv.extend_sinogram(sino_360, center0)
 losa.save_image(output_base + "/reconstruction/sino_360_extened.tif", sino_ext)
 # Denoising

@@ -38,6 +38,7 @@ import os
 import warnings
 import platform
 from pathlib import Path
+from fnmatch import fnmatchcase
 import multiprocessing as mp
 from joblib import Parallel, delayed
 from collections import OrderedDict, deque
@@ -358,14 +359,16 @@ def make_file_name(file_path):
     return str(file_path)
 
 
-def find_file(path):
+def find_file(path, case_sensitive=False):
     """
     Search file
 
     Parameters
     ----------
     path : str
-        Path and pattern to find files.
+        Path and pattern to find files. e.g. 'C:/data/*.tif*'
+    case_sensitive : bool, optional
+        If True, pattern matching is case-sensitive. Defaults to False.
 
     Returns
     -------
@@ -373,7 +376,14 @@ def find_file(path):
         List of files.
     """
     path = __correct_path(path)
-    file_paths = list(path.parent.glob(path.name))
+    directory = path.parent
+    pattern = path.name
+    if case_sensitive:
+        file_paths = list(directory.glob(path.name))
+    else:
+        pattern_lower = pattern.casefold()
+        file_paths = [p for p in directory.iterdir()
+                      if fnmatchcase(p.name.casefold(), pattern_lower)]
     if not file_paths:
         raise FileNotFoundError(f"No files found matching: {path}")
     return sorted([file.as_posix() for file in file_paths])
