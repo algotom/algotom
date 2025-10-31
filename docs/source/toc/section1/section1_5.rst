@@ -97,6 +97,45 @@ corresponding to how the loops are defined. The following examples will make thi
         example, the "threads" option gives the best performance. Note that we can't use the above approaches for
         parallel reading or writing data from/to a hdf file. There is a `different way <https://docs.h5py.org/en/stable/mpi.html>`__ of doing these.
 
-    -   Users can also refer to how Algotom uses Joblib for different use-cases as shown `here <https://github.com/algotom/algotom/blob/e4241fdce435ffeed512c657b25e07d9e9a1a45f/algotom/util/utility.py#L68>`__,
-        `here <https://github.com/algotom/algotom/blob/e4241fdce435ffeed512c657b25e07d9e9a1a45f/algotom/prep/calculation.py#L176>`__,
-        or `here <https://github.com/algotom/algotom/blob/e4241fdce435ffeed512c657b25e07d9e9a1a45f/algotom/util/correlation.py#L1155>`__.
+For convenient use, Algotom provides a wrapper for the Joblib library. Users can easily apply a method to multiple images or sinograms as follows:
+
+.. code-block:: python
+
+    import time
+    import numpy as np
+    import multiprocessing as mp
+    from scipy.ndimage import gaussian_filter
+    import algotom.prep.filtering as filt
+    import algotom.util.utility as util
+
+    num_img = 100
+    height, width = 2000, 2000
+    sim_data = np.random.rand(num_img, 2000, 2000)
+
+    # Serial processing:
+    t0 = time.time()
+    smooth_data = []
+    for i in range(num_img):
+       smooth_data.append(gaussian_filter(sim_data[i], 5))
+    smooth_data = np.asarray(smooth_data)
+    t1 = time.time()
+    print(f"Time elapsed for serial processing: {t1-t0}")
+
+    # Parallel processing using Algotom utility module:
+    num_core = mp.cpu_count()
+    t0 = time.time()
+    smooth_data = util.parallel_process_slices(sim_data, gaussian_filter, [5], axis=0, ncore=num_core, prefer="threads")
+    t1 = time.time()
+    print(f"Time elapsed for parallel processing using 'threads': {t1-t0}. Number of core: {num_core}")
+
+    t0 = time.time()
+    smooth_data = util.parallel_process_slices(sim_data, gaussian_filter, [5], axis=0, ncore=num_core, prefer="processes")
+    t1 = time.time()
+    print(f"Time elapsed for parallel processing using 'processes': {t1-t0}. Number of core: {num_core}")
+
+    # We can pass any processing method and its parameters as follows; check Algotom document to know how to pass arguments.
+    t0 = time.time()
+    smooth_data = util.parallel_process_slices(sim_data, filt.fresnel_filter, [100.0, 1], axis=0, ncore=num_core, prefer="threads")
+    t1 = time.time()
+    print(f"Time elapsed for applying Fresnel filter: {t1-t0}. Number of core: {num_core}")
+

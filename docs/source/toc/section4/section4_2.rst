@@ -62,8 +62,13 @@ file at the time they were created, so we only need to work with the nxs file.
             :width: 100 %
             :align: center
 
-    Other python-based GUI software can be used are: `Broh5 <https://github.com/algotom/broh5>`__ or
+    Other python-based GUI software can be used are: `Datview <https://github.com/algotom/datview>`__, `Broh5 <https://github.com/algotom/broh5>`__ or
     `Vitables <https://github.com/uvemas/ViTables>`__.
+
+        .. image:: section4_2/figs/fig_4_2_4.png
+            :name: fig_4_2_4
+            :width: 100 %
+            :align: center
 
 -   Users also can use functions in the :ref:`input-output module <input-output>` of Algotom to explore data.
     For example, to display the hierarchical structure of a hdf file:

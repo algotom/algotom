@@ -71,3 +71,8 @@ Update notes
     + Enable parallel computing for image-stitching-related methods in calculation.py module
     + Add "sharpness" metric to "find_center_based_slice_metric" method.
     + Release version 1.6.0
+
+- 16/10/2025:
+
+    + Update LoaderSaver module, stitching methods.
+    + Release version 1.7.0

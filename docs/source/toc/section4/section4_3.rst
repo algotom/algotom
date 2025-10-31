@@ -242,7 +242,7 @@ Transformation between sinogram space and reconstruction space
         sino_corr = apply_customized_filter(sino_calc, parameters)
 
         # Reconstruct
-        img_rec = rec.dfi_reconstruction(sino_corr, (width - 1) / 2, apply_log=False)
+        img_rec = rec.fbp_reconstruction(sino_corr, (width - 1) / 2, apply_log=False)
 
     .. figure:: section4_3/figs/fig_4_3_8.jpg
         :name: fig_4_3_8

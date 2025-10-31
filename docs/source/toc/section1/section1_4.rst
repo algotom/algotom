@@ -236,6 +236,8 @@ Blurring an image will impact the performance of these methods.
 
 	.. code-block:: python
 
+		import algotom.prep.filtering as filt
+
 		sino_filt1 = filt.fresnel_filter(sino_rem2, 200)
 		sino_filt2 = filt.fresnel_filter(sino_rem2, 1000)
 		losa.save_image("E:/output/sino_denoising_strength_200.tif", sino_filt1)
@@ -267,8 +269,8 @@ Examples of comparing reconstructed images before and after artifacts removal:
 		import algotom.rec.reconstruction as rec
 
 		# No need to pass angles if it's a 180-degree sinogram
-		rec_img1 = rec.dfi_reconstruction(sino_norm, center, angles=None)
-		rec_img2 = rec.dfi_reconstruction(sino_rem2, center, angles=None)
+		rec_img1 = rec.fbp_reconstruction(sino_norm, center, angles=None)
+		rec_img2 = rec.fbp_reconstruction(sino_rem2, center, angles=None)
 		losa.save_image("E:/output/rec_with_artifacts.tif", rec_img1)
 		losa.save_image("E:/output/rec_artifacts_removed.tif", rec_img2)
 
@@ -284,8 +286,8 @@ different strengths:
 
 	.. code-block:: python
 
-		rec_img3 = rec.dfi_reconstruction(sino_filt1, center, angles=None)
-		rec_img4 = rec.dfi_reconstruction(sino_filt2, center, angles=None)
+		rec_img3 = rec.fbp_reconstruction(sino_filt1, center, angles=None)
+		rec_img4 = rec.fbp_reconstruction(sino_filt2, center, angles=None)
 		losa.save_image("E:/output/rec_filt1.tif", rec_img3)
 		losa.save_image("E:/output/rec_filt2.tif", rec_img4)
 
@@ -349,7 +351,7 @@ routine is as follows:
 		sinogram = remo.remove_all_stripe(sinogram, 3.0, 51, 17)
 		center = calc.find_center_vo(sinogram, width // 2 - 50, width // 2 + 50)
 		# Reconstruct image from the sinogram
-		rec_img = reco.dfi_reconstruction(sinogram, center, angles=None, apply_log=True)
+		rec_img = reco.fbp_reconstruction(sinogram, center, angles=None, apply_log=True)
 		losa.save_image(output_base + "/rec_00800.tif", rec_img)
 
 
@@ -420,7 +422,7 @@ two halves of the sinogram. Algotom provides `methods <https://algotom.readthedo
 		losa.save_image(output_base + "/sino_180.tif", sino_180)
 
 		# Perform reconstruction
-		rec_img = reco.dfi_reconstruction(sino_180, center1, apply_log=True)
+		rec_img = reco.fbp_reconstruction(sino_180, center1, apply_log=True)
 		losa.save_image(output_base + "/rec_img_1.tif", rec_img)
 
 		# 2nd way: extend the 360-degree sinogram. It's useful for tomography fly-scans

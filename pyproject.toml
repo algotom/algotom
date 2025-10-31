@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algotom"
+version = "1.7.0"
+description = "Data processing algorithms for tomography"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Nghia Vo", email = "nvo@bnl.gov" }]
+keywords = [
+  "Parallel-beam Computed Tomography", "Image Processing",
+  "Tomography", "X-ray Imaging", "Phase Contrast Imaging",
+  "Ring artifact removal"
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Natural Language :: English",
+  "Topic :: Scientific/Engineering :: Image Processing"
+]
+dependencies = [
+  "numpy>=1.18",
+  "scipy>=1.6",
+  "numba",
+  "pywavelets",
+  "pillow",
+  "h5py",
+  "joblib"
+]
+
+[tool.setuptools]
+license-files = []
+packages = { find = { include = ["algotom", "algotom.*"] } }

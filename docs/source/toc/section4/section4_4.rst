@@ -53,8 +53,8 @@ after ring removal methods are applied.
             sinogram1 = rem.remove_all_stripe(sinogram1, snr=3.0, la_size=51, sm_size=21)
             sinogram2 = rem.remove_all_stripe(sinogram2, snr=3.0, la_size=51, sm_size=21)
 
-            img_rec1 = rec.dfi_reconstruction(sinogram1, center1)
-            img_rec2 = rec.dfi_reconstruction(sinogram2, center2)
+            img_rec1 = rec.fbp_reconstruction(sinogram1, center1)
+            img_rec2 = rec.fbp_reconstruction(sinogram2, center2)
             losa.save_image(output_base + "/rec_sample1.tif", img_rec1)
             losa.save_image(output_base + "/rec_sample2.tif", img_rec2)
 
@@ -157,8 +157,8 @@ which cause partial ring artifacts.
             sinogram1 = rem.remove_stripe_based_sorting(sinogram1, 51)
             sinogram2 = rem.remove_stripe_based_sorting(sinogram2, 51)
 
-            img_rec1 = rec.dfi_reconstruction(sinogram1, center1)
-            img_rec2 = rec.dfi_reconstruction(sinogram2, center2)
+            img_rec1 = rec.fbp_reconstruction(sinogram1, center1)
+            img_rec2 = rec.fbp_reconstruction(sinogram2, center2)
             losa.save_image(output_base + "/rec_sample1.tif", img_rec1)
             losa.save_image(output_base + "/rec_sample2.tif", img_rec2)
 
@@ -274,8 +274,8 @@ in one slice.
             sinogram1 = rem.remove_all_stripe(sinogram1, snr=2.0, la_size=81, sm_size=31)
             sinogram2 = rem.remove_all_stripe(sinogram2, snr=3.0, la_size=81, sm_size=31)
 
-            img_rec1 = rec.dfi_reconstruction(sinogram1, center1)
-            img_rec2 = rec.dfi_reconstruction(sinogram2, center2)
+            img_rec1 = rec.fbp_reconstruction(sinogram1, center1)
+            img_rec2 = rec.fbp_reconstruction(sinogram2, center2)
             losa.save_image(output_base + "/rec_sample1.tif", img_rec1)
             losa.save_image(output_base + "/rec_sample2.tif", img_rec2)
 
@@ -358,8 +358,8 @@ is a problem for fft-based methods or normalization-based methods, but not for s
             sinogram1 = rem.remove_all_stripe(sinogram, snr=3.0, la_size=31, sm_size=21)
             sinogram2 = rem.remove_stripe_based_sorting(sinogram, 21)
 
-            img_rec1 = rec.dfi_reconstruction(sinogram1, center)
-            img_rec2 = rec.dfi_reconstruction(sinogram2, center)
+            img_rec1 = rec.fbp_reconstruction(sinogram1, center)
+            img_rec2 = rec.fbp_reconstruction(sinogram2, center)
             losa.save_image(output_base + "/rec_img1.tif", img_rec1)
             losa.save_image(output_base + "/rec_img2.tif", img_rec2)
 
@@ -439,11 +439,11 @@ step-by-step:
 
             import timeit
             import multiprocessing as mp
-            from joblib import Parallel, delayed
             import numpy as np
             import algotom.io.loadersaver as losa
             import algotom.prep.removal as rem
             import algotom.prep.correction as corr
+            import algotom.util.utility as util
 
             input_file = "E:/tmp/projections.hdf"
             output_file = "E:/tmp/tmp/projections_preprocessed.hdf"
@@ -462,28 +462,36 @@ step-by-step:
             last_chunk = height - chunk_size * (height // chunk_size)
             for i in np.arange(0, height - last_chunk, chunk_size):
                 sinograms = np.float32(data[:, i:i + chunk_size, :])
-                # Note about the change of the shape of output_tmp (which is a list of processed sinogram)
-                output_tmp = Parallel(n_jobs=ncore, prefer="threads")(delayed(rem.remove_all_stripe)(sinograms[:, j, :], 3.0, 51, 21) for j in range(chunk_size))
-
+                sinograms = util.parallel_process_slices(sinograms,
+                                                         rem.remove_all_stripe,
+                                                         [3.0, 51, 21],
+                                                         ncore=ncore, prefer="processes",
+                                                         axis=1)
                 # Apply beam hardening correction if need to
-                # output_tmp = np.asarray(output_tmp)
-                # output_tmp = Parallel(n_jobs=ncore, prefer="threads")(
-                #     delayed(corr.beam_hardening_correction)(output_tmp[j], 40, 2.0, False) for j in range(chunk_size))
-
-                output[i:i + chunk_size] = np.asarray(output_tmp, dtype=np.float32)
+                # sinograms = util.parallel_process_slices(sinograms,
+                #                                          corr.beam_hardening_correction,
+                #                                          [40, 2.0, False],
+                #                                          ncore=ncore, prefer="processes",
+                #                                          axis=1)
+                output[i:i + chunk_size] = np.moveaxis(sinograms, 1, 0)
                 t1 = timeit.default_timer()
                 print("Done sinograms: {0}-{1}. Time {2}".format(i, i + chunk_size, t1 - t0))
 
             if last_chunk != 0:
                 sinograms = np.float32(data[:, height - last_chunk:height, :])
-                output_tmp = Parallel(n_jobs=ncore, prefer="threads")(delayed(rem.remove_all_stripe)(sinograms[:, j, :], 3.0, 51, 21) for j in range(last_chunk))
+                sinograms = util.parallel_process_slices(sinograms,
+                                                         rem.remove_all_stripe,
+                                                         [3.0, 51, 21],
+                                                         ncore=ncore, prefer="processes",
+                                                         axis=1)
 
                 # Apply beam hardening correction if need to
-                # output_tmp = np.asarray(output_tmp)
-                # output_tmp = Parallel(n_jobs=ncore, prefer="threads")(
-                #     delayed(corr.beam_hardening_correction)(output_tmp[j], 40, 2.0, False) for j in range(last_chunk))
-
-                output[height - last_chunk:height] = np.asarray(output_tmp, dtype=np.float32)
+                # sinograms = util.parallel_process_slices(sinograms,
+                #                                          corr.beam_hardening_correction,
+                #                                          [40, 2.0, False],
+                #                                          ncore=ncore, prefer="processes",
+                #                                          axis=1)
+                output[height - last_chunk:height] = np.moveaxis(sinograms, 1, 0)
                 t1 = timeit.default_timer()
                 print("Done sinograms: {0}-{1}. Time {2}".format(height - last_chunk, height - 1, t1 - t0))
 
@@ -499,7 +507,6 @@ step-by-step:
 
             import timeit
             import multiprocessing as mp
-            from joblib import Parallel, delayed
             import numpy as np
             import algotom.io.loadersaver as losa
 
@@ -520,18 +527,16 @@ step-by-step:
 
             for i in np.arange(0, depth - last_chunk, chunk_size):
                 mat_stack = data[:, i: i + chunk_size, :]
-                mat_stack = np.uint16(mat_stack)  # Convert to 16-bit data for tif-format
-                file_names = [(output_base + "/proj_" + ("0000" + str(j))[-5:] + ".tif") for j in range(i, i + chunk_size)]
-                # Save files in parallel
-                Parallel(n_jobs=ncore, prefer="processes")(delayed(losa.save_image)(file_names[j], mat_stack[:, j, :]) for j in range(chunk_size))
-
+                mat_stack = np.uint16(data[:, i: i + chunk_size, :])
+                losa.save_image_multiple(output_base, mat_stack, axis=1,
+                                         overwrite=True, ncore=ncore,
+                                         prefer='processes', start_idx=i)
             if last_chunk != 0:
-                mat_stack = data[:, depth - last_chunk:depth, :]
-                mat_stack = np.uint16(mat_stack)  # Convert to 16-bit data for tif-format
-                file_names = [(output_base + "/proj_" + ("0000" + str(j))[-5:] + ".tif") for j in range(depth - last_chunk, depth)]
-                # Save files in parallel
-                Parallel(n_jobs=ncore, prefer="processes")(delayed(losa.save_image)(file_names[j], mat_stack[:, j, :]) for j in range(last_chunk))
-
+                mat_stack = np.uint16(data[:, depth - last_chunk:depth,
+                                      :])  # Convert to 16-bit data for tif-format
+                losa.save_image_multiple(output_base, mat_stack, axis=1,
+                                         overwrite=True, ncore=ncore,
+                                         prefer='processes', start_idx=depth - last_chunk)
             t1 = timeit.default_timer()
             print("Done!!!. Total time cost: {}".format(t1 - t0))
 

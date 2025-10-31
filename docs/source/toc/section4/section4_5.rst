@@ -257,9 +257,11 @@ higher resolution scans. This can be achieved by following these steps:
             # ...
                 # Perform reconstruction
                 # Using a cpu method
-                rec_img = rec.dfi_reconstruction(sinogram, center, angles=angles,
-                                                 apply_log=True)
+                rec_img = rec.fbp_reconstruction(sinogram, center, angles=angles,
+                                                 apply_log=True, gpu=False)
                 # # Other options:
+                # rec_img = rec.dfi_reconstruction(sinogram, center, angles=angles,
+                #                                  apply_log=True)
                 # # Using a gpu method
                 # rec_img = rec.fbp_reconstruction(sinogram, center, angles=angles,
                 #                                  apply_log=True, gpu=True)
@@ -436,9 +438,11 @@ types of input images.
 
             .. code-block:: python
 
+                import algotom.rec.reconstruction as rec
+
                 output_base = "E:/tmp/manual_finding/using_slices/"
-                util.find_center_visual_slices(sinogram, output_base, width // 2 - 20,
-                                               width // 2 + 20, 1, zoom=1.0, method="fbp", gpu=True)
+                rec.find_center_visual_slices(sinogram, output_base, width // 2 - 20,
+                                              width // 2 + 20, 1, zoom=1.0, method="fbp", gpu=True)
 
             .. image:: section4_5/figs/img_4_5_6.jpg
                 :name: img_4_5_6
@@ -683,8 +687,8 @@ for both tif and hdf input formats, but we can break down the workflow and provi
 
         # Give alias to a reconstruction method which is convenient for later change
         # recon_method = rec.dfi_reconstruction
-        # recon_method = rec.fbp_reconstruction
-        recon_method = rec.gridrec_reconstruction # Fast cpu-method. Must install Tomopy.
+        recon_method = rec.fbp_reconstruction
+        # recon_method = rec.gridrec_reconstruction # Fast cpu-method. Must install Tomopy.
         # recon_method = rec.astra_reconstruction # To use iterative methods. Must install Astra.
 
         # Provide metadata for loading hdf file, get data shape and rotation angles.
