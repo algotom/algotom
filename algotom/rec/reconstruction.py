@@ -329,13 +329,18 @@ def back_projection_cpu(sinogram, angles, center,
     (sino_height, sino_width) = sinogram.shape
     sino_width1 = sino_width - 1
     icenter = 0.5 * sino_width1
-    recon = np.zeros((sino_width, sino_width), dtype=np.float32)
-    for i in prange(sino_height):
+    cos_table = np.zeros(sino_height, dtype=np.float64)
+    sin_table = np.zeros(sino_height, dtype=np.float64)
+    for i in range(sino_height):
         theta = - angles[i]
-        cos_theta = math.cos(theta)
-        sin_theta = math.sin(theta)
-        for y_index in range(sino_width):
-            y_cor = y_index - icenter
+        cos_table[i] = math.cos(theta)
+        sin_table[i] = math.sin(theta)
+    recon = np.zeros((sino_width, sino_width), dtype=np.float32)
+    for y_index in prange(sino_width):
+        y_cor = y_index - icenter
+        for i in range(sino_height):
+            cos_theta = cos_table[i]
+            sin_theta = sin_table[i]
             for x_index in range(sino_width):
                 x_pos = (x_index - icenter) * cos_theta + y_cor * sin_theta
                 f_pos = x_pos + center
