@@ -85,6 +85,25 @@ class ReconstructionMethods(unittest.TestCase):
         win2 = rec.make_smoothing_window("triang", self.size)
         self.assertTrue(np.mean(np.abs(win1 - win2)) > 0.0)
 
+    def test_back_projection_cpu(self):
+        f_alias = rec.back_projection_cpu
+        rng = np.random.default_rng(1)
+        sinos = [(np.float32(self.sino_180), np.float32(
+            np.deg2rad(self.angles2)), np.float32(self.center)),
+                 (np.float32(rng.random((180, 129))), np.float32(
+                     np.linspace(0.0, np.pi, 180)), np.float32(64.0))]
+        num_threads = numba.config.NUMBA_NUM_THREADS
+        for (sino, angles, center) in sinos:
+            for edge_pad in (False, True):
+                numba.set_num_threads(1)
+                try:
+                    mat_ref = f_alias(sino, angles, center, edge_pad)
+                finally:
+                    numba.set_num_threads(num_threads)
+                for _ in range(4):
+                    mat_rec = f_alias(sino, angles, center, edge_pad)
+                    self.assertTrue(np.array_equal(mat_rec, mat_ref))
+
     def test_fbp_reconstruction(self):
         f_alias = rec.fbp_reconstruction
         mat_rec1 = f_alias(self.sino_180, self.center, apply_log=False,
