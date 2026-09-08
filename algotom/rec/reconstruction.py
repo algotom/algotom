@@ -43,6 +43,7 @@ from numba import jit, cuda, prange
 from joblib import Parallel, delayed
 import algotom.util.utility as util
 import algotom.io.loadersaver as losa
+import algotom.prep.conversion as conv
 from numba.core.errors import NumbaPerformanceWarning
 warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
 
@@ -1267,7 +1268,7 @@ def _find_center_based_slice_metric(sinogram, start, stop, step=1,
     Find the center-of-rotation (COR) using metrics of reconstructed slices
     at different CORs. The entropy of histogram (Ref. [1]) is used by default
     if the metric-function is set to None. If customized metrics are used, 
-    not that the minimum value must be corresponding to the optimal center.
+    note that the minimum value must be corresponding to the optimal center.
 
     Parameters
     ----------
@@ -1531,6 +1532,110 @@ def find_center_visual_slices(sinogram, output, start, stop, step=1, zoom=0.5,
     for center in list_center:
         rec_img = _reconstruct_slice(sinogram, center, method, angles, ratio,
                                      filter_name, apply_log, gpu, ncore)
+        file_name = "center_{0:.2f}".format(center / zoom) + ".tif"
+        losa.save_image(output_base + file_name, rec_img)
+        if display:
+            print("Done: {}".format(output_base + file_name))
+    return output_base
+
+
+def find_center_360_visual_slices(sinogram, output, start, stop, step=1,
+                                  zoom=0.5, method="fbp", gpu=False,
+                                  angles=None, ratio=1.0, filter_name="hann",
+                                  apply_log=True, ncore=None, display=False):
+    """
+    For visually finding the center-of-rotation (COR) in a 360-degree scan with
+    offset COR using reconstructed slices at different CORs.
+
+    Parameters
+    ----------
+    sinogram : array_like
+        2D array. 360-degree sinogram image.
+    output : str
+        Base folder for saving reconstructed slices.
+    start : float
+        Starting point for searching CoR.
+    stop : float
+        Ending point for searching CoR.
+    step : float, optional
+        Searching step.
+    zoom : float, optional
+        To resize input and output images. For example, 0.5 <=> reduce the
+        size of images by half.
+    method : {"bpf", "dfi", "gridrec", "fbp", "astra"}
+        To select a backend method for reconstruction.
+    gpu : bool, optional
+        Use GPU for computing if True.
+    angles : array_like, optional
+        1D array. List of angles (in radian) corresponding to the sinogram.
+    ratio : float, optional
+        To apply a circle mask to the reconstructed image.
+    filter_name : {None, "hann", "bartlett", "blackman", "hamming",\
+                  "nuttall", "parzen", "triang"}
+        Apply a smoothing filter.
+    apply_log : bool, optional
+        Apply the logarithm function to the sinogram before reconstruction.
+    ncore : int or None, optional
+        Number of cpu-cores used for computing. Automatically selected if None.
+    display : bool, optional
+        Print the output if True.
+
+    Returns
+    -------
+    str
+        Folder path to tif images.
+    """
+    output_name = losa.make_folder_name(output, name_prefix="Find_center",
+                                        zero_prefix=3)
+    output_base = output + "/" + output_name + "/"
+    sino_360 = np.copy(sinogram)
+    if apply_log:
+        if np.any(sino_360 <= 0.0):
+            warnings.warn("!!!Applying logarithm is enabled but "
+                          "there are values <= 0.0 in the data!!!")
+            sino_360[sino_360 <= 0.0] = np.float32(1.0)
+        sino_360 = -np.log(sino_360)
+        apply_log = False
+    zoom = np.clip(zoom, 0.01, 1.0)
+    if zoom != 1.0:
+        sino_360 = ndi.zoom(sino_360, zoom, order=1, mode="nearest")
+        start = start * zoom
+        stop = stop * zoom
+        step = step * zoom
+        list_center = np.arange(start, stop + step, step)
+        if angles is not None:
+            angles = np.interp(
+                np.linspace(0, 1, sino_360.shape[0]),
+                np.linspace(0, 1, len(angles)),
+                angles
+            )
+    else:
+        list_center = np.arange(start, stop + step, step)
+    min_center = int(np.min(list_center))
+    max_center = int(np.max(list_center))
+    sino_width = sino_360.shape[-1]
+    if min_center < 0 or max_center < 0:
+        pad = max(abs(min_center), abs(max_center))
+        total_width = 2 * sino_width + 2 * pad + 1
+    elif min_center > sino_width or max_center > sino_width:
+        pad = max(abs(sino_width - min_center), abs(sino_width - max_center))
+        total_width = 2 * sino_width + 2 * pad + 1
+    else:
+        total_width = 2 * sino_width
+    if angles is None:
+        angles = np.deg2rad(np.linspace(0.0, 360.0, sino_360.shape[0]))
+    if not cuda.is_available():
+        gpu = False
+    for center in list_center:
+        sino_ext, center_ext = conv.extend_sinogram(sino_360, center,
+                                                    apply_log=apply_log)
+        pad = total_width - sino_ext.shape[-1]
+        pad_left = pad // 2
+        pad_right = pad - pad_left
+        sino_ext = np.pad(sino_ext, ((0, 0), (pad_left, pad_right)))
+        rec_img = _reconstruct_slice(sino_ext, center_ext + pad_left, method,
+                                     angles, ratio, filter_name, apply_log, gpu,
+                                     ncore)
         file_name = "center_{0:.2f}".format(center / zoom) + ".tif"
         losa.save_image(output_base + file_name, rec_img)
         if display:

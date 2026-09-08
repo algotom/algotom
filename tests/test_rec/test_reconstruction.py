@@ -303,3 +303,20 @@ class ReconstructionMethods(unittest.TestCase):
         img = losa.load_image(files[0])
         wid2 = img.shape[-1]
         self.assertTrue(len(files) == num_img and wid2 == wid // 2)
+
+    def test_find_center_360_visual_slices(self):
+        output_base = "./tmp"
+        start, stop = self.center - 2, self.center + 2
+        num_img = stop - start + 1
+        output_folder = rec.find_center_360_visual_slices(self.sino_360,
+                                                          output_base, start,
+                                                          stop, step=1,
+                                                          method="fbp",
+                                                          gpu=False,
+                                                          zoom=0.5,
+                                                          apply_log=False)
+        files = losa.find_file(output_folder + "/*.tif*")
+        self.assertTrue(len(files) == num_img)
+        img1 = losa.load_image(files[0])
+        img2 = losa.load_image(files[-1])
+        self.assertTrue(img1.shape == img2.shape)
