@@ -39,12 +39,12 @@ import sys
 import math
 import time
 import warnings
-import multiprocessing as mp
 import numpy as np
 import numpy.fft as fft
 from scipy import signal
 from scipy import ndimage as ndi
 from numba import jit, cuda, prange
+from joblib import cpu_count
 import algotom.util.utility as util
 import algotom.io.loadersaver as losa
 import algotom.rec.reconstruction as rec
@@ -519,10 +519,11 @@ def vertical_reconstruction(projections, slice_index, center, alpha=0.0,
             or ramp_filter is None):
         raise ValueError("Must use one of these options: "
                          "'before', 'after', None")
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = int(np.clip(mp.cpu_count() - 1, 1, None))
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = int(np.clip(ncore, 1, None))
+        ncore = max(1, min(ncore, max_cores))
     (num_proj0, height0, width0) = projections.shape
     if proj_stop == -1:
         proj_stop = num_proj0
@@ -784,10 +785,11 @@ def vertical_reconstruction_multiple(projections, start_index, stop_index,
             or ramp_filter is None):
         raise ValueError("Must use one of these options: "
                          "'before', 'after', None")
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = int(np.clip(mp.cpu_count() - 1, 1, None))
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = int(np.clip(ncore, 1, None))
+        ncore = max(1, min(ncore, max_cores))
     (num_proj0, height0, width0) = projections.shape
     if proj_stop == -1:
         proj_stop = num_proj0
@@ -1063,10 +1065,11 @@ def vertical_reconstruction_different_angles(projections, slice_indices,
             or ramp_filter is None):
         raise ValueError("Must use one of these options: "
                          "'before', 'after', None")
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = int(np.clip(mp.cpu_count() - 1, 1, None))
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = int(np.clip(ncore, 1, None))
+        ncore = max(1, min(ncore, max_cores))
     (num_proj0, height0, width0) = projections.shape
     if proj_stop == -1:
         proj_stop = num_proj0

@@ -39,8 +39,7 @@ import numpy as np
 import numpy.fft as fft
 from scipy import stats
 import scipy.ndimage as ndi
-import multiprocessing as mp
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 
 
 def make_inverse_double_wedge_mask(height, width, radius, hor_drop=None,
@@ -175,8 +174,11 @@ def coarse_search_cor(sino_180, start, stop, ratio=0.5, denoise=True,
     """
     if denoise is True:
         sino_180 = ndi.gaussian_filter(sino_180, (3, 1), mode='reflect')
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     (nrow, ncol) = sino_180.shape
     start_cor = int(np.clip(start, 0, ncol - 1))
     stop_cor = int(np.clip(stop, 0, ncol - 1))
@@ -241,8 +243,11 @@ def fine_search_cor(sino_180, start, radius, step, ratio=0.5, denoise=True,
     """
     if denoise is True:
         sino_180 = ndi.gaussian_filter(sino_180, (2, 2), mode='reflect')
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     (nrow, ncol) = sino_180.shape
     sino_flip = np.fliplr(sino_180)
     sino_comp = np.flipud(sino_180)
@@ -492,8 +497,11 @@ def search_overlap(mat1, mat2, win_width, side, denoise=True, norm=False,
         Initial position of the searching window where the position
         corresponds to the center of the window.
     """
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     if denoise is True:
         mat1 = ndi.gaussian_filter(mat1, (2, 2), mode='reflect')
         mat2 = ndi.gaussian_filter(mat2, (2, 2), mode='reflect')

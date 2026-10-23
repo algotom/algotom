@@ -34,13 +34,12 @@ Module for phase contrast imaging:
             +   Generate transmission-signal and dark-signal images.
 """
 
-import multiprocessing as mp
 import numpy as np
 import numpy.fft as fft
 from scipy.fft import dctn, idctn
 import scipy.ndimage as ndi
 from numba import jit
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 import algotom.util.correlation as corl
 
 
@@ -800,8 +799,11 @@ def get_transmission_dark_field_signal(ref_stack, sam_stack, x_shifts,
         raise ValueError("Shapes of the inputs {0} are smaller than the "
                          "requested size (win_size + 2*margin) = "
                          "{1}".format((height, width), als_size))
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     chunk_size = (height - 2 * pad) // ncore
     f_alias = _get_transmission_dark_field_signal
     if len(ref_stack.shape) == 2:

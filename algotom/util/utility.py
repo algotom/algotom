@@ -54,16 +54,14 @@ Module of utility methods:
  """
 
 import sys
-import multiprocessing as mp
 import pywt
 import numpy as np
 import numpy.fft as fft
-from numba import cuda
 import scipy.ndimage as ndi
 from scipy import interpolate
 import scipy.signal.windows as win
 from scipy.signal import savgol_filter
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 import algotom.io.loadersaver as losa
 
 
@@ -96,10 +94,11 @@ def parallel_process_slices(data, method, parameters, axis=1, ncore=None,
         Same axis-definition as the input.
     """
     (depth, height, width) = data.shape
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     if not isinstance(parameters, list):
         parameters = list([parameters])
     if axis == 2:
@@ -910,7 +909,7 @@ def apply_regularization_filter(mat, alpha, axis=1, ncore=None):
     [1] : https://doi.org/10.1016/j.aml.2010.08.022
     """
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = np.clip(cpu_count() - 1, 1, None)
     if axis == 0:
         mat = np.transpose(mat)
     (nrow, ncol) = mat.shape

@@ -39,12 +39,11 @@ import warnings
 import platform
 from pathlib import Path
 from fnmatch import fnmatchcase
-import multiprocessing as mp
-from joblib import Parallel, delayed
 from collections import OrderedDict, deque
 import h5py
 import numpy as np
 from PIL import Image
+from joblib import Parallel, delayed, cpu_count
 
 
 PIPE = "│"
@@ -1238,10 +1237,12 @@ def load_image_multiple(list_path, ncore=None, prefer="threads"):
         3D array.
     """
     if isinstance(list_path, list):
+        max_cores = cpu_count()
         if ncore is None:
-            ncore = mp.cpu_count() - 1
+            ncore = max(1, max_cores - 1)
+        else:
+            ncore = max(1, min(ncore, max_cores))
         num_file = len(list_path)
-        ncore = np.clip(ncore, 1, num_file)
         if ncore > 1:
             imgs = Parallel(n_jobs=ncore, prefer=prefer)(
                 delayed(load_image)(list_path[i]) for i in range(num_file))
@@ -1288,9 +1289,11 @@ def save_image_multiple(list_path, image_stack, axis=0, overwrite=True,
                      for i in range(start_idx, start_idx + num_file)]
     else:
         raise ValueError("Input must be a list of file paths or a folder path")
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = mp.cpu_count() - 1
-    ncore = np.clip(ncore, 1, num_file)
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     if axis == 2:
         if ncore > 1:
             Parallel(n_jobs=ncore, prefer=prefer)(

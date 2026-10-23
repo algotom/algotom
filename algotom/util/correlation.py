@@ -33,10 +33,9 @@ stacks of images. The methods are designed to be flexible to:
 
 import math
 import warnings
-import multiprocessing as mp
 import numpy as np
 from numba import jit, cuda
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 from scipy.signal import correlate
 from algotom.rec.reconstruction import make_smoothing_window
 
@@ -957,8 +956,11 @@ def _get_1d_shift_multi_rows_3d_input(ref_mat, mat, direction="x", win_size=7,
     if direction != "x" and direction != "y":
         raise ValueError("Only two options: 'x' or 'y''")
     (depth, height, width) = ref_mat.shape
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = mp.cpu_count() - 1
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     f_alias = _get_1d_shift_single_row_2d_input
     if direction == "x":
         if ncore == 1:
@@ -1158,8 +1160,11 @@ def _get_2d_shift_full_image_2d_input(ref_mat, mat, win_size=7, margin=10,
             for i in range(start, stop_row)]
         shifts = np.asarray(shifts)
     else:
+        max_cores = cpu_count()
         if ncore is None:
-            ncore = np.clip(mp.cpu_count() - 1, 1, None)
+            ncore = max(1, max_cores - 1)
+        else:
+            ncore = max(1, min(ncore, max_cores))
         shifts = np.asarray(Parallel(n_jobs=ncore)(
             delayed(f_alias)(
                 ref_mat[i - start:i + start1, j - start:j + start1],
@@ -1261,8 +1266,11 @@ def _get_2d_shift_multi_rows_3d_input(ref_mat, mat, win_size=7, margin=10,
             for i in range(start, stop_row)]
         shifts = np.asarray(shifts)
     else:
+        max_cores = cpu_count()
         if ncore is None:
-            ncore = np.clip(mp.cpu_count() - 1, 1, None)
+            ncore = max(1, max_cores - 1)
+        else:
+            ncore = max(1, min(ncore, max_cores))
         shifts = np.asarray(
             Parallel(n_jobs=ncore)(delayed(f_alias)(
                 ref_mat[:, i - start:i + start1, j - start:j + start1],
@@ -2366,8 +2374,11 @@ def _get_2d_shift_multi_rows_3d_input_cpu_gpu(ref_mat, mat, win_size=7,
     coef_4d = np.zeros((height1, width1, size_mag, size_mag), dtype=np.float32)
     f_alias[grid, block](coef_4d, ref_mat1, mat1, np.int32(height1),
                          np.int32(width1), np.int32(radi), np.int32(margin))
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = mp.cpu_count() - 1
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     shifts = np.asarray(Parallel(n_jobs=ncore)(
         delayed(locate_peak)(coef_4d[i, j, :, :], True, method, 2, size)
         for i in range(height1) for j in range(width1)))
@@ -2735,8 +2746,11 @@ def _find_global_shift_based_local_shifts_cpu(ref_mat, mat, win_size, margin,
                           False, None) for k in range(num_point)]
         shifts = np.asarray(shifts)
     else:
+        max_cores = cpu_count()
         if ncore is None:
-            ncore = np.clip(mp.cpu_count() - 1, 1, None)
+            ncore = max(1, max_cores - 1)
+        else:
+            ncore = max(1, min(ncore, max_cores))
         shifts = np.asarray(Parallel(n_jobs=ncore)(
             delayed(f_alias)(
                 ref_mat[list_i[k] - start:list_i[k] + start1,
@@ -3051,8 +3065,11 @@ def __get_2d_shift_multi_rows_3d_input_umpa_cpu(ref_mat, mat, win_size, margin,
     stop_col, stop_row = width - start, height - start
     start1, radi1, margin1 = start + 1, radi + 1, margin + 1
     f_alias = __calc_shift_umpa
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
+    else:
+        ncore = max(1, min(ncore, max_cores))
     if dark_signal:
         results = np.asarray(
             Parallel(n_jobs=ncore)(delayed(f_alias)(

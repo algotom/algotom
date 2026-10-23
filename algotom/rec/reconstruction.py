@@ -24,6 +24,7 @@
 Module of reconstruction methods:
 
     -   Filtered back-projection (FBP) method for GPU and CPU.
+    -   Forward-projection method for GPU and CPU.
     -   Direct Fourier inversion (DFI) method.
     -   Wrapper for Astra-Toolbox reconstruction methods (optional)
     -   Wrapper for Tomopy-gridrec reconstruction method (optional)
@@ -33,14 +34,13 @@ Module of reconstruction methods:
 
 import math
 import warnings
-import multiprocessing as mp
 import numpy as np
 import numpy.fft as fft
 import scipy
 from scipy import signal
 from scipy import ndimage as ndi
 from numba import jit, cuda, prange
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, cpu_count
 import algotom.util.utility as util
 import algotom.io.loadersaver as losa
 import algotom.prep.conversion as conv
@@ -365,6 +365,196 @@ def back_projection_cpu(sinogram, angles, center,
     return recon
 
 
+@cuda.jit
+def __forward_projection_gpu_kernel(sinogram, image, angles, center,
+                                    num_angle, width, num_step,
+                                    t_start):  # pragma: no cover
+    """
+    GPU-kernel function performing forward-projection.
+    """
+    (s_index, a_index) = cuda.grid(2)
+    if (s_index < width) and (a_index < num_angle):
+        width1 = width - 1
+        icenter = 0.5 * width1
+        theta = -angles[a_index]
+        cos_theta = math.cos(theta)
+        sin_theta = math.sin(theta)
+        s_cor = s_index - center
+        x_start = s_cor * cos_theta + icenter
+        y_start = s_cor * sin_theta + icenter
+        num = 0.0
+        for k in range(num_step):
+            t_pos = t_start + k
+            x_pos = x_start - t_pos * sin_theta
+            y_pos = y_start + t_pos * cos_theta
+            if (0 <= x_pos <= width1) and (0 <= y_pos <= width1):
+                x_d = int(math.floor(x_pos))
+                y_d = int(math.floor(y_pos))
+                x_u = min(x_d + 1, width1)
+                y_u = min(y_d + 1, width1)
+                dx = x_pos - x_d
+                dy = y_pos - y_d
+                val_d = image[y_d, x_d] + (image[y_d, x_u]
+                                           - image[y_d, x_d]) * dx
+                val_u = image[y_u, x_d] + (image[y_u, x_u]
+                                           - image[y_u, x_d]) * dx
+                num += val_d + (val_u - val_d) * dy
+        sinogram[a_index, s_index] = num
+
+
+def forward_projection_gpu(square_image, angles, center=None,
+                           block=(16, 16)):  # pragma: no cover
+    """
+    Implement the forward-projection algorithm using GPU.
+
+    Parameters
+    ----------
+    square_image : array_like
+        Square 2D image.
+    angles : array_like
+        1D array. Projection angles (radian).
+    center : float, optional
+        Center of rotation in the sinogram. Set to the middle of the image
+        if None.
+    block : tuple of int, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
+
+    Returns
+    -------
+    sinogram : array_like
+        2D array with shape (len(angles), image_width).
+    """
+    (nrow, ncol) = square_image.shape
+    if nrow != ncol:
+        raise ValueError("Input must be a square image!!!")
+    if center is None:
+        center = 0.5 * (ncol - 1)
+    num_angle = len(angles)
+    pad = int(np.ceil(0.5 * (np.sqrt(2.0) - 1.0) * ncol))
+    num_step = ncol + 2 * pad
+    t_start = -0.5 * (ncol - 1) - pad
+    square_image = np.ascontiguousarray(square_image, dtype=np.float32)
+    sinogram = np.zeros((num_angle, ncol), dtype=np.float32)
+    grid = (int(np.ceil(1.0 * ncol / block[0])),
+            int(np.ceil(1.0 * num_angle / block[1])))
+    __forward_projection_gpu_kernel[grid, block](sinogram, square_image,
+                                                 np.float32(angles),
+                                                 np.float32(center),
+                                                 np.int32(num_angle),
+                                                 np.int32(ncol),
+                                                 np.int32(num_step),
+                                                 np.float32(t_start))
+    return sinogram
+
+
+@jit(nopython=True, parallel=True, cache=True)
+def forward_projection_cpu(square_image, angles, center):  # pragma: no cover
+    """
+    Implement the forward-projection algorithm using CPU.
+
+    Parameters
+    ----------
+    square_image : array_like
+        Square 2D image.
+    angles : array_like
+        1D array. Projection angles (radian).
+    center : float
+        Center of rotation in the sinogram.
+
+    Returns
+    -------
+    sinogram : array_like
+        2D array with shape (len(angles), image_width).
+    """
+    (height, width) = square_image.shape
+    if height != width:
+        raise ValueError("Input must be a square image!!!")
+    width1 = width - 1
+    icenter = 0.5 * width1
+    num_angle = len(angles)
+    pad = int(np.ceil(0.5 * (np.sqrt(2.0) - 1.0) * width))
+    num_step = width + 2 * pad
+    t_start = -icenter - pad
+    sinogram = np.zeros((num_angle, width), dtype=np.float32)
+    for a_index in prange(num_angle):
+        theta = -angles[a_index]
+        cos_theta = math.cos(theta)
+        sin_theta = math.sin(theta)
+        for s_index in range(width):
+            s_cor = s_index - center
+            x_start = s_cor * cos_theta + icenter
+            y_start = s_cor * sin_theta + icenter
+            num = 0.0
+            for k in range(num_step):
+                t_pos = t_start + k
+                x_pos = x_start - t_pos * sin_theta
+                y_pos = y_start + t_pos * cos_theta
+                if (0 <= x_pos <= width1) and (0 <= y_pos <= width1):
+                    x_d = np.int32(np.floor(x_pos))
+                    y_d = np.int32(np.floor(y_pos))
+                    x_u = min(x_d + 1, width1)
+                    y_u = min(y_d + 1, width1)
+                    dx = x_pos - x_d
+                    dy = y_pos - y_d
+                    val_d = square_image[y_d, x_d] + (
+                            square_image[y_d, x_u]
+                            - square_image[y_d, x_d]) * dx
+                    val_u = square_image[y_u, x_d] + (
+                            square_image[y_u, x_u]
+                            - square_image[y_u, x_d]) * dx
+                    num += val_d + (val_u - val_d) * dy
+            sinogram[a_index, s_index] = num
+    return sinogram
+
+
+def forward_projection(square_image, angles, center=None, circle_mask=True,
+                       gpu=True, block=(16, 16)):
+    """
+    Generate a sinogram using ray-driven bilinear interpolation.
+
+    Parameters
+    ----------
+    square_image : array_like
+        Square 2D image.
+    angles : array_like
+        1D array. Projection angles (radian).
+    center : float, optional
+        Center of rotation in the sinogram. Set to the middle of the image
+        if None.
+    circle_mask : bool, optional
+        Apply a circle mask to the image before forward projection.
+    gpu : bool, optional
+        Use GPU for computing if True.
+    block : tuple of two integer-values, optional
+        Size of a GPU block. E.g. (8, 8), (16, 16), (32, 32), ...
+
+    Returns
+    -------
+    array_like
+        2D array with shape (len(angles), image_width).
+    """
+    (nrow, ncol) = square_image.shape
+    if nrow != ncol:
+        raise ValueError("Input must be a square image!!!")
+    if center is None:
+        center = 0.5 * (ncol - 1)
+    angles = np.asarray(angles)
+    if circle_mask:
+        square_image = square_image * util.make_circle_mask(ncol, 1.0)
+    if gpu is True:
+        if cuda.is_available() is False:
+            warnings.warn("!!!No Nvidia GPU found! Run with CPU instead!!!")
+            gpu = False
+    if gpu is True:
+        sinogram = forward_projection_gpu(square_image, angles, center,
+                                          block=block)
+    else:
+        sinogram = forward_projection_cpu(
+            np.ascontiguousarray(square_image, dtype=np.float32),
+            np.float32(angles), np.float32(center))
+    return sinogram
+
+
 def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
                        filter_name="hann", pad=None, pad_mode="edge",
                        apply_log=True, gpu=True, block=(16, 16), ncore=None):
@@ -430,10 +620,11 @@ def fbp_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
         else:
             grid = (int(np.ceil(1.0 * ncol / block[0])),
                     int(np.ceil(1.0 * ncol / block[1])))
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     if apply_log is True:
         if np.any(sinogram <= 0.0):
             warnings.warn("!!!Applying logarithm is enabled but "
@@ -631,10 +822,11 @@ def bpf_reconstruction(sinogram, center, angles=None, ratio=1.0, ramp_win=None,
         else:
             grid = (int(np.ceil(1.0 * ncol / block[0])),
                     int(np.ceil(1.0 * ncol / block[1])))
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     if apply_log is True:
         if np.any(sinogram <= 0.0):
             warnings.warn("!!!Applying logarithm is enabled but "
@@ -871,10 +1063,11 @@ def dfi_reconstruction(sinogram, center, angles=None, ratio=1.0,
                           "there are values <= 0.0 in the data!!!")
             sinogram[sinogram <= 0.0] = np.float32(1.0)
         sinogram = -np.log(sinogram)
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     nrow, ncol2 = sinogram.shape[0], sinogram.shape[-1]
     mask = util.make_circle_mask(ncol2, 1.0)
     (r_mat, theta_mat) = generate_mapping_coordinate(ncol2, nrow, ncol2, ncol2)
@@ -970,10 +1163,11 @@ def gridrec_reconstruction(sinogram, center, angles=None, ratio=1.0,
                           "there are values <= 0.0 in the data!!!")
             sinogram[sinogram <= 0.0] = np.float32(1.0)
         sinogram = -np.log(sinogram)
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     if filter_name is None:
         filter_name = "shepp"
     pad_left = 0
@@ -1048,6 +1242,100 @@ def __astra_recon_single(sinogram, center, angles, pad, method, filter_name,
     astra.data2d.delete(sino_id)
     astra.data2d.delete(rec_id)
     return recon[pad:ncol - pad, pad:ncol - pad]
+
+
+def back_projection_astra(sinogram, center, angles=None, pad=0,
+                          pad_mode="edge", gpu=True):
+    try:
+        import astra
+    except ImportError:
+        raise ValueError("You must install Astra-Toolbox before using this "
+                         "function!")
+    method = "BP"
+    if gpu is True:
+        if cuda.is_available() is True:
+            method = "BP_CUDA"
+        else:
+            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
+    sinogram = np.pad(sinogram, ((0, 0), (pad, pad)), mode=pad_mode)
+    ncol = sinogram.shape[-1]
+    proj_geom = astra.create_proj_geom('parallel', 1, ncol, angles)
+    vol_geom = astra.create_vol_geom(ncol, ncol)
+    cen_col = (ncol - 1.0) / 2.0
+    sinogram = ndi.shift(sinogram, (0, cen_col - (center + pad)),
+                         mode='nearest')
+    sino_id = astra.data2d.create('-sino', proj_geom, sinogram)
+    rec_id = astra.data2d.create('-vol', vol_geom)
+    proj_id = None
+    if "CUDA" not in method:
+        proj_id = astra.create_projector('line', proj_geom, vol_geom)
+    cfg = astra.astra_dict(method)
+    cfg['ProjectionDataId'] = sino_id
+    cfg['ReconstructionDataId'] = rec_id
+    if "CUDA" not in method:
+        cfg['ProjectorId'] = proj_id
+    try:
+        alg_id = astra.algorithm.create(cfg)
+    except Exception:
+        raise ValueError("Invalid selection of method!!!")
+    astra.algorithm.run(alg_id, 1)
+    recon = astra.data2d.get(rec_id)
+    astra.algorithm.delete(alg_id)
+    astra.data2d.delete(sino_id)
+    astra.data2d.delete(rec_id)
+    return recon[pad:ncol - pad, pad:ncol - pad]
+
+
+def forward_projection_astra(square_image, angles, circle_mask=True, gpu=True):
+    """Return a sinogram with shape (len(angles), image_width).
+
+    Parameters
+    ----------
+    square_image : array_like
+        Square 2D image.
+    angles : array_like
+        Projection angles in radians.
+    circle_mask : bool
+        Apply circle mask before forward projection.
+    gpu : bool
+        Use GPU if available; otherwise use the CPU.
+    """
+    try:
+        import astra
+    except ImportError:
+        raise ValueError("You must install Astra-Toolbox before using this "
+                         "function!")
+    method = "FP"
+    if gpu is True:
+        if cuda.is_available() is True:
+            method = "FP_CUDA"
+        else:
+            warnings.warn("!!!No Nvidia GPU found!!!Run with CPU instead!!!")
+    (nrow, ncol) = square_image.shape
+    if nrow != ncol:
+        raise ValueError("Input must a square image!!!")
+    if circle_mask:
+        mask = util.make_circle_mask(ncol, 1.0)
+        square_image = square_image * mask
+    proj_geom = astra.create_proj_geom('parallel', 1, ncol, angles)
+    vol_geom = astra.create_vol_geom(ncol, ncol)
+
+    volume_id = astra.data2d.create("-vol", vol_geom, square_image)
+    projection_id = astra.data2d.create('-sino', proj_geom)
+    cfg = astra.astra_dict(method)
+    if "CUDA" not in method:
+        projector_id = astra.create_projector('linear', proj_geom, vol_geom)
+        cfg['ProjectorId'] = projector_id
+    cfg['ProjectionDataId'] = projection_id
+    cfg['VolumeDataId'] = volume_id
+    algorithm_id = astra.algorithm.create(cfg)
+    astra.algorithm.run(algorithm_id)
+    sinogram = astra.data2d.get(projection_id)
+    astra.data2d.delete([projection_id, volume_id])
+    astra.algorithm.delete(algorithm_id)
+    if "CUDA" not in method:
+        astra.projector.delete(projector_id)
+    return sinogram
 
 
 def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
@@ -1133,10 +1421,11 @@ def astra_reconstruction(sinogram, center, angles=None, ratio=1.0,
         if method not in cpu_method:
             raise ValueError("No such option, {0}, in the available list "
                              "{1}".format(method, cpu_method))
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     if center < 0 or center >= ncol:
         raise ValueError("Center is out of the range [0, {}]".format(ncol - 1))
     if apply_log is True:
@@ -1340,10 +1629,11 @@ def _find_center_based_slice_metric(sinogram, start, stop, step=1,
         nmin, nmax = np.min(recon), np.max(recon)
         if nmin == nmax:
             raise ValueError("Empty image!!!")
+    max_cores = cpu_count()
     if ncore is None:
-        ncore = np.clip(mp.cpu_count() - 1, 1, None)
+        ncore = max(1, max_cores - 1)
     else:
-        ncore = np.clip(ncore, 1, None)
+        ncore = max(1, min(ncore, max_cores))
     if (ncore > 1) and (gpu is False) and (method != "fbp"):
         list_metric = Parallel(n_jobs=ncore, prefer=prefer)(delayed(
             __get_slice_metric)(sinogram, center, method, angles, ratio,
